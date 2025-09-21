@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 import logoDark from '@/assets/logo-dark.png';
 import logoLight from '@/assets/logo-light.png';
@@ -19,21 +21,39 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [nombre, setNombre] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [camaraId, setCamaraId] = useState('');
+  const [celular, setCelular] = useState('');
+  const [cargo, setCargo] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [camaras, setCamaras] = useState<Array<{id: string, nombre: string, nit: string}>>([]);
 
   const { signIn, signUp, user } = useAuth();
   const { theme } = useTheme();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Redirigir si ya está autenticado
+  // Cargar cámaras y redirigir si ya está autenticado
   useEffect(() => {
     if (user) {
       navigate('/');
     }
+    
+    // Cargar cámaras para el formulario de registro
+    const fetchCamaras = async () => {
+      const { data, error } = await supabase
+        .from('camaras')
+        .select('id, nombre, nit')
+        .order('nombre');
+      
+      if (!error && data) {
+        setCamaras(data);
+      }
+    };
+    
+    fetchCamaras();
   }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,8 +92,26 @@ export default function Auth() {
           setLoading(false);
           return;
         }
+        
+        if (!camaraId) {
+          setError('Debes seleccionar una cámara de comercio');
+          setLoading(false);
+          return;
+        }
+        
+        if (!celular.trim()) {
+          setError('El número de celular es requerido');
+          setLoading(false);
+          return;
+        }
+        
+        if (!cargo.trim()) {
+          setError('El cargo es requerido');
+          setLoading(false);
+          return;
+        }
 
-        const { error } = await signUp(email, password, nombre);
+        const { error } = await signUp(email, password, nombre, camaraId, celular, cargo);
         if (error) {
           setError(getErrorMessage(error.message));
         } else {
@@ -109,6 +147,9 @@ export default function Auth() {
     setPassword('');
     setNombre('');
     setConfirmPassword('');
+    setCamaraId('');
+    setCelular('');
+    setCargo('');
     setError('');
     setShowPassword(false);
     setShowConfirmPassword(false);
@@ -160,18 +201,62 @@ export default function Auth() {
               )}
 
               {!isLogin && (
-                <div className="space-y-2">
-                  <Label htmlFor="nombre">Nombre completo</Label>
-                  <Input
-                    id="nombre"
-                    type="text"
-                    placeholder="Ingresa tu nombre completo"
-                    value={nombre}
-                    onChange={(e) => setNombre(e.target.value)}
-                    required={!isLogin}
-                    className="transition-colors focus:border-primary"
-                  />
-                </div>
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="nombre">Nombre completo</Label>
+                    <Input
+                      id="nombre"
+                      type="text"
+                      placeholder="Ingresa tu nombre completo"
+                      value={nombre}
+                      onChange={(e) => setNombre(e.target.value)}
+                      required={!isLogin}
+                      className="transition-colors focus:border-primary"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="camara">Cámara de Comercio</Label>
+                    <Select value={camaraId} onValueChange={setCamaraId} required={!isLogin}>
+                      <SelectTrigger className="transition-colors focus:border-primary">
+                        <SelectValue placeholder="Selecciona tu cámara de comercio" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover border-border z-50">
+                        {camaras.map((camara) => (
+                          <SelectItem key={camara.id} value={camara.id}>
+                            {camara.nombre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="celular">Número de celular</Label>
+                    <Input
+                      id="celular"
+                      type="tel"
+                      placeholder="Ej: 300 123 4567"
+                      value={celular}
+                      onChange={(e) => setCelular(e.target.value)}
+                      required={!isLogin}
+                      className="transition-colors focus:border-primary"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="cargo">Cargo en la empresa</Label>
+                    <Input
+                      id="cargo"
+                      type="text"
+                      placeholder="Ej: Gerente General, Director, etc."
+                      value={cargo}
+                      onChange={(e) => setCargo(e.target.value)}
+                      required={!isLogin}
+                      className="transition-colors focus:border-primary"
+                    />
+                  </div>
+                </>
               )}
 
               <div className="space-y-2">
