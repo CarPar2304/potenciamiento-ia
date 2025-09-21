@@ -147,7 +147,6 @@ export type Database = {
           fecha_expiracion_ultima_licencia: string | null
           fecha_inicio_ultima_licencia: string | null
           fecha_primera_activacion: string | null
-          id: string
           nombre: string
           progreso_ruta: number | null
           ruta: string | null
@@ -167,7 +166,6 @@ export type Database = {
           fecha_expiracion_ultima_licencia?: string | null
           fecha_inicio_ultima_licencia?: string | null
           fecha_primera_activacion?: string | null
-          id?: string
           nombre: string
           progreso_ruta?: number | null
           ruta?: string | null
@@ -187,14 +185,21 @@ export type Database = {
           fecha_expiracion_ultima_licencia?: string | null
           fecha_inicio_ultima_licencia?: string | null
           fecha_primera_activacion?: string | null
-          id?: string
           nombre?: string
           progreso_ruta?: number | null
           ruta?: string | null
           tiempo_total_dedicado?: number | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "platzi_general_email_fkey"
+            columns: ["email"]
+            isOneToOne: true
+            referencedRelation: "solicitudes"
+            referencedColumns: ["email"]
+          },
+        ]
       }
       platzi_seguimiento: {
         Row: {
@@ -203,8 +208,7 @@ export type Database = {
           email: string
           estado_curso: Database["public"]["Enums"]["estado_curso_enum"] | null
           fecha_certificacion: string | null
-          id: string
-          id_curso: string | null
+          id_curso: string
           nombre: string
           porcentaje_avance: number | null
           ruta: string | null
@@ -216,8 +220,7 @@ export type Database = {
           email: string
           estado_curso?: Database["public"]["Enums"]["estado_curso_enum"] | null
           fecha_certificacion?: string | null
-          id?: string
-          id_curso?: string | null
+          id_curso: string
           nombre: string
           porcentaje_avance?: number | null
           ruta?: string | null
@@ -229,14 +232,21 @@ export type Database = {
           email?: string
           estado_curso?: Database["public"]["Enums"]["estado_curso_enum"] | null
           fecha_certificacion?: string | null
-          id?: string
-          id_curso?: string | null
+          id_curso?: string
           nombre?: string
           porcentaje_avance?: number | null
           ruta?: string | null
           tiempo_invertido?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "platzi_seguimiento_email_fkey"
+            columns: ["email"]
+            isOneToOne: false
+            referencedRelation: "solicitudes"
+            referencedColumns: ["email"]
+          },
+        ]
       }
       profiles: {
         Row: {
