@@ -11,6 +11,7 @@ export interface UserProfile {
   cargo?: string;
   celular?: string;
   camara_id?: string;
+  is_admin: boolean;
   role: UserRole;
   chamber?: string;
 }
@@ -33,7 +34,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const getUserRole = async (camaraId?: string): Promise<UserRole> => {
+  const getUserRole = async (camaraId?: string, isAdmin?: boolean): Promise<UserRole> => {
+    if (isAdmin) return 'admin';
     if (!camaraId) return 'ccc';
     
     try {
@@ -43,9 +45,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq('id', camaraId)
         .single();
 
-      // CCC (Cali) tiene permisos de admin
+      // CCC (Cali) tiene permisos de CCC
       if (camara?.nit === '890399001') {
-        return 'admin';
+        return 'ccc';
       }
       return 'camara_aliada';
     } catch (error) {
@@ -71,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       if (profileData) {
-        const role = await getUserRole(profileData.camara_id);
+        const role = await getUserRole(profileData.camara_id, profileData.is_admin);
         const userProfile: UserProfile = {
           id: profileData.id,
           nombre: profileData.nombre,
@@ -79,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           cargo: profileData.cargo,
           celular: profileData.celular,
           camara_id: profileData.camara_id,
+          is_admin: profileData.is_admin,
           role,
           chamber: profileData.camaras?.nombre
         };
@@ -182,9 +185,19 @@ export function useAuth() {
 
 export function hasPermission(userRole: UserRole, permission: string): boolean {
   const permissions: Record<UserRole, string[]> = {
-    admin: ['view_all', 'edit_all', 'crm_edit', 'insights_edit', 'reports_upload', 'user_management', 'ajustes'],
-    ccc: ['view_global', 'dashboard_complete', 'crm_view', 'insights_read', 'solicitudes', 'empresas', 'colaboradores_cali'],
-    camara_aliada: ['view_own_chamber', 'dashboard_restricted', 'insights_read', 'solicitudes_own', 'empresas_own', 'colaboradores_own'],
+    admin: [
+      'view_all', 'edit_all', 'crm_edit', 'insights_edit', 'reports_upload', 
+      'user_management', 'ajustes', 'dashboard', 'insights_read', 'solicitudes', 
+      'empresas', 'colaboradores', 'crm_view'
+    ],
+    ccc: [
+      'view_global', 'dashboard', 'crm_view', 'insights_read', 'solicitudes', 
+      'empresas', 'colaboradores_cali', 'colaboradores'
+    ],
+    camara_aliada: [
+      'view_own_chamber', 'dashboard', 'insights_read', 'solicitudes_own', 
+      'empresas_own', 'colaboradores_own', 'solicitudes', 'empresas', 'colaboradores'
+    ],
   };
 
   return permissions[userRole]?.includes(permission) ?? false;

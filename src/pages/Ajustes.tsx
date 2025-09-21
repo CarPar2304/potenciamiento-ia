@@ -20,9 +20,11 @@ import {
   CheckCircle,
   AlertCircle,
   Info,
+  Shield,
 } from 'lucide-react';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const SettingCard = ({ 
   title, 
@@ -62,11 +64,46 @@ export default function Ajustes() {
   const [selectedReport, setSelectedReport] = useState<'sheet1' | 'sheet2' | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [isPromotingAdmin, setIsPromotingAdmin] = useState(false);
 
   if (!profile) return null;
 
   const canManageUsers = hasPermission(profile.role, 'user_management');
   const canUploadReports = hasPermission(profile.role, 'reports_upload');
+  const isFromCCC = profile.chamber === 'Cámara de Comercio de Cali';
+
+  const handlePromoteToAdmin = async () => {
+    if (!profile?.id) return;
+    
+    setIsPromotingAdmin(true);
+    try {
+      const { error } = await supabase.rpc('set_user_admin', {
+        user_id: profile.id,
+        admin_status: true
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "¡Permisos actualizados!",
+        description: "Ahora tienes permisos de administrador. Recarga la página para ver los cambios.",
+      });
+
+      // Recargar la página para actualizar los permisos
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudieron actualizar los permisos",
+        variant: "destructive"
+      });
+    } finally {
+      setIsPromotingAdmin(false);
+    }
+  };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -120,6 +157,66 @@ export default function Ajustes() {
 
       {/* Integration Cards */}
       <div className="space-y-6">
+        {/* Admin Configuration - Solo para usuarios de CCC que no son admin */}
+        {isFromCCC && !profile.is_admin && (
+          <SettingCard
+            title="Configuración de Administrador"
+            description="Como usuario de la Cámara de Comercio de Cali, puedes solicitar permisos de administrador"
+            icon={Shield}
+            variant="info"
+          >
+            <div className="space-y-4">
+              <div className="bg-blue-50 dark:bg-blue-950/50 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-start space-x-3">
+                  <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      Permisos de Administrador
+                    </p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                      Los administradores pueden acceder a todas las funciones del sistema, gestionar usuarios, subir reportes y configurar integraciones.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <Button 
+                onClick={handlePromoteToAdmin}
+                disabled={isPromotingAdmin}
+                className="w-full"
+              >
+                {isPromotingAdmin ? 'Configurando...' : 'Activar Permisos de Administrador'}
+              </Button>
+            </div>
+          </SettingCard>
+        )}
+
+        {/* Status actual */}
+        <SettingCard
+          title="Estado de la Cuenta"
+          description="Información sobre tu cuenta y permisos actuales"
+          icon={Info}
+        >
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <span className="text-sm text-muted-foreground">Rol:</span>
+              <span className="text-sm font-medium">
+                {profile.role === 'admin' ? 'Administrador' : 
+                 profile.role === 'ccc' ? 'CCC' : 'Cámara Aliada'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-muted-foreground">Cámara:</span>
+              <span className="text-sm font-medium">{profile.chamber}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-muted-foreground">Admin:</span>
+              <span className="text-sm font-medium">
+                {profile.is_admin ? '✅ Sí' : '❌ No'}
+              </span>
+            </div>
+          </div>
+        </SettingCard>
         {/* Webhooks */}
         <SettingCard
           title="Administrador de Webhooks"

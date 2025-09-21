@@ -246,6 +246,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          is_admin: boolean
           nombre: string
           updated_at: string
         }
@@ -256,6 +257,7 @@ export type Database = {
           created_at?: string
           email: string
           id: string
+          is_admin?: boolean
           nombre: string
           updated_at?: string
         }
@@ -266,6 +268,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          is_admin?: boolean
           nombre?: string
           updated_at?: string
         }
@@ -361,6 +364,10 @@ export type Database = {
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      set_user_admin: {
+        Args: { admin_status: boolean; user_id: string }
+        Returns: undefined
       }
     }
     Enums: {
