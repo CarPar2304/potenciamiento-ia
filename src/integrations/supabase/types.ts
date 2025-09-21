@@ -151,7 +151,6 @@ export type Database = {
           nombre: string
           progreso_ruta: number | null
           ruta: string | null
-          solicitud_id: string | null
           tiempo_total_dedicado: number | null
           updated_at: string
         }
@@ -172,7 +171,6 @@ export type Database = {
           nombre: string
           progreso_ruta?: number | null
           ruta?: string | null
-          solicitud_id?: string | null
           tiempo_total_dedicado?: number | null
           updated_at?: string
         }
@@ -193,19 +191,10 @@ export type Database = {
           nombre?: string
           progreso_ruta?: number | null
           ruta?: string | null
-          solicitud_id?: string | null
           tiempo_total_dedicado?: number | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "platzi_general_solicitud_id_fkey"
-            columns: ["solicitud_id"]
-            isOneToOne: false
-            referencedRelation: "solicitudes"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       platzi_seguimiento: {
         Row: {
@@ -219,7 +208,6 @@ export type Database = {
           nombre: string
           porcentaje_avance: number | null
           ruta: string | null
-          solicitud_id: string | null
           tiempo_invertido: number | null
         }
         Insert: {
@@ -233,7 +221,6 @@ export type Database = {
           nombre: string
           porcentaje_avance?: number | null
           ruta?: string | null
-          solicitud_id?: string | null
           tiempo_invertido?: number | null
         }
         Update: {
@@ -247,18 +234,9 @@ export type Database = {
           nombre?: string
           porcentaje_avance?: number | null
           ruta?: string | null
-          solicitud_id?: string | null
           tiempo_invertido?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "platzi_seguimiento_solicitud_id_fkey"
-            columns: ["solicitud_id"]
-            isOneToOne: false
-            referencedRelation: "solicitudes"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -383,9 +361,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_chamber_by_email: {
+        Args: { user_email: string }
+        Returns: string
+      }
       get_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      has_approved_request: {
+        Args: { user_email: string }
+        Returns: boolean
       }
       set_user_admin: {
         Args: { admin_status: boolean; user_id: string }
