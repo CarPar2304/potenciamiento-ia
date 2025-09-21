@@ -33,6 +33,7 @@ const mockUsers: Record<UserRole, User> = {
     name: 'Carlos Rodríguez',
     email: 'carlos.rodriguez@ccc.org.co',
     role: 'ccc',
+    chamber: 'Cámara de Comercio de Cali',
   },
   camara_aliada: {
     id: '3',
@@ -82,7 +83,7 @@ export function useAuth() {
 export function hasPermission(userRole: UserRole, permission: string): boolean {
   const permissions: Record<UserRole, string[]> = {
     admin: ['view_all', 'edit_all', 'crm_edit', 'insights_edit', 'reports_upload', 'user_management', 'ajustes'],
-    ccc: ['view_global', 'dashboard_complete', 'crm_view', 'insights_read', 'solicitudes', 'empresas'],
+    ccc: ['view_global', 'dashboard_complete', 'crm_view', 'insights_read', 'solicitudes', 'empresas', 'colaboradores_cali'],
     camara_aliada: ['view_own_chamber', 'dashboard_restricted', 'insights_read', 'solicitudes_own', 'empresas_own', 'colaboradores_own'],
   };
 

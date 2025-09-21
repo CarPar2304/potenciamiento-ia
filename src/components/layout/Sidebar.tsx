@@ -49,7 +49,7 @@ const navigationItems = [
     href: '/colaboradores',
     icon: Users,
     permission: 'colaboradores',
-    roles: ['admin', 'camara_aliada'],
+    roles: ['admin', 'ccc', 'camara_aliada'],
   },
   {
     title: 'CRM Cámaras',

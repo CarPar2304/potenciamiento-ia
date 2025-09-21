@@ -56,13 +56,25 @@ export default function Colaboradores() {
 
   if (!user) return null;
 
-  const canViewGlobal = hasPermission(user.role, 'view_global') || hasPermission(user.role, 'view_all');
+  const canViewGlobal = hasPermission(user.role, 'view_all');
+  const canViewCCC = hasPermission(user.role, 'colaboradores_cali');
+  const canViewOwn = hasPermission(user.role, 'colaboradores_own');
 
   // Filter applications to only show chamber employees (example criteria)
   const chamberEmployees = mockApplications.filter(app => {
     // Mock condition: employees with company names containing "Cámara" are chamber employees
     const isChamberEmployee = app.company.toLowerCase().includes('cámara');
-    const matchesPermission = canViewGlobal || app.chamber === user.chamber;
+    
+    let matchesPermission = false;
+    
+    if (canViewGlobal) {
+      matchesPermission = true; // Admin can see all
+    } else if (canViewCCC) {
+      matchesPermission = app.chamber === 'Cámara de Comercio de Cali'; // CCC can only see Cali
+    } else if (canViewOwn && user.chamber) {
+      matchesPermission = app.chamber === user.chamber; // Chamber users see their own
+    }
+    
     return isChamberEmployee && matchesPermission;
   });
 
@@ -118,7 +130,9 @@ export default function Colaboradores() {
           </h1>
           <p className="text-muted-foreground">
             {canViewGlobal 
-              ? 'Personal de todas las cámaras aliadas participando en el programa' 
+              ? 'Personal de todas las cámaras aliadas participando en el programa'
+              : canViewCCC 
+              ? 'Colaboradores de la Cámara de Comercio de Cali'
               : `Colaboradores de ${user.chamber}`
             }
           </p>
