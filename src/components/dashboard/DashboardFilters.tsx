@@ -60,7 +60,10 @@ export function DashboardFilters({ filters, onFiltersChange, userRole, userChamb
     return count;
   };
 
-  const availableChambers = userRole === 'camara_aliada' && userChamber ? [userChamber] : mockChambers;
+  const { camaras } = useCamaras();
+  const availableChambers = userRole === 'camara_aliada' && userChamber 
+    ? [userChamber] 
+    : camaras?.map(c => c.nombre) || [];
 
   return (
     <Card className="p-4 mb-6">
@@ -172,7 +175,7 @@ export function DashboardFilters({ filters, onFiltersChange, userRole, userChamb
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todos los sectores</SelectItem>
-                  {mockSectors.map((sector) => (
+                  {['Tecnología', 'Manufactura', 'Servicios', 'Comercio', 'Salud', 'Educación', 'Construcción', 'Turismo', 'Agroindustria', 'Otro'].map((sector) => (
                     <SelectItem key={sector} value={sector}>
                       {sector}
                     </SelectItem>
