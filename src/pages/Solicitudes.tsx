@@ -28,7 +28,7 @@ import {
   XCircle,
   FileText,
 } from 'lucide-react';
-import { mockApplications, mockChambers, mockSectors } from '@/data/mockData';
+import { useSolicitudes, useCamaras } from '@/hooks/useSupabaseData';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
 
 const StatCard = ({ title, value, description, icon: Icon }: {
@@ -51,6 +51,8 @@ const StatCard = ({ title, value, description, icon: Icon }: {
 
 export default function Solicitudes() {
   const { profile } = useAuth();
+  const { solicitudes, loading } = useSolicitudes();
+  const { camaras } = useCamaras();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [chamberFilter, setChamberFilter] = useState('todas');
@@ -62,20 +64,20 @@ export default function Solicitudes() {
 
   // Filter applications based on user permissions
   const baseApplications = canViewGlobal 
-    ? mockApplications 
-    : mockApplications.filter(app => app.chamber === profile.chamber);
+    ? solicitudes 
+    : solicitudes.filter(sol => sol.empresas?.camaras?.nombre === profile.chamber);
 
   // Apply filters
-  const filteredApplications = baseApplications.filter(app => {
+  const filteredApplications = baseApplications.filter(sol => {
     const matchesSearch = 
-      `${app.firstName} ${app.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      app.document.includes(searchTerm);
+      sol.nombres_apellidos.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sol.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (sol.empresas?.nombre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sol.numero_documento.includes(searchTerm);
     
-    const matchesStatus = statusFilter === 'todos' || app.status === statusFilter;
-    const matchesChamber = chamberFilter === 'todas' || app.chamber === chamberFilter;
-    const matchesSector = sectorFilter === 'todos' || app.sector === sectorFilter;
+    const matchesStatus = statusFilter === 'todos' || sol.estado.toLowerCase() === statusFilter.toLowerCase();
+    const matchesChamber = chamberFilter === 'todas' || sol.empresas?.camaras?.nombre === chamberFilter;
+    const matchesSector = sectorFilter === 'todos' || sol.empresas?.sector === sectorFilter;
 
     return matchesSearch && matchesStatus && matchesChamber && matchesSector;
   });
@@ -83,34 +85,21 @@ export default function Solicitudes() {
   // Calculate stats
   const stats = {
     total: baseApplications.length,
-    approved: baseApplications.filter(app => app.status === 'aprobado').length,
-    pending: baseApplications.filter(app => app.status === 'pendiente').length,
-    rejected: baseApplications.filter(app => app.status === 'rechazado').length,
+    approved: baseApplications.filter(sol => sol.estado === 'Aprobada').length,
+    pending: baseApplications.filter(sol => sol.estado === 'Pendiente').length,
+    rejected: baseApplications.filter(sol => sol.estado === 'Rechazada').length,
   };
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-      'aprobado': 'default',
-      'pendiente': 'secondary',
-      'rechazado': 'destructive',
-      'en_proceso': 'outline',
-    };
-    const labels: Record<string, string> = {
-      'aprobado': 'Aprobado',
-      'pendiente': 'Pendiente',
-      'rechazado': 'Rechazado',
-      'en_proceso': 'En Proceso',
-    };
     const colors: Record<string, string> = {
-      'aprobado': 'text-green-600 bg-green-50 border-green-200',
-      'pendiente': 'text-yellow-600 bg-yellow-50 border-yellow-200',
-      'rechazado': 'text-red-600 bg-red-50 border-red-200',
-      'en_proceso': 'text-blue-600 bg-blue-50 border-blue-200',
+      'Aprobada': 'text-green-600 bg-green-50 border-green-200',
+      'Pendiente': 'text-yellow-600 bg-yellow-50 border-yellow-200',
+      'Rechazada': 'text-red-600 bg-red-50 border-red-200',
     };
     
     return (
       <Badge className={colors[status] || 'default'}>
-        {labels[status] || status}
+        {status}
       </Badge>
     );
   };
@@ -198,9 +187,8 @@ export default function Solicitudes() {
                 <SelectContent>
                   <SelectItem value="todos">Todos los estados</SelectItem>
                   <SelectItem value="pendiente">Pendiente</SelectItem>
-                  <SelectItem value="aprobado">Aprobado</SelectItem>
-                  <SelectItem value="rechazado">Rechazado</SelectItem>
-                  <SelectItem value="en_proceso">En Proceso</SelectItem>
+                  <SelectItem value="aprobada">Aprobada</SelectItem>
+                  <SelectItem value="rechazada">Rechazada</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -214,8 +202,8 @@ export default function Solicitudes() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todas">Todas las cámaras</SelectItem>
-                    {mockChambers.map(chamber => (
-                      <SelectItem key={chamber} value={chamber}>{chamber}</SelectItem>
+                    {camaras.map(camara => (
+                      <SelectItem key={camara.id} value={camara.nombre}>{camara.nombre}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -230,7 +218,7 @@ export default function Solicitudes() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos los sectores</SelectItem>
-                  {mockSectors.map(sector => (
+                  {['Tecnología', 'Comercio', 'Manufactura', 'Servicios', 'Agricultura', 'Turismo', 'Construcción', 'Transporte', 'Educación', 'Salud'].map(sector => (
                     <SelectItem key={sector} value={sector}>{sector}</SelectItem>
                   ))}
                 </SelectContent>
@@ -266,43 +254,43 @@ export default function Solicitudes() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredApplications.slice(0, 50).map((app) => (
-                  <TableRow key={app.id} className="hover:bg-muted/50">
+                 {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={canViewGlobal ? 7 : 6} className="text-center py-6">
+                      Cargando solicitudes...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredApplications.slice(0, 50).map((sol) => (
+                  <TableRow key={sol.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="space-y-1">
-                        <p className="font-medium">{app.firstName} {app.lastName}</p>
-                        <p className="text-xs text-muted-foreground">{app.email}</p>
+                        <p className="font-medium">{sol.nombres_apellidos}</p>
+                        <p className="text-xs text-muted-foreground">{sol.email}</p>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
-                        <p className="font-medium">{app.company}</p>
-                        <p className="text-xs text-muted-foreground">{app.nit}</p>
+                        <p className="font-medium">{sol.empresas?.nombre || 'N/A'}</p>
+                        <p className="text-xs text-muted-foreground">{sol.empresas?.nit || 'N/A'}</p>
                       </div>
                     </TableCell>
                     {canViewGlobal && (
                       <TableCell>
-                        <p className="text-sm">{app.chamber}</p>
+                        <p className="text-sm">{sol.empresas?.camaras?.nombre || 'N/A'}</p>
                       </TableCell>
                     )}
                     <TableCell>
-                      <Badge variant="outline">{app.sector}</Badge>
+                      <Badge variant="outline">{sol.empresas?.sector || 'N/A'}</Badge>
                     </TableCell>
                     <TableCell>
-                      {getStatusBadge(app.status)}
+                      {getStatusBadge(sol.estado)}
                     </TableCell>
                     <TableCell>
-                      {app.testCompleted ? (
-                        <Badge variant="default" className="text-green-600 bg-green-50 border-green-200">
-                          Completado
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary">Pendiente</Badge>
-                      )}
+                      <Badge variant="secondary">Pendiente</Badge>
                     </TableCell>
                     <TableCell>
                       <p className="text-sm">
-                        {new Date(app.createdAt).toLocaleDateString('es-CO')}
+                        {new Date(sol.fecha_solicitud).toLocaleDateString('es-CO')}
                       </p>
                     </TableCell>
                   </TableRow>

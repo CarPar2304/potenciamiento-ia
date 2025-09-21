@@ -21,7 +21,7 @@ import {
   TrendingUp,
   Zap,
 } from 'lucide-react';
-import { mockCompanies, mockApplications, mockChambers, mockSectors } from '@/data/mockData';
+import { useEmpresas, useCamaras } from '@/hooks/useSupabaseData';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
 
 const StatCard = ({ title, value, description, icon: Icon }: {
@@ -44,6 +44,8 @@ const StatCard = ({ title, value, description, icon: Icon }: {
 
 export default function Empresas() {
   const { profile } = useAuth();
+  const { empresas, loading } = useEmpresas();
+  const { camaras } = useCamaras();
   const [searchTerm, setSearchTerm] = useState('');
   const [chamberFilter, setChamberFilter] = useState('todas');
   const [sectorFilter, setSectorFilter] = useState('todos');
@@ -55,36 +57,20 @@ export default function Empresas() {
 
   // Filter companies based on user permissions
   const baseCompanies = canViewGlobal 
-    ? mockCompanies 
-    : mockCompanies.filter(company => company.chamber === profile.chamber);
-
-  // Get employees per company from applications
-  const companiesWithEmployees = baseCompanies.map(company => {
-    const companyApplications = mockApplications.filter(app => app.nit === company.nit);
-    return {
-      ...company,
-      employeeApplications: companyApplications.length,
-      approvedEmployees: companyApplications.filter(app => app.status === 'aprobado').length,
-      completedTests: companyApplications.filter(app => app.testCompleted).length,
-      averageProgress: companyApplications.length > 0 
-        ? Math.round(
-            companyApplications.reduce((sum, app) => sum + app.progress, 0) / companyApplications.length
-          )
-        : 0,
-    };
-  });
+    ? empresas 
+    : empresas.filter(empresa => empresa.camaras?.nombre === profile.chamber);
 
   // Apply filters
-  const filteredCompanies = companiesWithEmployees.filter(company => {
+  const filteredCompanies = baseCompanies.filter(empresa => {
     const matchesSearch = 
-      company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.nit.includes(searchTerm);
+      empresa.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      empresa.nit.includes(searchTerm);
     
-    const matchesChamber = chamberFilter === 'todas' || company.chamber === chamberFilter;
-    const matchesSector = sectorFilter === 'todos' || company.sector === sectorFilter;
+    const matchesChamber = chamberFilter === 'todas' || empresa.camaras?.nombre === chamberFilter;
+    const matchesSector = sectorFilter === 'todos' || empresa.sector === sectorFilter;
     const matchesAI = aiFilter === 'todos' || 
-      (aiFilter === 'con_ia' && company.hasAI) ||
-      (aiFilter === 'sin_ia' && !company.hasAI);
+      (aiFilter === 'con_ia' && empresa.decision_adoptar_ia) ||
+      (aiFilter === 'sin_ia' && !empresa.decision_adoptar_ia);
 
     return matchesSearch && matchesChamber && matchesSector && matchesAI;
   });
@@ -92,10 +78,10 @@ export default function Empresas() {
   // Calculate stats
   const stats = {
     total: baseCompanies.length,
-    withAI: baseCompanies.filter(company => company.hasAI).length,
-    totalInvestment: baseCompanies.reduce((sum, company) => sum + company.aiInvestment2024, 0),
+    withAI: baseCompanies.filter(empresa => empresa.decision_adoptar_ia).length,
+    totalInvestment: baseCompanies.reduce((sum, empresa) => sum + (empresa.monto_inversion_2024 || 0), 0),
     averageEmployees: Math.round(
-      baseCompanies.reduce((sum, company) => sum + company.employees, 0) / baseCompanies.length
+      baseCompanies.reduce((sum, empresa) => sum + (empresa.num_colaboradores || 0), 0) / Math.max(1, baseCompanies.length)
     ),
   };
 
@@ -110,6 +96,19 @@ export default function Empresas() {
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('es-CO').format(num);
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight bg-gradient-primary bg-clip-text text-transparent">
+            Empresas
+          </h1>
+          <p className="text-muted-foreground">Cargando datos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -194,8 +193,8 @@ export default function Empresas() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todas">Todas las cámaras</SelectItem>
-                    {mockChambers.map(chamber => (
-                      <SelectItem key={chamber} value={chamber}>{chamber}</SelectItem>
+                    {camaras.map(camara => (
+                      <SelectItem key={camara.id} value={camara.nombre}>{camara.nombre}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -210,7 +209,7 @@ export default function Empresas() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos los sectores</SelectItem>
-                  {mockSectors.map(sector => (
+                  {['Tecnología', 'Comercio', 'Manufactura', 'Servicios', 'Agricultura', 'Turismo', 'Construcción', 'Transporte', 'Educación', 'Salud'].map(sector => (
                     <SelectItem key={sector} value={sector}>{sector}</SelectItem>
                   ))}
                 </SelectContent>
@@ -236,15 +235,15 @@ export default function Empresas() {
 
       {/* Companies Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {filteredCompanies.slice(0, 24).map((company) => (
-          <Card key={company.nit} className="hover:shadow-lg transition-shadow cursor-pointer">
+        {filteredCompanies.slice(0, 24).map((empresa) => (
+          <Card key={empresa.nit} className="hover:shadow-lg transition-shadow cursor-pointer">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
-                  <CardTitle className="text-lg line-clamp-1">{company.name}</CardTitle>
-                  <CardDescription>{company.nit}</CardDescription>
+                  <CardTitle className="text-lg line-clamp-1">{empresa.nombre}</CardTitle>
+                  <CardDescription>{empresa.nit}</CardDescription>
                 </div>
-                {company.hasAI && (
+                {empresa.decision_adoptar_ia && (
                   <Badge className="bg-gradient-primary text-white border-none">
                     <Zap className="h-3 w-3 mr-1" />
                     IA
@@ -257,11 +256,11 @@ export default function Empresas() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Sector</p>
-                  <p className="font-medium">{company.sector}</p>
+                  <p className="font-medium">{empresa.sector || 'No especificado'}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Empleados</p>
-                  <p className="font-medium">{formatNumber(company.employees)}</p>
+                  <p className="font-medium">{formatNumber(empresa.num_colaboradores || 0)}</p>
                 </div>
               </div>
 
@@ -269,40 +268,25 @@ export default function Empresas() {
               {canViewGlobal && (
                 <div>
                   <p className="text-muted-foreground text-sm">Cámara</p>
-                  <p className="text-sm font-medium line-clamp-2">{company.chamber}</p>
+                  <p className="text-sm font-medium line-clamp-2">{empresa.camaras?.nombre || 'No especificada'}</p>
                 </div>
               )}
 
-              {/* Participation Stats */}
-              <div className="space-y-3">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground">Colaboradores participando</span>
-                  <span className="font-medium">{company.employeeApplications}</span>
-                </div>
-                
-                {company.approvedEmployees > 0 && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground">Progreso promedio</span>
-                      <span className="font-medium">{company.averageProgress}%</span>
-                    </div>
-                    <Progress value={company.averageProgress} className="h-2" />
-                  </div>
-                )}
-
-                <div className="flex justify-between items-center text-xs text-muted-foreground">
-                  <span>{company.approvedEmployees} aprobados</span>
-                  <span>{company.completedTests} tests completados</span>
-                </div>
-              </div>
-
               {/* AI Investment */}
-              {company.aiInvestment2024 > 0 && (
+              {empresa.monto_inversion_2024 && empresa.monto_inversion_2024 > 0 && (
                 <div className="bg-muted/50 p-3 rounded-lg">
                   <p className="text-xs text-muted-foreground">Inversión IA 2024</p>
                   <p className="font-semibold text-primary">
-                    {formatCurrency(company.aiInvestment2024)}
+                    {formatCurrency(empresa.monto_inversion_2024)}
                   </p>
+                </div>
+              )}
+
+              {/* Capacitación */}
+              {empresa.colaboradores_capacitados_ia && empresa.colaboradores_capacitados_ia > 0 && (
+                <div className="text-sm">
+                  <p className="text-muted-foreground">Colaboradores capacitados en IA</p>
+                  <p className="font-medium">{empresa.colaboradores_capacitados_ia}</p>
                 </div>
               )}
             </CardContent>

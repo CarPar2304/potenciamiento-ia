@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { CalendarIcon, FilterIcon, X, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { mockChambers, mockSectors } from '@/data/mockData';
+import { useCamaras } from '@/hooks/useSupabaseData';
 
 export interface DashboardFilters {
   dateRange: { from?: Date; to?: Date };

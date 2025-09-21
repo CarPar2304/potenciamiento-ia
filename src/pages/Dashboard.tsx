@@ -1,13 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
-import { mockApplications, mockStats, mockChambers, mockSectors } from '@/data/mockData';
+import { useSolicitudes, useStats, useCamaras } from '@/hooks/useSupabaseData';
 import { DashboardFilters } from '@/components/dashboard/DashboardFilters';
 import { OverviewTab } from '@/components/dashboard/tabs/OverviewTab';
 import type { DashboardFilters as DashboardFiltersType } from '@/components/dashboard/DashboardFilters';
 
 export default function Dashboard() {
   const { profile } = useAuth();
+  const { solicitudes, loading: solicitudesLoading } = useSolicitudes();
+  const stats = useStats();
+  const { camaras } = useCamaras();
   const [activeTab, setActiveTab] = useState('overview');
   const [filters, setFilters] = useState<DashboardFiltersType>({
     dateRange: {},
@@ -23,50 +26,55 @@ export default function Dashboard() {
 
   // Filter data based on user permissions and filters
   const filteredData = useMemo(() => {
-    let filtered = mockApplications;
+    let filtered = solicitudes;
 
     // Role-based filtering
     if (profile?.role === 'camara_aliada' && profile?.chamber) {
-      filtered = filtered.filter(app => app.chamber === profile.chamber);
+      filtered = filtered.filter(sol => sol.empresas?.camaras?.nombre === profile.chamber);
     }
 
     // Apply filters
     if (filters.searchQuery) {
       const query = filters.searchQuery.toLowerCase();
-      filtered = filtered.filter(app => 
-        app.firstName.toLowerCase().includes(query) ||
-        app.lastName.toLowerCase().includes(query) ||
-        app.email.toLowerCase().includes(query) ||
-        app.company.toLowerCase().includes(query) ||
-        app.nit.includes(query)
+      filtered = filtered.filter(sol => 
+        sol.nombres_apellidos.toLowerCase().includes(query) ||
+        sol.email.toLowerCase().includes(query) ||
+        (sol.empresas?.nombre || '').toLowerCase().includes(query) ||
+        (sol.empresas?.nit || '').includes(query)
       );
     }
 
     // Apply other filters...
     return filtered;
-  }, [filters, profile]);
+  }, [filters, solicitudes, profile]);
 
   // Generate processed data
   const processedData = useMemo(() => {
     const applications = filteredData;
-    const stats = {
-      totalLicenses: mockStats.totalLicenses,
-      usedLicenses: applications.filter(app => app.testCompleted).length,
-      totalApplications: applications.length,
-      approvedApplications: applications.filter(app => app.status === 'aprobado').length,
-      completedTests: applications.filter(app => app.testCompleted).length,
-      averageProgress: Math.round(
-        applications.filter(app => app.progress > 0).reduce((sum, app) => sum + app.progress, 0) /
-        Math.max(1, applications.filter(app => app.progress > 0).length)
-      ),
-      totalInvestment: applications.reduce((sum, app) => sum + app.aiInvestment2024, 0),
-      chamberStats: mockStats.chamberStats,
+    
+    return { 
+      applications, 
+      stats: {
+        ...stats,
+        totalApplications: applications.length,
+        approvedApplications: applications.filter(app => app.estado === 'Aprobada').length,
+      }, 
+      companies: [] 
     };
-
-    return { applications, stats, companies: [] };
-  }, [filteredData]);
+  }, [filteredData, stats]);
 
   const userChamber = profile?.role === 'camara_aliada' ? profile?.chamber : undefined;
+
+  if (solicitudesLoading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard Analítico</h2>
+          <p className="text-muted-foreground">Cargando datos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
