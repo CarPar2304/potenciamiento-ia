@@ -74,7 +74,8 @@ export default function CRM() {
 
   if (!user) return null;
 
-  const canAccessCRM = hasPermission(user.role, 'crm');
+  const canAccessCRM = hasPermission(user.role, 'crm_edit') || hasPermission(user.role, 'crm_view');
+  const canEditCRM = hasPermission(user.role, 'crm_edit');
 
   if (!canAccessCRM) {
     return (
@@ -106,6 +107,15 @@ export default function CRM() {
   });
 
   const handleAddInteraction = () => {
+    if (!canEditCRM) {
+      toast({
+        title: "Sin permisos",
+        description: "No tienes permisos para registrar interacciones",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!selectedChamber || !interactionData.type || !interactionData.title) {
       return;
     }
@@ -137,96 +147,103 @@ export default function CRM() {
           </h1>
           <p className="text-muted-foreground">
             Gestión de relaciones y seguimiento del ciclo de alianzas
+            {!canEditCRM && (
+              <span className="ml-2 text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded">
+                Solo lectura
+              </span>
+            )}
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="h-4 w-4" />
-              Registrar Interacción
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Nueva Interacción</DialogTitle>
-              <DialogDescription>
-                Registra una nueva interacción con una cámara aliada
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="chamber">Cámara</Label>
-                <Select value={selectedChamber} onValueChange={setSelectedChamber}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una cámara" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {mockChambers.map(chamber => (
-                      <SelectItem key={chamber} value={chamber}>{chamber}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        {canEditCRM && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Registrar Interacción
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Nueva Interacción</DialogTitle>
+                <DialogDescription>
+                  Registra una nueva interacción con una cámara aliada
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="chamber">Cámara</Label>
+                  <Select value={selectedChamber} onValueChange={setSelectedChamber}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona una cámara" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {mockChambers.map(chamber => (
+                        <SelectItem key={chamber} value={chamber}>{chamber}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="type">Tipo de Interacción</Label>
-                <Select 
-                  value={interactionData.type} 
-                  onValueChange={(value) => setInteractionData({...interactionData, type: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona el tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(interactionTypes).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="type">Tipo de Interacción</Label>
+                  <Select 
+                    value={interactionData.type} 
+                    onValueChange={(value) => setInteractionData({...interactionData, type: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona el tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(interactionTypes).map(([key, label]) => (
+                        <SelectItem key={key} value={key}>{label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="title">Título</Label>
-                <Input
-                  id="title"
-                  value={interactionData.title}
-                  onChange={(e) => setInteractionData({...interactionData, title: e.target.value})}
-                  placeholder="Ej: Reunión de seguimiento mensual"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="title">Título</Label>
+                  <Input
+                    id="title"
+                    value={interactionData.title}
+                    onChange={(e) => setInteractionData({...interactionData, title: e.target.value})}
+                    placeholder="Ej: Reunión de seguimiento mensual"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="date">Fecha</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={interactionData.date}
-                  onChange={(e) => setInteractionData({...interactionData, date: e.target.value})}
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="date">Fecha</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={interactionData.date}
+                    onChange={(e) => setInteractionData({...interactionData, date: e.target.value})}
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Notas</Label>
-                <Textarea
-                  id="description"
-                  value={interactionData.description}
-                  onChange={(e) => setInteractionData({...interactionData, description: e.target.value})}
-                  placeholder="Detalles de la interacción, acuerdos, próximos pasos..."
-                  rows={3}
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="description">Notas</Label>
+                  <Textarea
+                    id="description"
+                    value={interactionData.description}
+                    onChange={(e) => setInteractionData({...interactionData, description: e.target.value})}
+                    placeholder="Detalles de la interacción, acuerdos, próximos pasos..."
+                    rows={3}
+                  />
+                </div>
 
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleAddInteraction}>
-                  Registrar
-                </Button>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleAddInteraction}>
+                    Registrar
+                  </Button>
+                </div>
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {/* Statistics Overview */}
@@ -334,17 +351,24 @@ export default function CRM() {
               </div>
 
               {/* Action Button */}
-              <Button 
-                variant="outline" 
-                className="w-full gap-2"
-                onClick={() => {
-                  setSelectedChamber(chamber.name);
-                  setIsDialogOpen(true);
-                }}
-              >
-                <Plus className="h-4 w-4" />
-                Registrar Interacción
-              </Button>
+              {canEditCRM && (
+                <Button 
+                  variant="outline" 
+                  className="w-full gap-2"
+                  onClick={() => {
+                    setSelectedChamber(chamber.name);
+                    setIsDialogOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                  Registrar Interacción
+                </Button>
+              )}
+              {!canEditCRM && (
+                <div className="w-full p-2 text-center text-xs text-muted-foreground bg-muted rounded">
+                  Solo lectura - Sin permisos de edición
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}
