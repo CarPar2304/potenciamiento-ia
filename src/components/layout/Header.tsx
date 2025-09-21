@@ -45,7 +45,7 @@ export function Header() {
         {/* Logo */}
         <div className="flex items-center gap-4">
           <img 
-            src={theme === 'dark' ? logoLight : logoDark} 
+            src={theme === 'dark' ? logoDark : logoLight} 
             alt="CCC Logo" 
             className="h-10 w-auto"
           />
@@ -84,9 +84,16 @@ export function Header() {
             )}
           </Button>
 
-          {/* Role indicator */}
-          <div className="hidden md:flex items-center text-sm text-muted-foreground">
-            <span className="font-medium">{getRoleDisplayName(profile.role)}</span>
+          {/* Chamber and role indicator */}
+          <div className="hidden md:flex flex-col items-end text-sm">
+            {profile.chamber && (
+              <span className="text-xs text-muted-foreground font-medium">
+                {profile.chamber}
+              </span>
+            )}
+            <span className="text-sm text-foreground font-medium">
+              {getRoleDisplayName(profile.role)}
+            </span>
           </div>
 
           {/* User menu */}

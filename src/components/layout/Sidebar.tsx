@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
@@ -68,11 +69,25 @@ const navigationItems = [
 ];
 
 export function Sidebar() {
-  const { profile } = useAuth();
+  const { profile, loading } = useAuth();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
 
-  if (!profile) return null;
+  // Mostrar skeleton mientras carga el perfil
+  if (loading || !profile) {
+    return (
+      <aside className={cn(
+        "relative flex flex-col border-r border-sidebar-border bg-sidebar transition-all duration-300",
+        collapsed ? "w-16" : "w-64"
+      )}>
+        <div className="flex-1 space-y-1 p-4 pt-8">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full rounded-lg" />
+          ))}
+        </div>
+      </aside>
+    );
+  }
 
   const filteredItems = navigationItems.filter(item => 
     item.roles.includes(profile.role) &&

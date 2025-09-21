@@ -119,7 +119,7 @@ export default function Auth() {
     resetForm();
   };
 
-  const currentLogo = theme === 'dark' ? logoLight : logoDark;
+  const currentLogo = theme === 'dark' ? logoDark : logoLight;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background/95 to-primary/5 p-4">
