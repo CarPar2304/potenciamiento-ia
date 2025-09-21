@@ -24,7 +24,7 @@ export function Header() {
   const getRoleDisplayName = (role: string) => {
     const roles = {
       admin: 'Administrador',
-      ejecutivo_ccc: 'Ejecutivo CCC',
+      ccc: 'CCC',
       camara_aliada: 'Cámara Aliada',
     };
     return roles[role as keyof typeof roles] || role;
@@ -98,8 +98,8 @@ export function Header() {
               <DropdownMenuItem onClick={() => switchRole('admin')}>
                 Administrador
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => switchRole('ejecutivo_ccc')}>
-                Ejecutivo CCC
+              <DropdownMenuItem onClick={() => switchRole('ccc')}>
+                CCC
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => switchRole('camara_aliada')}>
                 Cámara Aliada

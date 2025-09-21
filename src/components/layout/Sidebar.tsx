@@ -20,43 +20,50 @@ const navigationItems = [
     title: 'Dashboard',
     href: '/',
     icon: BarChart3,
-    permission: 'view_all',
+    permission: 'dashboard',
+    roles: ['admin', 'ccc', 'camara_aliada'],
   },
   {
     title: 'Insights',
     href: '/insights',
     icon: Lightbulb,
     permission: 'insights_read',
+    roles: ['admin', 'ccc', 'camara_aliada'],
   },
   {
     title: 'Solicitudes',
     href: '/solicitudes',
     icon: FileText,
-    permission: 'view_all',
+    permission: 'solicitudes',
+    roles: ['admin', 'ccc', 'camara_aliada'],
   },
   {
     title: 'Empresas',
     href: '/empresas',
     icon: Building2,
-    permission: 'view_all',
+    permission: 'empresas',
+    roles: ['admin', 'ccc', 'camara_aliada'],
   },
   {
     title: 'Colaboradores',
     href: '/colaboradores',
     icon: Users,
-    permission: 'view_all',
+    permission: 'colaboradores',
+    roles: ['admin', 'camara_aliada'],
   },
   {
     title: 'CRM Cámaras',
     href: '/crm',
     icon: HeartHandshake,
     permission: 'crm',
+    roles: ['admin', 'ccc'],
   },
   {
     title: 'Ajustes',
     href: '/ajustes',
     icon: Settings,
-    permission: 'view_all',
+    permission: 'ajustes',
+    roles: ['admin'],
   },
 ];
 
@@ -68,7 +75,7 @@ export function Sidebar() {
   if (!user) return null;
 
   const filteredItems = navigationItems.filter(item => 
-    hasPermission(user.role, item.permission)
+    item.roles.includes(user.role)
   );
 
   return (

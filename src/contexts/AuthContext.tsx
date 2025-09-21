@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-export type UserRole = 'admin' | 'ejecutivo_ccc' | 'camara_aliada';
+export type UserRole = 'admin' | 'ccc' | 'camara_aliada';
 
 export interface User {
   id: string;
@@ -28,11 +28,11 @@ const mockUsers: Record<UserRole, User> = {
     email: 'maria.gonzalez@ccc.org.co',
     role: 'admin',
   },
-  ejecutivo_ccc: {
+  ccc: {
     id: '2',
     name: 'Carlos Rodríguez',
     email: 'carlos.rodriguez@ccc.org.co',
-    role: 'ejecutivo_ccc',
+    role: 'ccc',
   },
   camara_aliada: {
     id: '3',
@@ -44,7 +44,7 @@ const mockUsers: Record<UserRole, User> = {
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(mockUsers.admin); // Start as admin for demo
+  const [user, setUser] = useState<User | null>(mockUsers.ccc); // Start as CCC for demo
 
   const login = async (email: string, password: string) => {
     // Mock login - in real app, this would call your auth API
@@ -81,9 +81,9 @@ export function useAuth() {
 
 export function hasPermission(userRole: UserRole, permission: string): boolean {
   const permissions: Record<UserRole, string[]> = {
-    admin: ['view_all', 'edit_all', 'crm', 'insights_edit', 'reports_upload', 'user_management'],
-    ejecutivo_ccc: ['view_global', 'dashboard_complete', 'crm', 'insights_read'],
-    camara_aliada: ['view_own_chamber', 'dashboard_restricted', 'insights_read'],
+    admin: ['view_all', 'edit_all', 'crm_edit', 'insights_edit', 'reports_upload', 'user_management', 'ajustes'],
+    ccc: ['view_global', 'dashboard_complete', 'crm_view', 'insights_read', 'solicitudes', 'empresas'],
+    camara_aliada: ['view_own_chamber', 'dashboard_restricted', 'insights_read', 'solicitudes_own', 'empresas_own', 'colaboradores_own'],
   };
 
   return permissions[userRole]?.includes(permission) ?? false;
