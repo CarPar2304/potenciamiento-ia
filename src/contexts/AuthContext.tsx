@@ -1,72 +1,172 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
 
 export type UserRole = 'admin' | 'ccc' | 'camara_aliada';
 
-export interface User {
+export interface UserProfile {
   id: string;
-  name: string;
+  nombre: string;
   email: string;
+  cargo?: string;
+  celular?: string;
+  camara_id?: string;
   role: UserRole;
-  chamber?: string; // For camara_aliada users
-  avatar?: string;
+  chamber?: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  switchRole: (role: UserRole) => void; // For demo purposes
+  profile: UserProfile | null;
+  session: Session | null;
+  loading: boolean;
+  signUp: (email: string, password: string, nombre: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Mock users for demo
-const mockUsers: Record<UserRole, User> = {
-  admin: {
-    id: '1',
-    name: 'María González',
-    email: 'maria.gonzalez@ccc.org.co',
-    role: 'admin',
-  },
-  ccc: {
-    id: '2',
-    name: 'Carlos Rodríguez',
-    email: 'carlos.rodriguez@ccc.org.co',
-    role: 'ccc',
-    chamber: 'Cámara de Comercio de Cali',
-  },
-  camara_aliada: {
-    id: '3',
-    name: 'Ana Martínez',
-    email: 'ana.martinez@camarapopayan.org.co',
-    role: 'camara_aliada',
-    chamber: 'Cámara de Comercio de Popayán',
-  },
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(mockUsers.ccc); // Start as CCC for demo
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const login = async (email: string, password: string) => {
-    // Mock login - in real app, this would call your auth API
-    const foundUser = Object.values(mockUsers).find(u => u.email === email);
-    if (foundUser) {
-      setUser(foundUser);
-    } else {
-      throw new Error('Invalid credentials');
+  const getUserRole = async (camaraId?: string): Promise<UserRole> => {
+    if (!camaraId) return 'ccc';
+    
+    try {
+      const { data: camara } = await supabase
+        .from('camaras')
+        .select('nit')
+        .eq('id', camaraId)
+        .single();
+
+      // CCC (Cali) tiene permisos de admin
+      if (camara?.nit === '890399001') {
+        return 'admin';
+      }
+      return 'camara_aliada';
+    } catch (error) {
+      console.error('Error getting user role:', error);
+      return 'ccc';
     }
   };
 
-  const logout = () => {
-    setUser(null);
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          camaras (
+            nombre,
+            nit
+          )
+        `)
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+
+      if (profileData) {
+        const role = await getUserRole(profileData.camara_id);
+        const userProfile: UserProfile = {
+          id: profileData.id,
+          nombre: profileData.nombre,
+          email: profileData.email,
+          cargo: profileData.cargo,
+          celular: profileData.celular,
+          camara_id: profileData.camara_id,
+          role,
+          chamber: profileData.camaras?.nombre
+        };
+        setProfile(userProfile);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
   };
 
-  const switchRole = (role: UserRole) => {
-    setUser(mockUsers[role]);
+  useEffect(() => {
+    // Configurar listener de cambios de auth
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Fetch profile after session is established
+          setTimeout(() => {
+            fetchProfile(session.user.id);
+          }, 0);
+        } else {
+          setProfile(null);
+        }
+        
+        setLoading(false);
+      }
+    );
+
+    // Verificar sesión existente
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        setTimeout(() => {
+          fetchProfile(session.user.id);
+        }, 0);
+      }
+      
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signUp = async (email: string, password: string, nombre: string) => {
+    const redirectUrl = `${window.location.origin}/`;
+    
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          nombre: nombre
+        }
+      }
+    });
+    
+    return { error };
+  };
+
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    
+    return { error };
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setProfile(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, switchRole }}>
+    <AuthContext.Provider value={{
+      user,
+      profile,
+      session,
+      loading,
+      signUp,
+      signIn,
+      signOut
+    }}>
       {children}
     </AuthContext.Provider>
   );

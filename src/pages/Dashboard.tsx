@@ -7,7 +7,7 @@ import { OverviewTab } from '@/components/dashboard/tabs/OverviewTab';
 import type { DashboardFilters as DashboardFiltersType } from '@/components/dashboard/DashboardFilters';
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [filters, setFilters] = useState<DashboardFiltersType>({
     dateRange: {},
@@ -19,15 +19,15 @@ export default function Dashboard() {
     searchQuery: ''
   });
 
-  if (!user) return null;
+  if (!profile) return null;
 
   // Filter data based on user permissions and filters
   const filteredData = useMemo(() => {
     let filtered = mockApplications;
 
     // Role-based filtering
-    if (user.role === 'camara_aliada' && user.chamber) {
-      filtered = filtered.filter(app => app.chamber === user.chamber);
+    if (profile?.role === 'camara_aliada' && profile?.chamber) {
+      filtered = filtered.filter(app => app.chamber === profile.chamber);
     }
 
     // Apply filters
@@ -44,7 +44,7 @@ export default function Dashboard() {
 
     // Apply other filters...
     return filtered;
-  }, [filters, user]);
+  }, [filters, profile]);
 
   // Generate processed data
   const processedData = useMemo(() => {
@@ -66,7 +66,7 @@ export default function Dashboard() {
     return { applications, stats, companies: [] };
   }, [filteredData]);
 
-  const userChamber = user.role === 'camara_aliada' ? user.chamber : undefined;
+  const userChamber = profile?.role === 'camara_aliada' ? profile?.chamber : undefined;
 
   return (
     <div className="space-y-6">
@@ -81,7 +81,7 @@ export default function Dashboard() {
       <DashboardFilters
         filters={filters}
         onFiltersChange={setFilters}
-        userRole={user.role}
+        userRole={profile?.role || 'camara_aliada'}
         userChamber={userChamber}
       />
 
@@ -96,7 +96,7 @@ export default function Dashboard() {
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <OverviewTab data={processedData} userRole={user.role} />
+          <OverviewTab data={processedData} userRole={profile?.role || 'camara_aliada'} />
         </TabsContent>
 
         <TabsContent value="ai-adoption" className="mt-6">

@@ -50,7 +50,7 @@ const categoryLabels = {
 };
 
 export default function Insights() {
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('todas');
@@ -63,9 +63,9 @@ export default function Insights() {
     featured: false,
   });
 
-  if (!user) return null;
+  if (!profile) return null;
 
-  const canEditInsights = hasPermission(user.role, 'insights_edit');
+  const canEditInsights = hasPermission(profile.role, 'insights_edit');
 
   // Filter insights
   const filteredInsights = mockInsights.filter(insight => {

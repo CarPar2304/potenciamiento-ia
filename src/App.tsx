@@ -15,9 +15,12 @@ import Colaboradores from "./pages/Colaboradores";
 import CRM from "./pages/CRM";
 import Insights from "./pages/Insights";
 import Ajustes from "./pages/Ajustes";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -27,19 +30,25 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Layout>
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/insights" element={<Insights />} />
-                <Route path="/solicitudes" element={<Solicitudes />} />
-                <Route path="/empresas" element={<Empresas />} />
-                <Route path="/colaboradores" element={<Colaboradores />} />
-                <Route path="/crm" element={<CRM />} />
-                <Route path="/ajustes" element={<Ajustes />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Layout>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/*" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/insights" element={<Insights />} />
+                      <Route path="/solicitudes" element={<Solicitudes />} />
+                      <Route path="/empresas" element={<Empresas />} />
+                      <Route path="/colaboradores" element={<Colaboradores />} />
+                      <Route path="/crm" element={<CRM />} />
+                      <Route path="/ajustes" element={<Ajustes />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Layout>
+                </ProtectedRoute>
+              } />
+            </Routes>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

@@ -43,20 +43,20 @@ const StatCard = ({ title, value, description, icon: Icon }: {
 );
 
 export default function Empresas() {
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [chamberFilter, setChamberFilter] = useState('todas');
   const [sectorFilter, setSectorFilter] = useState('todos');
   const [aiFilter, setAiFilter] = useState('todos');
 
-  if (!user) return null;
+  if (!profile) return null;
 
-  const canViewGlobal = hasPermission(user.role, 'view_global') || hasPermission(user.role, 'view_all');
+  const canViewGlobal = hasPermission(profile.role, 'view_global') || hasPermission(profile.role, 'view_all');
 
   // Filter companies based on user permissions
   const baseCompanies = canViewGlobal 
     ? mockCompanies 
-    : mockCompanies.filter(company => company.chamber === user.chamber);
+    : mockCompanies.filter(company => company.chamber === profile.chamber);
 
   // Get employees per company from applications
   const companiesWithEmployees = baseCompanies.map(company => {
@@ -122,7 +122,7 @@ export default function Empresas() {
           <p className="text-muted-foreground">
             {canViewGlobal 
               ? 'Directorio completo de empresas participantes' 
-              : `Empresas de ${user.chamber}`
+              : `Empresas de ${profile?.chamber}`
             }
           </p>
         </div>

@@ -60,7 +60,7 @@ const interactionTypes = {
 };
 
 export default function CRM() {
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedChamber, setSelectedChamber] = useState<string>('');
@@ -72,10 +72,10 @@ export default function CRM() {
     responsible: user?.name || '',
   });
 
-  if (!user) return null;
+  if (!profile) return null;
 
-  const canAccessCRM = hasPermission(user.role, 'crm_edit') || hasPermission(user.role, 'crm_view');
-  const canEditCRM = hasPermission(user.role, 'crm_edit');
+  const canAccessCRM = hasPermission(profile.role, 'crm_edit') || hasPermission(profile.role, 'crm_view');
+  const canEditCRM = hasPermission(profile.role, 'crm_edit');
 
   if (!canAccessCRM) {
     return (

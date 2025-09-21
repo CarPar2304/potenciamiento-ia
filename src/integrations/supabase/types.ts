@@ -14,16 +14,366 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      camaras: {
+        Row: {
+          created_at: string
+          id: string
+          licencias_disponibles: number
+          nit: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          licencias_disponibles?: number
+          nit: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          licencias_disponibles?: number
+          nit?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      empresas: {
+        Row: {
+          areas_implementacion_ia: string | null
+          asigno_recursos_ia: boolean | null
+          camara_id: string | null
+          colaboradores_capacitados_ia: number | null
+          created_at: string
+          decision_adoptar_ia: boolean | null
+          id: string
+          invirtio_ia_2024: boolean | null
+          mercado: Database["public"]["Enums"]["mercado_enum"] | null
+          monto_inversion_2024: number | null
+          monto_invertir_12m: number | null
+          mujeres_colaboradoras: number | null
+          nit: string
+          nombre: string
+          num_colaboradores: number | null
+          plan_capacitacion_ia: boolean | null
+          probabilidad_adopcion_12m: number | null
+          probabilidad_inversion_12m: number | null
+          productos_servicios: string | null
+          razon_no_adopcion: string | null
+          sector: string | null
+          tipo_cliente: string | null
+          updated_at: string
+          utilidades_2024: number | null
+          ventas_2024: number | null
+        }
+        Insert: {
+          areas_implementacion_ia?: string | null
+          asigno_recursos_ia?: boolean | null
+          camara_id?: string | null
+          colaboradores_capacitados_ia?: number | null
+          created_at?: string
+          decision_adoptar_ia?: boolean | null
+          id?: string
+          invirtio_ia_2024?: boolean | null
+          mercado?: Database["public"]["Enums"]["mercado_enum"] | null
+          monto_inversion_2024?: number | null
+          monto_invertir_12m?: number | null
+          mujeres_colaboradoras?: number | null
+          nit: string
+          nombre: string
+          num_colaboradores?: number | null
+          plan_capacitacion_ia?: boolean | null
+          probabilidad_adopcion_12m?: number | null
+          probabilidad_inversion_12m?: number | null
+          productos_servicios?: string | null
+          razon_no_adopcion?: string | null
+          sector?: string | null
+          tipo_cliente?: string | null
+          updated_at?: string
+          utilidades_2024?: number | null
+          ventas_2024?: number | null
+        }
+        Update: {
+          areas_implementacion_ia?: string | null
+          asigno_recursos_ia?: boolean | null
+          camara_id?: string | null
+          colaboradores_capacitados_ia?: number | null
+          created_at?: string
+          decision_adoptar_ia?: boolean | null
+          id?: string
+          invirtio_ia_2024?: boolean | null
+          mercado?: Database["public"]["Enums"]["mercado_enum"] | null
+          monto_inversion_2024?: number | null
+          monto_invertir_12m?: number | null
+          mujeres_colaboradoras?: number | null
+          nit?: string
+          nombre?: string
+          num_colaboradores?: number | null
+          plan_capacitacion_ia?: boolean | null
+          probabilidad_adopcion_12m?: number | null
+          probabilidad_inversion_12m?: number | null
+          productos_servicios?: string | null
+          razon_no_adopcion?: string | null
+          sector?: string | null
+          tipo_cliente?: string | null
+          updated_at?: string
+          utilidades_2024?: number | null
+          ventas_2024?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "empresas_camara_id_fkey"
+            columns: ["camara_id"]
+            isOneToOne: false
+            referencedRelation: "camaras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platzi_general: {
+        Row: {
+          created_at: string
+          cursos_totales_certificados: number | null
+          cursos_totales_progreso: number | null
+          dias_acceso_restantes: number | null
+          dias_sin_certificar: number | null
+          dias_sin_progreso: number | null
+          email: string
+          equipos: string | null
+          estado_acceso: string | null
+          fecha_expiracion_ultima_licencia: string | null
+          fecha_inicio_ultima_licencia: string | null
+          fecha_primera_activacion: string | null
+          id: string
+          nombre: string
+          progreso_ruta: number | null
+          ruta: string | null
+          tiempo_total_dedicado: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cursos_totales_certificados?: number | null
+          cursos_totales_progreso?: number | null
+          dias_acceso_restantes?: number | null
+          dias_sin_certificar?: number | null
+          dias_sin_progreso?: number | null
+          email: string
+          equipos?: string | null
+          estado_acceso?: string | null
+          fecha_expiracion_ultima_licencia?: string | null
+          fecha_inicio_ultima_licencia?: string | null
+          fecha_primera_activacion?: string | null
+          id?: string
+          nombre: string
+          progreso_ruta?: number | null
+          ruta?: string | null
+          tiempo_total_dedicado?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cursos_totales_certificados?: number | null
+          cursos_totales_progreso?: number | null
+          dias_acceso_restantes?: number | null
+          dias_sin_certificar?: number | null
+          dias_sin_progreso?: number | null
+          email?: string
+          equipos?: string | null
+          estado_acceso?: string | null
+          fecha_expiracion_ultima_licencia?: string | null
+          fecha_inicio_ultima_licencia?: string | null
+          fecha_primera_activacion?: string | null
+          id?: string
+          nombre?: string
+          progreso_ruta?: number | null
+          ruta?: string | null
+          tiempo_total_dedicado?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      platzi_seguimiento: {
+        Row: {
+          created_at: string
+          curso: string | null
+          email: string
+          estado_curso: Database["public"]["Enums"]["estado_curso_enum"] | null
+          fecha_certificacion: string | null
+          id: string
+          id_curso: string | null
+          nombre: string
+          porcentaje_avance: number | null
+          ruta: string | null
+          tiempo_invertido: number | null
+        }
+        Insert: {
+          created_at?: string
+          curso?: string | null
+          email: string
+          estado_curso?: Database["public"]["Enums"]["estado_curso_enum"] | null
+          fecha_certificacion?: string | null
+          id?: string
+          id_curso?: string | null
+          nombre: string
+          porcentaje_avance?: number | null
+          ruta?: string | null
+          tiempo_invertido?: number | null
+        }
+        Update: {
+          created_at?: string
+          curso?: string | null
+          email?: string
+          estado_curso?: Database["public"]["Enums"]["estado_curso_enum"] | null
+          fecha_certificacion?: string | null
+          id?: string
+          id_curso?: string | null
+          nombre?: string
+          porcentaje_avance?: number | null
+          ruta?: string | null
+          tiempo_invertido?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          camara_id: string | null
+          cargo: string | null
+          celular: string | null
+          created_at: string
+          email: string
+          id: string
+          nombre: string
+          updated_at: string
+        }
+        Insert: {
+          camara_id?: string | null
+          cargo?: string | null
+          celular?: string | null
+          created_at?: string
+          email: string
+          id: string
+          nombre: string
+          updated_at?: string
+        }
+        Update: {
+          camara_id?: string | null
+          cargo?: string | null
+          celular?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          nombre?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_camara_id_fkey"
+            columns: ["camara_id"]
+            isOneToOne: false
+            referencedRelation: "camaras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      solicitudes: {
+        Row: {
+          autorizacion_datos: boolean
+          cargo: string | null
+          celular: string | null
+          created_at: string
+          email: string
+          empresa_id: string | null
+          estado: Database["public"]["Enums"]["estado_solicitud_enum"] | null
+          fecha_nacimiento: string | null
+          fecha_solicitud: string
+          genero: Database["public"]["Enums"]["genero_enum"] | null
+          grupo_etnico: string | null
+          id: string
+          nivel_educativo: string | null
+          nombres_apellidos: string
+          numero_documento: string
+          tipo_identificacion:
+            | Database["public"]["Enums"]["tipo_identificacion_enum"]
+            | null
+          updated_at: string
+        }
+        Insert: {
+          autorizacion_datos?: boolean
+          cargo?: string | null
+          celular?: string | null
+          created_at?: string
+          email: string
+          empresa_id?: string | null
+          estado?: Database["public"]["Enums"]["estado_solicitud_enum"] | null
+          fecha_nacimiento?: string | null
+          fecha_solicitud?: string
+          genero?: Database["public"]["Enums"]["genero_enum"] | null
+          grupo_etnico?: string | null
+          id?: string
+          nivel_educativo?: string | null
+          nombres_apellidos: string
+          numero_documento: string
+          tipo_identificacion?:
+            | Database["public"]["Enums"]["tipo_identificacion_enum"]
+            | null
+          updated_at?: string
+        }
+        Update: {
+          autorizacion_datos?: boolean
+          cargo?: string | null
+          celular?: string | null
+          created_at?: string
+          email?: string
+          empresa_id?: string | null
+          estado?: Database["public"]["Enums"]["estado_solicitud_enum"] | null
+          fecha_nacimiento?: string | null
+          fecha_solicitud?: string
+          genero?: Database["public"]["Enums"]["genero_enum"] | null
+          grupo_etnico?: string | null
+          id?: string
+          nivel_educativo?: string | null
+          nombres_apellidos?: string
+          numero_documento?: string
+          tipo_identificacion?:
+            | Database["public"]["Enums"]["tipo_identificacion_enum"]
+            | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitudes_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
-      [_ in never]: never
+      estado_curso_enum: "En_progreso" | "Completado" | "Certificado"
+      estado_solicitud_enum: "Pendiente" | "Aprobada" | "Rechazada"
+      genero_enum: "Masculino" | "Femenino" | "Otro" | "Prefiero_no_decir"
+      mercado_enum: "Local" | "Nacional" | "Internacional"
+      tipo_identificacion_enum:
+        | "Tarjeta_Identidad"
+        | "Cedula_Ciudadania"
+        | "Cedula_Extranjeria"
+        | "Pasaporte"
+        | "Permiso_Permanencia_Temporal"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +500,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      estado_curso_enum: ["En_progreso", "Completado", "Certificado"],
+      estado_solicitud_enum: ["Pendiente", "Aprobada", "Rechazada"],
+      genero_enum: ["Masculino", "Femenino", "Otro", "Prefiero_no_decir"],
+      mercado_enum: ["Local", "Nacional", "Internacional"],
+      tipo_identificacion_enum: [
+        "Tarjeta_Identidad",
+        "Cedula_Ciudadania",
+        "Cedula_Extranjeria",
+        "Pasaporte",
+        "Permiso_Permanencia_Temporal",
+      ],
+    },
   },
 } as const

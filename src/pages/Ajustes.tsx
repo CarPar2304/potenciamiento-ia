@@ -56,17 +56,17 @@ const SettingCard = ({
 );
 
 export default function Ajustes() {
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState<'sheet1' | 'sheet2' | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
 
-  if (!user) return null;
+  if (!profile) return null;
 
-  const canManageUsers = hasPermission(user.role, 'user_management');
-  const canUploadReports = hasPermission(user.role, 'reports_upload');
+  const canManageUsers = hasPermission(profile.role, 'user_management');
+  const canUploadReports = hasPermission(profile.role, 'reports_upload');
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

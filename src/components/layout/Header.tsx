@@ -1,4 +1,4 @@
-import { Search, Moon, Sun, User, ChevronDown } from 'lucide-react';
+import { Search, Moon, Sun, User, LogOut, Settings } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -17,9 +17,9 @@ import logoDark from '@/assets/logo-dark.png';
 
 export function Header() {
   const { theme, toggleTheme } = useTheme();
-  const { user, switchRole, logout } = useAuth();
+  const { profile, signOut } = useAuth();
 
-  if (!user) return null;
+  if (!profile) return null;
 
   const getRoleDisplayName = (role: string) => {
     const roles = {
@@ -45,13 +45,13 @@ export function Header() {
         {/* Logo */}
         <div className="flex items-center gap-4">
           <img 
-            src={theme === 'dark' ? logoDark : logoLight} 
+            src={theme === 'dark' ? logoLight : logoDark} 
             alt="CCC Logo" 
             className="h-10 w-auto"
           />
           <div className="hidden md:block">
             <h2 className="text-lg font-semibold bg-gradient-primary bg-clip-text text-transparent">
-              Adopción de IA
+              Potenciamiento IA
             </h2>
             <p className="text-xs text-muted-foreground">CCC y Cámaras Aliadas</p>
           </div>
@@ -84,28 +84,10 @@ export function Header() {
             )}
           </Button>
 
-          {/* Role switch (demo only) */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                {getRoleDisplayName(user.role)}
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuLabel>Cambiar Rol (Demo)</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => switchRole('admin')}>
-                Administrador
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => switchRole('ccc')}>
-                CCC
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => switchRole('camara_aliada')}>
-                Cámara Aliada
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Role indicator */}
+          <div className="hidden md:flex items-center text-sm text-muted-foreground">
+            <span className="font-medium">{getRoleDisplayName(profile.role)}</span>
+          </div>
 
           {/* User menu */}
           <DropdownMenu>
@@ -113,7 +95,7 @@ export function Header() {
               <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                 <Avatar className="h-9 w-9">
                   <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                    {getInitials(user.name)}
+                    {getInitials(profile.nombre)}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -121,13 +103,13 @@ export function Header() {
             <DropdownMenuContent className="w-56" align="end">
               <DropdownMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user.name}</p>
+                  <p className="text-sm font-medium leading-none">{profile.nombre}</p>
                   <p className="text-xs leading-none text-muted-foreground">
-                    {user.email}
+                    {profile.email}
                   </p>
-                  {user.chamber && (
+                  {profile.chamber && (
                     <p className="text-xs leading-none text-muted-foreground">
-                      {user.chamber}
+                      {profile.chamber}
                     </p>
                   )}
                 </div>
@@ -137,9 +119,14 @@ export function Header() {
                 <User className="mr-2 h-4 w-4" />
                 <span>Perfil</span>
               </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Configuración</span>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout}>
-                Cerrar Sesión
+              <DropdownMenuItem onClick={signOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Cerrar Sesión</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

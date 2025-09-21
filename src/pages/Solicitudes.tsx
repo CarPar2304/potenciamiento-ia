@@ -50,20 +50,20 @@ const StatCard = ({ title, value, description, icon: Icon }: {
 );
 
 export default function Solicitudes() {
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [chamberFilter, setChamberFilter] = useState('todas');
   const [sectorFilter, setSectorFilter] = useState('todos');
 
-  if (!user) return null;
+  if (!profile) return null;
 
-  const canViewGlobal = hasPermission(user.role, 'view_global') || hasPermission(user.role, 'view_all');
+  const canViewGlobal = hasPermission(profile.role, 'view_global') || hasPermission(profile.role, 'view_all');
 
   // Filter applications based on user permissions
   const baseApplications = canViewGlobal 
     ? mockApplications 
-    : mockApplications.filter(app => app.chamber === user.chamber);
+    : mockApplications.filter(app => app.chamber === profile.chamber);
 
   // Apply filters
   const filteredApplications = baseApplications.filter(app => {
@@ -126,7 +126,7 @@ export default function Solicitudes() {
           <p className="text-muted-foreground">
             {canViewGlobal 
               ? 'Gestiona todas las solicitudes de licencias Platzi' 
-              : `Solicitudes de ${user.chamber}`
+              : `Solicitudes de ${profile?.chamber}`
             }
           </p>
         </div>

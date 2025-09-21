@@ -55,7 +55,7 @@ const navigationItems = [
     title: 'CRM Cámaras',
     href: '/crm',
     icon: HeartHandshake,
-    permission: 'crm',
+    permission: 'crm_view',
     roles: ['admin', 'ccc'],
   },
   {
@@ -68,14 +68,15 @@ const navigationItems = [
 ];
 
 export function Sidebar() {
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
 
-  if (!user) return null;
+  if (!profile) return null;
 
   const filteredItems = navigationItems.filter(item => 
-    item.roles.includes(user.role)
+    item.roles.includes(profile.role) &&
+    hasPermission(profile.role, item.permission)
   );
 
   return (
@@ -123,11 +124,11 @@ export function Sidebar() {
       </nav>
 
       {/* User chamber info */}
-      {!collapsed && user.chamber && (
+      {!collapsed && profile.chamber && (
         <div className="border-t border-sidebar-border p-4">
           <div className="text-xs text-sidebar-foreground/70 mb-1">Tu Cámara</div>
           <div className="text-sm font-medium text-sidebar-foreground line-clamp-2">
-            {user.chamber}
+            {profile.chamber}
           </div>
         </div>
       )}
