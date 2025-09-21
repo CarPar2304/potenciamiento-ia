@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { Layout } from "@/components/layout/Layout";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Pages
 import Dashboard from "./pages/Dashboard";
@@ -20,8 +21,6 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-import ProtectedRoute from "./components/ProtectedRoute";
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -32,22 +31,56 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/auth" element={<Auth />} />
-              <Route path="/*" element={
+              <Route path="/" element={
                 <ProtectedRoute>
                   <Layout>
-                    <Routes>
-                      <Route path="/" element={<Dashboard />} />
-                      <Route path="/insights" element={<Insights />} />
-                      <Route path="/solicitudes" element={<Solicitudes />} />
-                      <Route path="/empresas" element={<Empresas />} />
-                      <Route path="/colaboradores" element={<Colaboradores />} />
-                      <Route path="/crm" element={<CRM />} />
-                      <Route path="/ajustes" element={<Ajustes />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
+                    <Dashboard />
                   </Layout>
                 </ProtectedRoute>
               } />
+              <Route path="/insights" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Insights />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/solicitudes" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Solicitudes />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/empresas" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Empresas />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/colaboradores" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Colaboradores />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/crm" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <CRM />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="/ajustes" element={
+                <ProtectedRoute>
+                  <Layout>
+                    <Ajustes />
+                  </Layout>
+                </ProtectedRoute>
+              } />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>

@@ -69,7 +69,7 @@ export default function CRM() {
     title: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
-    responsible: user?.name || '',
+    responsible: profile?.nombre || '',
   });
 
   if (!profile) return null;
@@ -133,7 +133,7 @@ export default function CRM() {
       title: '',
       description: '',
       date: new Date().toISOString().split('T')[0],
-      responsible: user?.name || '',
+      responsible: profile?.nombre || '',
     });
   };
 
