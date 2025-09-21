@@ -1,228 +1,132 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Users, 
-  Building2, 
-  Award, 
-  TrendingUp, 
-  Target,
-  BookOpen,
-  DollarSign,
-  BarChart3
-} from 'lucide-react';
-import { mockStats, mockApplications } from '@/data/mockData';
-import { useAuth, hasPermission } from '@/contexts/AuthContext';
-
-const StatCard = ({ title, value, description, icon: Icon, trend, variant = 'default' }: {
-  title: string;
-  value: string | number;
-  description: string;
-  icon: any;
-  trend?: string;
-  variant?: 'default' | 'primary' | 'success';
-}) => (
-  <Card className={`${variant === 'primary' ? 'bg-gradient-primary text-white border-none' : ''}`}>
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      <Icon className={`h-4 w-4 ${variant === 'primary' ? 'text-white/80' : 'text-muted-foreground'}`} />
-    </CardHeader>
-    <CardContent>
-      <div className="text-2xl font-bold">{value}</div>
-      <p className={`text-xs ${variant === 'primary' ? 'text-white/80' : 'text-muted-foreground'}`}>
-        {description}
-        {trend && <span className="ml-1 text-green-500">{trend}</span>}
-      </p>
-    </CardContent>
-  </Card>
-);
+import React, { useState, useMemo } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/contexts/AuthContext';
+import { mockApplications, mockStats, mockChambers, mockSectors } from '@/data/mockData';
+import { DashboardFilters } from '@/components/dashboard/DashboardFilters';
+import { OverviewTab } from '@/components/dashboard/tabs/OverviewTab';
+import type { DashboardFilters as DashboardFiltersType } from '@/components/dashboard/DashboardFilters';
 
 export default function Dashboard() {
   const { user } = useAuth();
-  
+  const [activeTab, setActiveTab] = useState('overview');
+  const [filters, setFilters] = useState<DashboardFiltersType>({
+    dateRange: {},
+    chambers: [],
+    sectors: [],
+    companySize: '',
+    aiAdoptionLevel: '',
+    platziLevel: '',
+    searchQuery: ''
+  });
+
   if (!user) return null;
 
-  const canViewGlobal = hasPermission(user.role, 'view_global') || hasPermission(user.role, 'view_all');
-  const userChamberData = user.chamber ? 
-    mockStats.chamberStats.find(stat => stat.name === user.chamber) : null;
+  // Filter data based on user permissions and filters
+  const filteredData = useMemo(() => {
+    let filtered = mockApplications;
 
-  const displayStats = canViewGlobal ? mockStats : {
-    totalLicenses: 100, // Simulated chamber limit
-    usedLicenses: userChamberData?.approved || 0,
-    totalApplications: userChamberData?.applications || 0,
-    approvedApplications: userChamberData?.approved || 0,
-    completedTests: userChamberData?.completed || 0,
-    averageProgress: userChamberData?.averageProgress || 0,
-  };
+    // Role-based filtering
+    if (user.role === 'camara_aliada' && user.chamber) {
+      filtered = filtered.filter(app => app.chamber === user.chamber);
+    }
 
-  const recentApplications = mockApplications
-    .filter(app => canViewGlobal || app.chamber === user.chamber)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .slice(0, 5);
+    // Apply filters
+    if (filters.searchQuery) {
+      const query = filters.searchQuery.toLowerCase();
+      filtered = filtered.filter(app => 
+        app.firstName.toLowerCase().includes(query) ||
+        app.lastName.toLowerCase().includes(query) ||
+        app.email.toLowerCase().includes(query) ||
+        app.company.toLowerCase().includes(query) ||
+        app.nit.includes(query)
+      );
+    }
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-      'aprobado': 'default',
-      'pendiente': 'secondary',
-      'rechazado': 'destructive',
-      'en_proceso': 'outline',
+    // Apply other filters...
+    return filtered;
+  }, [filters, user]);
+
+  // Generate processed data
+  const processedData = useMemo(() => {
+    const applications = filteredData;
+    const stats = {
+      totalLicenses: mockStats.totalLicenses,
+      usedLicenses: applications.filter(app => app.testCompleted).length,
+      totalApplications: applications.length,
+      approvedApplications: applications.filter(app => app.status === 'aprobado').length,
+      completedTests: applications.filter(app => app.testCompleted).length,
+      averageProgress: Math.round(
+        applications.filter(app => app.progress > 0).reduce((sum, app) => sum + app.progress, 0) /
+        Math.max(1, applications.filter(app => app.progress > 0).length)
+      ),
+      totalInvestment: applications.reduce((sum, app) => sum + app.aiInvestment2024, 0),
+      chamberStats: mockStats.chamberStats,
     };
-    const labels: Record<string, string> = {
-      'aprobado': 'Aprobado',
-      'pendiente': 'Pendiente',
-      'rechazado': 'Rechazado',
-      'en_proceso': 'En Proceso',
-    };
-    return (
-      <Badge variant={variants[status] || 'default'}>
-        {labels[status] || status}
-      </Badge>
-    );
-  };
+
+    return { applications, stats, companies: [] };
+  }, [filteredData]);
+
+  const userChamber = user.role === 'camara_aliada' ? user.chamber : undefined;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
+    <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight bg-gradient-primary bg-clip-text text-transparent">
-          Dashboard
-        </h1>
+        <h2 className="text-3xl font-bold tracking-tight">Dashboard Analítico</h2>
         <p className="text-muted-foreground">
-          {canViewGlobal 
-            ? 'Visión general del programa de Adopción de IA' 
-            : `Panel de ${user.chamber}`
-          }
+          Panel de control integral del programa de adopción de IA
         </p>
       </div>
 
-      {/* License Usage (Priority for CCC) */}
-      {canViewGlobal && (
-        <Card className="border-primary/20 bg-primary-light">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary" />
-              Consumo de Licencias Platzi
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">
-                  {mockStats.usedLicenses} de {mockStats.totalLicenses} licencias utilizadas
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {Math.round((mockStats.usedLicenses / mockStats.totalLicenses) * 100)}%
-                </span>
-              </div>
-              <Progress 
-                value={(mockStats.usedLicenses / mockStats.totalLicenses) * 100} 
-                className="h-3"
-              />
-              <p className="text-xs text-muted-foreground">
-                {mockStats.totalLicenses - mockStats.usedLicenses} licencias disponibles
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Filtros */}
+      <DashboardFilters
+        filters={filters}
+        onFiltersChange={setFilters}
+        userRole={user.role}
+        userChamber={userChamber}
+      />
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total Solicitudes"
-          value={displayStats.totalApplications}
-          description="Empresarios registrados"
-          icon={Users}
-          variant="primary"
-        />
-        <StatCard
-          title="Solicitudes Aprobadas"
-          value={displayStats.approvedApplications}
-          description={`${Math.round((displayStats.approvedApplications / displayStats.totalApplications) * 100)}% del total`}
-          icon={Award}
-          trend="+12%"
-        />
-        <StatCard
-          title="Tests Completados"
-          value={displayStats.completedTests}
-          description="Diagnósticos finalizados"
-          icon={BookOpen}
-        />
-        <StatCard
-          title="Progreso Promedio"
-          value={`${displayStats.averageProgress}%`}
-          description="En rutas de aprendizaje"
-          icon={TrendingUp}
-        />
-      </div>
+      {/* Tabs Navigation */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="overview">Visión General</TabsTrigger>
+          <TabsTrigger value="ai-adoption">Adopción IA</TabsTrigger>
+          <TabsTrigger value="performance">Rendimiento</TabsTrigger>
+          <TabsTrigger value="demographics">Demografía</TabsTrigger>
+          <TabsTrigger value="chambers">Por Cámara</TabsTrigger>
+        </TabsList>
 
-      {/* Chamber Stats (Only for global view) */}
-      {canViewGlobal && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Rendimiento por Cámara
-            </CardTitle>
-            <CardDescription>
-              Estado de adopción en cada cámara aliada
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {mockStats.chamberStats.slice(0, 6).map((chamber, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded-lg border">
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">{chamber.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {chamber.applications} solicitudes • {chamber.completed} tests completados
-                    </p>
-                  </div>
-                  <div className="text-right space-y-1">
-                    <p className="text-sm font-medium">{chamber.averageProgress}%</p>
-                    <p className="text-xs text-muted-foreground">progreso</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+        <TabsContent value="overview" className="mt-6">
+          <OverviewTab data={processedData} userRole={user.role} />
+        </TabsContent>
 
-      {/* Recent Applications */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Solicitudes Recientes
-          </CardTitle>
-          <CardDescription>
-            Últimas solicitudes de licencias procesadas
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {recentApplications.map((app) => (
-              <div key={app.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">
-                    {app.firstName} {app.lastName}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {app.company} • {app.chamber}
-                  </p>
-                </div>
-                <div className="text-right space-y-1">
-                  {getStatusBadge(app.status)}
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(app.createdAt).toLocaleDateString('es-CO')}
-                  </p>
-                </div>
-              </div>
-            ))}
+        <TabsContent value="ai-adoption" className="mt-6">
+          <div className="text-center py-12">
+            <h3 className="text-lg font-semibold mb-2">Análisis de Adopción IA</h3>
+            <p className="text-muted-foreground">Próximamente: Gráficos detallados de adopción de IA</p>
           </div>
-        </CardContent>
-      </Card>
+        </TabsContent>
+
+        <TabsContent value="performance" className="mt-6">
+          <div className="text-center py-12">
+            <h3 className="text-lg font-semibold mb-2">Rendimiento Académico</h3>
+            <p className="text-muted-foreground">Próximamente: Análisis de métricas Platzi</p>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="demographics" className="mt-6">
+          <div className="text-center py-12">
+            <h3 className="text-lg font-semibold mb-2">Perfil Demográfico</h3>
+            <p className="text-muted-foreground">Próximamente: Análisis demográfico detallado</p>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="chambers" className="mt-6">
+          <div className="text-center py-12">
+            <h3 className="text-lg font-semibold mb-2">Rendimiento por Cámara</h3>
+            <p className="text-muted-foreground">Próximamente: Vista detallada por cámara</p>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

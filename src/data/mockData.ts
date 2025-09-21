@@ -27,28 +27,128 @@ export const mockSectors = [
   'Salud'
 ];
 
-export const mockApplications = Array.from({ length: 250 }, (_, i) => ({
-  id: `app-${i + 1}`,
-  firstName: ['Juan', 'María', 'Carlos', 'Ana', 'Luis', 'Carmen', 'Pedro', 'Sofía', 'Diego', 'Isabella'][i % 10],
-  lastName: ['García', 'Rodríguez', 'López', 'Martínez', 'González', 'Pérez', 'Sánchez', 'Ramírez', 'Cruz', 'Flores'][i % 10],
-  email: `usuario${i + 1}@empresa${i + 1}.com`,
-  document: `12345${String(i + 1).padStart(3, '0')}`,
-  phone: `+57 3${String(Math.floor(Math.random() * 100000000)).padStart(8, '0')}`,
-  chamber: mockChambers[i % mockChambers.length],
-  company: `Empresa ${i + 1} SAS`,
-  nit: `9001234${String(i + 1).padStart(3, '0')}-${i % 9 + 1}`,
-  sector: mockSectors[i % mockSectors.length],
-  status: ['pendiente', 'aprobado', 'rechazado', 'en_proceso'][Math.floor(Math.random() * 4)],
-  createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
-  employees: Math.floor(Math.random() * 500) + 1,
-  sales2024: Math.floor(Math.random() * 5000000000) + 100000000,
-  hasAI: Math.random() > 0.6,
-  aiInvestment2024: Math.random() > 0.5 ? Math.floor(Math.random() * 100000000) : 0,
-  aiAdoptionProbability: Math.floor(Math.random() * 5) + 1,
-  testCompleted: Math.random() > 0.3,
-  platziLevel: Math.random() > 0.3 ? Math.floor(Math.random() * 6) + 1 : null,
-  progress: Math.random() > 0.3 ? Math.floor(Math.random() * 100) : 0,
-}));
+export const mockGenders = ['Masculino', 'Femenino', 'Otro', 'Prefiero no decir'];
+export const mockEthnicGroups = ['Mestizo', 'Afrodescendiente', 'Indígena', 'Blanco', 'Otro'];
+export const mockEducationLevels = ['Bachiller', 'Técnico', 'Tecnológico', 'Profesional', 'Especialización', 'Maestría', 'Doctorado'];
+export const mockPositions = ['CEO', 'Gerente General', 'Director', 'Coordinador', 'Jefe', 'Analista', 'Asistente'];
+export const mockClientTypes = ['B2B', 'B2C', 'B2G', 'Mixto'];
+export const mockMarkets = ['Local', 'Nacional', 'Internacional'];
+export const mockIdTypes = ['Cédula de Ciudadanía', 'Cédula de Extranjería', 'Pasaporte', 'Tarjeta de Identidad'];
+
+export const mockAIAreas = [
+  'Atención al Cliente',
+  'Marketing y Ventas',
+  'Recursos Humanos',
+  'Finanzas y Contabilidad',
+  'Producción y Manufactura',
+  'Logística y Supply Chain',
+  'Investigación y Desarrollo',
+  'Seguridad',
+  'Administración'
+];
+
+export const mockNotAdoptionReasons = [
+  'Falta de presupuesto',
+  'Desconocimiento técnico',
+  'Resistencia al cambio',
+  'Falta de personal capacitado',
+  'Consideran que no lo necesitan',
+  'Preocupaciones de seguridad',
+  'Complejidad de implementación'
+];
+
+export const mockPlatziRoutes = [
+  'Fundamentos de IA para Negocios',
+  'IA Aplicada al Marketing',
+  'Automatización con IA',
+  'IA para la Gestión Empresarial',
+  'Machine Learning para Empresarios',
+  'IA Avanzada para Líderes'
+];
+
+export const mockCourses = [
+  'Introducción a la Inteligencia Artificial',
+  'ChatGPT para Empresarios',
+  'Automatización de Procesos con IA',
+  'Marketing Digital con IA',
+  'Análisis de Datos con IA',
+  'Desarrollo de Productos con IA',
+  'Gestión de Equipos en la Era de la IA',
+  'Ética en Inteligencia Artificial',
+  'IA para la Toma de Decisiones',
+  'Transformación Digital con IA'
+];
+
+export const mockApplications = Array.from({ length: 250 }, (_, i) => {
+  const hasAI = Math.random() > 0.4;
+  const testCompleted = Math.random() > 0.25;
+  const platziLevel = testCompleted ? Math.floor(Math.random() * 6) + 1 : null;
+  const employees = Math.floor(Math.random() * 500) + 1;
+  const femaleEmployees = Math.floor(employees * (0.3 + Math.random() * 0.4));
+  const aiInvestment2024 = hasAI ? Math.floor(Math.random() * 200000000) + 10000000 : 0;
+  const trainedEmployees = hasAI ? Math.floor(employees * (Math.random() * 0.5)) : 0;
+  
+  return {
+    // IDs y básicos
+    id: `app-${i + 1}`,
+    firstName: ['Juan', 'María', 'Carlos', 'Ana', 'Luis', 'Carmen', 'Pedro', 'Sofía', 'Diego', 'Isabella', 'Andrés', 'Laura', 'Miguel', 'Patricia'][i % 14],
+    lastName: ['García', 'Rodríguez', 'López', 'Martínez', 'González', 'Pérez', 'Sánchez', 'Ramírez', 'Cruz', 'Flores', 'Torres', 'Vargas'][i % 12],
+    email: `usuario${i + 1}@empresa${i + 1}.com`,
+    
+    // Datos personales expandidos
+    gender: mockGenders[i % mockGenders.length],
+    ethnicGroup: mockEthnicGroups[i % mockEthnicGroups.length],
+    birthDate: new Date(1970 + Math.floor(Math.random() * 30), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString(),
+    idType: mockIdTypes[i % mockIdTypes.length],
+    document: `${Math.floor(Math.random() * 90000000) + 10000000}`,
+    phone: `+57 3${String(Math.floor(Math.random() * 100000000)).padStart(8, '0')}`,
+    educationLevel: mockEducationLevels[Math.floor(Math.random() * mockEducationLevels.length)],
+    position: mockPositions[Math.floor(Math.random() * mockPositions.length)],
+    
+    // Datos empresariales
+    chamber: mockChambers[i % mockChambers.length],
+    company: `${['Innovación', 'Tecnología', 'Desarrollo', 'Soluciones', 'Servicios', 'Comercializadora', 'Distribuidora', 'Consultora'][Math.floor(Math.random() * 8)]} ${['Alpha', 'Beta', 'Gamma', 'Delta', 'Prime', 'Pro', 'Plus', 'Max'][Math.floor(Math.random() * 8)]} SAS`,
+    nit: `9001${String(Math.floor(Math.random() * 900000) + 100000)}-${i % 9 + 1}`,
+    sector: mockSectors[i % mockSectors.length],
+    products: `Productos y servicios de ${mockSectors[i % mockSectors.length].toLowerCase()}`,
+    clientType: mockClientTypes[Math.floor(Math.random() * mockClientTypes.length)],
+    market: mockMarkets[Math.floor(Math.random() * mockMarkets.length)],
+    employees,
+    femaleEmployees,
+    sales2024: Math.floor(Math.random() * 10000000000) + 500000000,
+    profits2024: Math.floor(Math.random() * 1000000000) + 50000000,
+    
+    // Datos de adopción de IA
+    hasAI,
+    aiAreas: hasAI ? mockAIAreas.slice(0, Math.floor(Math.random() * 4) + 1) : [],
+    notAdoptionReason: !hasAI ? mockNotAdoptionReasons[Math.floor(Math.random() * mockNotAdoptionReasons.length)] : null,
+    aiInvestment2024,
+    hasAssignedResources: hasAI ? Math.random() > 0.3 : false,
+    aiAdoptionProbability: Math.floor(Math.random() * 5) + 1,
+    aiInvestmentProbability: Math.floor(Math.random() * 5) + 1,
+    futureAIBudget: Math.floor(Math.random() * 500000000) + 5000000,
+    trainedEmployees,
+    hasTrainingPlan: trainedEmployees > 0 || Math.random() > 0.6,
+    
+    // Estado de solicitud
+    status: ['pendiente', 'aprobado', 'rechazado', 'en_proceso'][Math.floor(Math.random() * 4)],
+    createdAt: new Date(Date.now() - Math.random() * 120 * 24 * 60 * 60 * 1000).toISOString(),
+    
+    // Datos de Platzi
+    testCompleted,
+    platziLevel,
+    route: platziLevel ? mockPlatziRoutes[platziLevel - 1] : null,
+    progress: testCompleted ? Math.floor(Math.random() * 100) : 0,
+    accessStatus: testCompleted ? ['Activo', 'Vencido', 'Suspendido'][Math.floor(Math.random() * 3)] : 'Sin acceso',
+    remainingDays: testCompleted && Math.random() > 0.3 ? Math.floor(Math.random() * 365) : 0,
+    coursesInProgress: testCompleted ? Math.floor(Math.random() * 5) + 1 : 0,
+    coursesCertified: testCompleted ? Math.floor(Math.random() * 3) : 0,
+    totalTimeSpent: testCompleted ? Math.floor(Math.random() * 200) + 20 : 0,
+    daysWithoutProgress: testCompleted ? Math.floor(Math.random() * 30) : 0,
+    activationDate: testCompleted ? new Date(Date.now() - Math.random() * 60 * 24 * 60 * 60 * 1000).toISOString() : null,
+    expirationDate: testCompleted ? new Date(Date.now() + Math.random() * 300 * 24 * 60 * 60 * 1000).toISOString() : null,
+  };
+});
 
 export const mockCompanies = Array.from(new Set(mockApplications.map(app => app.nit)))
   .map(nit => {
