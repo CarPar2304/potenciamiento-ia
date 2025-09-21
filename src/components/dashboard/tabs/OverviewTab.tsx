@@ -11,11 +11,28 @@ interface OverviewTabProps {
 }
 
 export function OverviewTab({ data, userRole }: OverviewTabProps) {
+  // Ensure data structure exists with defaults
+  const safeData = {
+    stats: {
+      usedLicenses: 0,
+      totalLicenses: 0,
+      approvedApplications: 0,
+      totalApplications: 0,
+      completedTests: 0,
+      averageProgress: 0,
+      totalInvestment: 0,
+      chamberStats: [],
+      ...data?.stats
+    },
+    companies: data?.companies || [],
+    applications: data?.applications || []
+  };
+
   const kpis = [
     {
       title: 'Licencias Activas',
-      value: data.stats.usedLicenses,
-      total: data.stats.totalLicenses,
+      value: safeData.stats.usedLicenses,
+      total: safeData.stats.totalLicenses,
       description: 'del total de licencias disponibles',
       icon: Users,
       trend: '+12%',
@@ -24,8 +41,8 @@ export function OverviewTab({ data, userRole }: OverviewTabProps) {
     },
     {
       title: 'Solicitudes Aprobadas',
-      value: data.stats.approvedApplications,
-      total: data.stats.totalApplications,
+      value: safeData.stats.approvedApplications,
+      total: safeData.stats.totalApplications,
       description: 'tasa de aprobación',
       icon: Target,
       trend: '+8%',
@@ -34,8 +51,8 @@ export function OverviewTab({ data, userRole }: OverviewTabProps) {
     },
     {
       title: 'Tests Completados',
-      value: data.stats.completedTests,
-      total: data.stats.approvedApplications,
+      value: safeData.stats.completedTests,
+      total: safeData.stats.approvedApplications,
       description: 'de empresarios aprobados',
       icon: GraduationCap,
       trend: '+15%',
@@ -44,7 +61,7 @@ export function OverviewTab({ data, userRole }: OverviewTabProps) {
     },
     {
       title: 'Progreso Promedio',
-      value: `${data.stats.averageProgress}%`,
+      value: `${safeData.stats.averageProgress}%`,
       description: 'en rutas de aprendizaje',
       icon: Brain,
       trend: '+5%',
@@ -53,7 +70,7 @@ export function OverviewTab({ data, userRole }: OverviewTabProps) {
     },
     {
       title: 'Inversión Total IA',
-      value: `$${(data.stats.totalInvestment / 1000000).toFixed(1)}M`,
+      value: `$${(safeData.stats.totalInvestment / 1000000).toFixed(1)}M`,
       description: 'invertido en IA en 2024',
       icon: DollarSign,
       trend: '+25%',
@@ -62,7 +79,7 @@ export function OverviewTab({ data, userRole }: OverviewTabProps) {
     },
     {
       title: 'Empresas Activas',
-      value: data.companies.length,
+      value: safeData.companies.length,
       description: 'empresas registradas',
       icon: Building,
       trend: '+18%',
@@ -85,7 +102,7 @@ export function OverviewTab({ data, userRole }: OverviewTabProps) {
     tests: Math.floor(Math.random() * 60) + 20,
   }));
 
-  const topPerformers = data.stats.chamberStats
+  const topPerformers = (safeData.stats.chamberStats || [])
     .sort((a: any, b: any) => b.averageProgress - a.averageProgress)
     .slice(0, 5)
     .map((chamber: any) => ({
@@ -240,29 +257,29 @@ export function OverviewTab({ data, userRole }: OverviewTabProps) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Licencias Activas</span>
-                <span className="text-sm text-muted-foreground">{data.stats.usedLicenses}</span>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Licencias Activas</span>
+                  <span className="text-sm text-muted-foreground">{safeData.stats.usedLicenses}</span>
+                </div>
+                <Progress value={(safeData.stats.usedLicenses / safeData.stats.totalLicenses) * 100} className="h-2" />
               </div>
-              <Progress value={(data.stats.usedLicenses / data.stats.totalLicenses) * 100} className="h-2" />
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">En Uso Efectivo</span>
-                <span className="text-sm text-muted-foreground">{Math.floor(data.stats.usedLicenses * 0.75)}</span>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">En Uso Efectivo</span>
+                  <span className="text-sm text-muted-foreground">{Math.floor(safeData.stats.usedLicenses * 0.75)}</span>
+                </div>
+                <Progress value={75} className="h-2" />
               </div>
-              <Progress value={75} className="h-2" />
-            </div>
-            
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Disponibles</span>
-                <span className="text-sm text-muted-foreground">{data.stats.totalLicenses - data.stats.usedLicenses}</span>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Disponibles</span>
+                  <span className="text-sm text-muted-foreground">{safeData.stats.totalLicenses - safeData.stats.usedLicenses}</span>
+                </div>
+                <Progress value={((safeData.stats.totalLicenses - safeData.stats.usedLicenses) / safeData.stats.totalLicenses) * 100} className="h-2" />
               </div>
-              <Progress value={((data.stats.totalLicenses - data.stats.usedLicenses) / data.stats.totalLicenses) * 100} className="h-2" />
-            </div>
           </div>
           
           <div className="mt-4 p-4 bg-primary/5 rounded-lg">
@@ -273,9 +290,9 @@ export function OverviewTab({ data, userRole }: OverviewTabProps) {
                   Basado en tendencia actual de consumo
                 </p>
               </div>
-              <Badge variant="secondary">
-                +{Math.floor((data.stats.totalLicenses - data.stats.usedLicenses) * 0.3)} licencias
-              </Badge>
+                <Badge variant="secondary">
+                  +{Math.floor((safeData.stats.totalLicenses - safeData.stats.usedLicenses) * 0.3)} licencias
+                </Badge>
             </div>
           </div>
         </CardContent>
