@@ -397,11 +397,9 @@ export type Database = {
         | "Ningún grupo étnico"
       mercado_enum: "Local" | "Nacional" | "Internacional"
       tipo_identificacion_enum:
-        | "Tarjeta_Identidad"
-        | "Cedula_Ciudadania"
-        | "Cedula_Extranjeria"
+        | "Cédula de Ciudadanía"
+        | "Cédula de Extranjería"
         | "Pasaporte"
-        | "Permiso_Permanencia_Temporal"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -542,11 +540,9 @@ export const Constants = {
       ],
       mercado_enum: ["Local", "Nacional", "Internacional"],
       tipo_identificacion_enum: [
-        "Tarjeta_Identidad",
-        "Cedula_Ciudadania",
-        "Cedula_Extranjeria",
+        "Cédula de Ciudadanía",
+        "Cédula de Extranjería",
         "Pasaporte",
-        "Permiso_Permanencia_Temporal",
       ],
     },
   },
