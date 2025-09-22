@@ -334,8 +334,10 @@ const SolicitudDetailDialog = ({ solicitud, isOpen, onClose, platziSeguimiento }
                   <div key={index} className="border rounded-lg p-3 bg-background/50">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1">
-                        <h4 className="font-medium text-sm line-clamp-2">{curso.curso || 'Curso sin nombre'}</h4>
-                        <p className="text-xs text-muted-foreground">{curso.ruta || 'Sin ruta'}</p>
+                        <h4 className="font-medium text-sm line-clamp-2">{curso.curso || "Curso sin nombre"}</h4>
+                        <p className="text-xs text-muted-foreground">
+                          <span className="font-medium">Ruta:</span> {curso.ruta || "Sin ruta"}
+                        </p>
                       </div>
                       <div className="flex items-center gap-2 ml-2">
                         {curso.estado_curso === 'Certificado' && (
@@ -357,10 +359,10 @@ const SolicitudDetailDialog = ({ solicitud, isOpen, onClose, platziSeguimiento }
                           <div className="flex-1 bg-muted rounded-full h-2">
                             <div 
                               className="bg-primary h-2 rounded-full transition-all"
-                              style={{ width: `${curso.porcentaje_avance || 0}%` }}
+                              style={{ width: `${(curso.porcentaje_avance || 0) * 100}%` }}
                             />
                           </div>
-                          <span className="font-medium">{curso.porcentaje_avance || 0}%</span>
+                          <span className="font-medium">{Math.round((curso.porcentaje_avance || 0) * 100)}%</span>
                         </div>
                       </div>
                       <div>
