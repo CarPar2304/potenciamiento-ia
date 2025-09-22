@@ -4,6 +4,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSolicitudes, useStats, useCamaras } from '@/hooks/useSupabaseData';
 import { DashboardFilters } from '@/components/dashboard/DashboardFilters';
 import { OverviewTab } from '@/components/dashboard/tabs/OverviewTab';
+import { AIAdoptionTab } from '@/components/dashboard/tabs/AIAdoptionTab';
+import { PlatziPerformanceTab } from '@/components/dashboard/tabs/PlatziPerformanceTab';
+import { DemographicsTab } from '@/components/dashboard/tabs/DemographicsTab';
+import { ChamberPerformanceTab } from '@/components/dashboard/tabs/ChamberPerformanceTab';
+import { useDashboardData } from '@/hooks/useDashboardData';
 import type { DashboardFilters as DashboardFiltersType } from '@/components/dashboard/DashboardFilters';
 
 export default function Dashboard() {
@@ -21,6 +26,16 @@ export default function Dashboard() {
     platziLevel: '',
     searchQuery: ''
   });
+
+  // Use new comprehensive dashboard data
+  const { 
+    loading: dashboardLoading, 
+    executiveKPIs, 
+    aiAdoptionData, 
+    platziPerformanceData, 
+    demographicsData, 
+    chamberPerformanceData 
+  } = useDashboardData(filters);
 
   if (!profile) return null;
 
@@ -65,7 +80,7 @@ export default function Dashboard() {
 
   const userChamber = profile?.role === 'camara_aliada' ? profile?.chamber : undefined;
 
-  if (solicitudesLoading) {
+  if (solicitudesLoading || dashboardLoading) {
     return (
       <div className="space-y-6">
         <div>
@@ -108,31 +123,46 @@ export default function Dashboard() {
         </TabsContent>
 
         <TabsContent value="ai-adoption" className="mt-6">
-          <div className="text-center py-12">
-            <h3 className="text-lg font-semibold mb-2">Análisis de Adopción IA</h3>
-            <p className="text-muted-foreground">Próximamente: Gráficos detallados de adopción de IA</p>
-          </div>
+          {aiAdoptionData && executiveKPIs && (
+            <AIAdoptionTab 
+              data={aiAdoptionData} 
+              kpis={{
+                aiAdoptionRate: executiveKPIs.aiAdoptionRate,
+                totalInvestment2024: executiveKPIs.totalInvestment2024,
+                projectedInvestment: executiveKPIs.projectedInvestment,
+                companiesImpacted: executiveKPIs.companiesImpacted
+              }} 
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="performance" className="mt-6">
-          <div className="text-center py-12">
-            <h3 className="text-lg font-semibold mb-2">Rendimiento Académico</h3>
-            <p className="text-muted-foreground">Próximamente: Análisis de métricas Platzi</p>
-          </div>
+          {platziPerformanceData && executiveKPIs && (
+            <PlatziPerformanceTab 
+              data={platziPerformanceData} 
+              kpis={{
+                avgProgress: executiveKPIs.avgProgress,
+                totalCertificates: executiveKPIs.totalCertificates,
+                totalHoursStudied: executiveKPIs.totalHoursStudied,
+                activeUsers: executiveKPIs.activeUsers
+              }} 
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="demographics" className="mt-6">
-          <div className="text-center py-12">
-            <h3 className="text-lg font-semibold mb-2">Perfil Demográfico</h3>
-            <p className="text-muted-foreground">Próximamente: Análisis demográfico detallado</p>
-          </div>
+          {demographicsData && (
+            <DemographicsTab 
+              data={demographicsData} 
+              totalParticipants={solicitudes.length}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="chambers" className="mt-6">
-          <div className="text-center py-12">
-            <h3 className="text-lg font-semibold mb-2">Rendimiento por Cámara</h3>
-            <p className="text-muted-foreground">Próximamente: Vista detallada por cámara</p>
-          </div>
+          {chamberPerformanceData && (
+            <ChamberPerformanceTab data={chamberPerformanceData} />
+          )}
         </TabsContent>
       </Tabs>
     </div>
