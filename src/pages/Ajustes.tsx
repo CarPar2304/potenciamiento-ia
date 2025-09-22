@@ -117,38 +117,59 @@ export default function Ajustes() {
     const processed = [];
     const errors = [];
 
+    console.log('Procesando sheet1 con', data.length, 'filas');
+    console.log('Primera fila de ejemplo:', data[0]);
+
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       try {
+        // Verificar si la fila tiene datos válidos
+        if (!row || typeof row !== 'object') {
+          continue;
+        }
+
         // Mapear columnas del Excel a campos de la BD
         const processedRow = {
           nombre: row['Nombre'] || row['nombre'] || row['NOMBRE'],
           email: row['Correo'] || row['correo'] || row['CORREO'] || row['Email'] || row['email'],
-          estado_acceso: row['Estado de acceso'] || row['estado_acceso'] || row['ESTADO DE ACCESO'],
-          dias_acceso_restantes: parseInt(row['Días de acceso restantes'] || row['dias_acceso_restantes'] || row['DÍAS DE ACCESO RESTANTES'] || '0'),
+          estado_acceso: row['Estado de acceso'] || row['estado_acceso'] || row['ESTADO DE ACCESO'] || row['ESTADO_ACCESO'],
+          dias_acceso_restantes: parseInt(row['Días de acceso restantes'] || row['dias_acceso_restantes'] || row['DÍAS DE ACCESO RESTANTES'] || row['DIAS_ACCESO_RESTANTES'] || '0'),
           equipos: row['Equipos'] || row['equipos'] || row['EQUIPOS'],
           ruta: row['Ruta'] || row['ruta'] || row['RUTA'],
-          progreso_ruta: parseFloat(row['Progreso en ruta'] || row['progreso_ruta'] || row['PROGRESO EN RUTA'] || '0'),
-          cursos_totales_progreso: parseInt(row['Cursos totales en progreso'] || row['cursos_totales_progreso'] || '0'),
-          cursos_totales_certificados: parseInt(row['Cursos totales certificados'] || row['cursos_totales_certificados'] || '0'),
-          tiempo_total_dedicado: parseInt(row['Tiempo total dedicado'] || row['tiempo_total_dedicado'] || '0'),
-          dias_sin_progreso: parseInt(row['Días sin progreso'] || row['dias_sin_progreso'] || '0'),
-          dias_sin_certificar: parseInt(row['Días sin certificar cursos'] || row['dias_sin_certificar'] || '0'),
-          fecha_inicio_ultima_licencia: row['Fecha de inicio última licencia activa'] ? new Date(row['Fecha de inicio última licencia activa']) : null,
-          fecha_expiracion_ultima_licencia: row['Fecha de expiración última licencia activa'] ? new Date(row['Fecha de expiración última licencia activa']) : null,
-          fecha_primera_activacion: row['Fecha en que activó su primera licencia'] ? new Date(row['Fecha en que activó su primera licencia']) : null,
+          progreso_ruta: parseFloat(row['Progreso en ruta'] || row['progreso_ruta'] || row['PROGRESO EN RUTA'] || row['PROGRESO_RUTA'] || '0'),
+          cursos_totales_progreso: parseInt(row['Cursos totales en progreso'] || row['cursos_totales_progreso'] || row['CURSOS_TOTALES_PROGRESO'] || '0'),
+          cursos_totales_certificados: parseInt(row['Cursos totales certificados'] || row['cursos_totales_certificados'] || row['CURSOS_TOTALES_CERTIFICADOS'] || '0'),
+          tiempo_total_dedicado: parseInt(row['Tiempo total dedicado'] || row['tiempo_total_dedicado'] || row['TIEMPO_TOTAL_DEDICADO'] || '0'),
+          dias_sin_progreso: parseInt(row['Días sin progreso'] || row['dias_sin_progreso'] || row['DIAS_SIN_PROGRESO'] || '0'),
+          dias_sin_certificar: parseInt(row['Días sin certificar cursos'] || row['dias_sin_certificar'] || row['DIAS_SIN_CERTIFICAR'] || '0'),
+          fecha_inicio_ultima_licencia: row['Fecha de inicio última licencia activa'] || row['fecha_inicio_ultima_licencia'] ? 
+            new Date(row['Fecha de inicio última licencia activa'] || row['fecha_inicio_ultima_licencia']) : null,
+          fecha_expiracion_ultima_licencia: row['Fecha de expiración última licencia activa'] || row['fecha_expiracion_ultima_licencia'] ? 
+            new Date(row['Fecha de expiración última licencia activa'] || row['fecha_expiracion_ultima_licencia']) : null,
+          fecha_primera_activacion: row['Fecha en que activó su primera licencia'] || row['fecha_primera_activacion'] ? 
+            new Date(row['Fecha en que activó su primera licencia'] || row['fecha_primera_activacion']) : null,
         };
 
         if (!processedRow.nombre || !processedRow.email) {
-          errors.push(`Fila ${i + 2}: Nombre o email faltante`);
+          errors.push(`Fila ${i + 2}: Nombre o email faltante - Nombre: "${processedRow.nombre}", Email: "${processedRow.email}"`);
           continue;
         }
 
+        // Limpiar email
+        processedRow.email = processedRow.email.toString().trim().toLowerCase();
+
         processed.push(processedRow);
       } catch (error) {
+        console.error(`Error procesando fila ${i + 2}:`, error);
         errors.push(`Fila ${i + 2}: Error al procesar - ${error}`);
       }
     }
+
+    console.log('Procesamiento completado:', {
+      total: data.length,
+      procesados: processed.length,
+      errores: errors.length
+    });
 
     return { processed, errors };
   };
@@ -157,31 +178,51 @@ export default function Ajustes() {
     const processed = [];
     const errors = [];
 
+    console.log('Procesando sheet2 con', data.length, 'filas');
+    console.log('Primera fila de ejemplo:', data[0]);
+
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       try {
-        const processedRow = {
-          nombre: row['Nombre'] || row['nombre'] || row['NOMBRE'],
-          email: row['Correo'] || row['correo'] || row['CORREO'] || row['Email'] || row['email'],
-          id_curso: row['ID del curso'] || row['id_curso'] || row['ID CURSO'],
-          curso: row['Curso'] || row['curso'] || row['CURSO'],
-          porcentaje_avance: parseFloat(row['% Avance'] || row['porcentaje_avance'] || row['PORCENTAJE AVANCE'] || '0'),
-          tiempo_invertido: parseInt(row['Tiempo invertido (en segundos)'] || row['tiempo_invertido'] || row['TIEMPO INVERTIDO'] || '0'),
-          estado_curso: row['Estado del curso'] || row['estado_curso'] || row['ESTADO CURSO'],
-          fecha_certificacion: row['Fecha de certificación'] ? new Date(row['Fecha de certificación']) : null,
-          ruta: row['Ruta'] || row['ruta'] || row['RUTA'],
-        };
-
-        if (!processedRow.nombre || !processedRow.email || !processedRow.id_curso) {
-          errors.push(`Fila ${i + 2}: Datos esenciales faltantes (nombre, email o ID curso)`);
+        // Verificar si la fila tiene datos válidos
+        if (!row || typeof row !== 'object') {
           continue;
         }
 
+        const processedRow = {
+          nombre: row['Nombre'] || row['nombre'] || row['NOMBRE'],
+          email: row['Correo'] || row['correo'] || row['CORREO'] || row['Email'] || row['email'],
+          id_curso: row['ID del curso'] || row['id_curso'] || row['ID CURSO'] || row['ID_CURSO'],
+          curso: row['Curso'] || row['curso'] || row['CURSO'],
+          porcentaje_avance: parseFloat(row['% Avance'] || row['porcentaje_avance'] || row['PORCENTAJE AVANCE'] || row['%_AVANCE'] || '0'),
+          tiempo_invertido: parseInt(row['Tiempo invertido (en segundos)'] || row['tiempo_invertido'] || row['TIEMPO INVERTIDO'] || row['TIEMPO_INVERTIDO'] || '0'),
+          estado_curso: row['Estado del curso'] || row['estado_curso'] || row['ESTADO CURSO'] || row['ESTADO_CURSO'],
+          fecha_certificacion: row['Fecha de certificación'] || row['fecha_certificacion'] ? 
+            new Date(row['Fecha de certificación'] || row['fecha_certificacion']) : null,
+          ruta: row['Ruta'] || row['ruta'] || row['RUTA'],
+        };
+
+        // Validar campos esenciales
+        if (!processedRow.nombre || !processedRow.email || !processedRow.id_curso) {
+          errors.push(`Fila ${i + 2}: Datos esenciales faltantes - Nombre: "${processedRow.nombre}", Email: "${processedRow.email}", ID Curso: "${processedRow.id_curso}"`);
+          continue;
+        }
+
+        // Limpiar email
+        processedRow.email = processedRow.email.toString().trim().toLowerCase();
+
         processed.push(processedRow);
       } catch (error) {
+        console.error(`Error procesando fila ${i + 2}:`, error);
         errors.push(`Fila ${i + 2}: Error al procesar - ${error}`);
       }
     }
+
+    console.log('Procesamiento completado:', {
+      total: data.length,
+      procesados: processed.length,
+      errores: errors.length
+    });
 
     return { processed, errors };
   };
@@ -195,12 +236,22 @@ export default function Ajustes() {
     setUploadResults(null);
 
     try {
+      console.log('Iniciando procesamiento de archivo:', file.name, 'Tipo:', selectedReport);
+      
       // Leer archivo Excel
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: 'array' });
+      
+      console.log('Hojas disponibles:', workbook.SheetNames);
+      
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      console.log('Datos extraídos del Excel:', jsonData.length, 'filas');
+      if (jsonData.length > 0) {
+        console.log('Ejemplo de primera fila:', jsonData[0]);
+      }
 
       setUploadProgress(25);
 
