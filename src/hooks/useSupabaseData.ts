@@ -13,7 +13,7 @@ export interface Solicitud {
   nivel_educativo?: string;
   fecha_solicitud: string;
   estado: 'Pendiente' | 'Aprobada' | 'Rechazada';
-  empresa_id?: string;
+  nit_empresa?: string;
   empresas?: {
     id: string;
     nombre: string;
@@ -105,32 +105,35 @@ export function useSolicitudes() {
     const fetchSolicitudes = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
+        
+        // Primero obtener solicitudes
+        const { data: solicitudesData, error: solicitudesError } = await supabase
           .from('solicitudes')
-          .select(`
-            *,
-            empresas (
-              id,
-              nombre,
-              nit,
-              sector,
-              mercado,
-              num_colaboradores,
-              ventas_2024,
-              decision_adoptar_ia,
-              invirtio_ia_2024,
-              monto_inversion_2024,
-              camara_id,
-              camaras (
-                nombre,
-                nit
-              )
-            )
-          `)
+          .select('*')
           .order('fecha_solicitud', { ascending: false });
 
-        if (error) throw error;
-        setSolicitudes(data || []);
+        if (solicitudesError) throw solicitudesError;
+
+        // Luego obtener empresas con sus cámaras
+        const { data: empresasData, error: empresasError } = await supabase
+          .from('empresas')
+          .select(`
+            *,
+            camaras (
+              nombre,
+              nit
+            )
+          `);
+
+        if (empresasError) throw empresasError;
+
+        // Combinar los datos manualmente por NIT
+        const solicitudesWithEmpresas = solicitudesData?.map(solicitud => ({
+          ...solicitud,
+          empresas: empresasData?.find(empresa => empresa.nit === solicitud.nit_empresa)
+        })) || [];
+
+        setSolicitudes(solicitudesWithEmpresas);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error cargando solicitudes');
         console.error('Error fetching solicitudes:', err);

@@ -299,13 +299,13 @@ export type Database = {
           celular: string | null
           created_at: string
           email: string
-          empresa_id: string | null
           estado: Database["public"]["Enums"]["estado_solicitud_enum"] | null
           fecha_nacimiento: string | null
           fecha_solicitud: string
           genero: Database["public"]["Enums"]["genero_enum"] | null
           grupo_etnico: string | null
           id: string
+          nit_empresa: string
           nivel_educativo: string | null
           nombres_apellidos: string
           numero_documento: string
@@ -320,13 +320,13 @@ export type Database = {
           celular?: string | null
           created_at?: string
           email: string
-          empresa_id?: string | null
           estado?: Database["public"]["Enums"]["estado_solicitud_enum"] | null
           fecha_nacimiento?: string | null
           fecha_solicitud?: string
           genero?: Database["public"]["Enums"]["genero_enum"] | null
           grupo_etnico?: string | null
           id?: string
+          nit_empresa: string
           nivel_educativo?: string | null
           nombres_apellidos: string
           numero_documento: string
@@ -341,13 +341,13 @@ export type Database = {
           celular?: string | null
           created_at?: string
           email?: string
-          empresa_id?: string | null
           estado?: Database["public"]["Enums"]["estado_solicitud_enum"] | null
           fecha_nacimiento?: string | null
           fecha_solicitud?: string
           genero?: Database["public"]["Enums"]["genero_enum"] | null
           grupo_etnico?: string | null
           id?: string
+          nit_empresa?: string
           nivel_educativo?: string | null
           nombres_apellidos?: string
           numero_documento?: string
@@ -356,15 +356,7 @@ export type Database = {
             | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "solicitudes_empresa_id_fkey"
-            columns: ["empresa_id"]
-            isOneToOne: false
-            referencedRelation: "empresas"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
