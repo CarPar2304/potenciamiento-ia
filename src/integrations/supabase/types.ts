@@ -294,7 +294,6 @@ export type Database = {
       }
       solicitudes: {
         Row: {
-          autorizacion_datos: boolean
           cargo: string | null
           celular: string | null
           created_at: string
@@ -315,7 +314,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          autorizacion_datos?: boolean
           cargo?: string | null
           celular?: string | null
           created_at?: string
@@ -336,7 +334,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          autorizacion_datos?: boolean
           cargo?: string | null
           celular?: string | null
           created_at?: string
