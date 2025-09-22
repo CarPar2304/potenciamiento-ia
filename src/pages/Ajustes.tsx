@@ -21,10 +21,12 @@ import {
   AlertCircle,
   Info,
   Shield,
+  XCircle,
 } from 'lucide-react';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import * as XLSX from 'xlsx';
 
 const SettingCard = ({ 
   title, 
@@ -65,6 +67,12 @@ export default function Ajustes() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [isPromotingAdmin, setIsPromotingAdmin] = useState(false);
+  const [uploadResults, setUploadResults] = useState<{
+    success: number;
+    errors: number;
+    total: number;
+    errorDetails?: string[];
+  } | null>(null);
 
   if (!profile) return null;
 
@@ -105,29 +113,184 @@ export default function Ajustes() {
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const processSheet1Data = async (data: any[]) => {
+    const processed = [];
+    const errors = [];
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      try {
+        // Mapear columnas del Excel a campos de la BD
+        const processedRow = {
+          nombre: row['Nombre'] || row['nombre'] || row['NOMBRE'],
+          email: row['Correo'] || row['correo'] || row['CORREO'] || row['Email'] || row['email'],
+          estado_acceso: row['Estado de acceso'] || row['estado_acceso'] || row['ESTADO DE ACCESO'],
+          dias_acceso_restantes: parseInt(row['Días de acceso restantes'] || row['dias_acceso_restantes'] || row['DÍAS DE ACCESO RESTANTES'] || '0'),
+          equipos: row['Equipos'] || row['equipos'] || row['EQUIPOS'],
+          ruta: row['Ruta'] || row['ruta'] || row['RUTA'],
+          progreso_ruta: parseFloat(row['Progreso en ruta'] || row['progreso_ruta'] || row['PROGRESO EN RUTA'] || '0'),
+          cursos_totales_progreso: parseInt(row['Cursos totales en progreso'] || row['cursos_totales_progreso'] || '0'),
+          cursos_totales_certificados: parseInt(row['Cursos totales certificados'] || row['cursos_totales_certificados'] || '0'),
+          tiempo_total_dedicado: parseInt(row['Tiempo total dedicado'] || row['tiempo_total_dedicado'] || '0'),
+          dias_sin_progreso: parseInt(row['Días sin progreso'] || row['dias_sin_progreso'] || '0'),
+          dias_sin_certificar: parseInt(row['Días sin certificar cursos'] || row['dias_sin_certificar'] || '0'),
+          fecha_inicio_ultima_licencia: row['Fecha de inicio última licencia activa'] ? new Date(row['Fecha de inicio última licencia activa']) : null,
+          fecha_expiracion_ultima_licencia: row['Fecha de expiración última licencia activa'] ? new Date(row['Fecha de expiración última licencia activa']) : null,
+          fecha_primera_activacion: row['Fecha en que activó su primera licencia'] ? new Date(row['Fecha en que activó su primera licencia']) : null,
+        };
+
+        if (!processedRow.nombre || !processedRow.email) {
+          errors.push(`Fila ${i + 2}: Nombre o email faltante`);
+          continue;
+        }
+
+        processed.push(processedRow);
+      } catch (error) {
+        errors.push(`Fila ${i + 2}: Error al procesar - ${error}`);
+      }
+    }
+
+    return { processed, errors };
+  };
+
+  const processSheet2Data = async (data: any[]) => {
+    const processed = [];
+    const errors = [];
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      try {
+        const processedRow = {
+          nombre: row['Nombre'] || row['nombre'] || row['NOMBRE'],
+          email: row['Correo'] || row['correo'] || row['CORREO'] || row['Email'] || row['email'],
+          id_curso: row['ID del curso'] || row['id_curso'] || row['ID CURSO'],
+          curso: row['Curso'] || row['curso'] || row['CURSO'],
+          porcentaje_avance: parseFloat(row['% Avance'] || row['porcentaje_avance'] || row['PORCENTAJE AVANCE'] || '0'),
+          tiempo_invertido: parseInt(row['Tiempo invertido (en segundos)'] || row['tiempo_invertido'] || row['TIEMPO INVERTIDO'] || '0'),
+          estado_curso: row['Estado del curso'] || row['estado_curso'] || row['ESTADO CURSO'],
+          fecha_certificacion: row['Fecha de certificación'] ? new Date(row['Fecha de certificación']) : null,
+          ruta: row['Ruta'] || row['ruta'] || row['RUTA'],
+        };
+
+        if (!processedRow.nombre || !processedRow.email || !processedRow.id_curso) {
+          errors.push(`Fila ${i + 2}: Datos esenciales faltantes (nombre, email o ID curso)`);
+          continue;
+        }
+
+        processed.push(processedRow);
+      } catch (error) {
+        errors.push(`Fila ${i + 2}: Error al procesar - ${error}`);
+      }
+    }
+
+    return { processed, errors };
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !selectedReport) return;
 
     setIsUploading(true);
     setUploadProgress(0);
+    setUploadResults(null);
 
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsUploading(false);
-          toast({
-            title: "Reporte cargado exitosamente",
-            description: `La ${selectedReport === 'sheet1' ? 'Hoja 1' : 'Hoja 2'} del reporte de Platzi ha sido procesada.`,
-          });
-          setIsDialogOpen(false);
-          return 100;
+    try {
+      // Leer archivo Excel
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      setUploadProgress(25);
+
+      if (jsonData.length === 0) {
+        throw new Error('El archivo está vacío o no tiene datos válidos');
+      }
+
+      // Procesar datos según el tipo de hoja
+      let processResult;
+      if (selectedReport === 'sheet1') {
+        processResult = await processSheet1Data(jsonData);
+        setUploadProgress(50);
+
+        // Insertar en platzi_general
+        if (processResult.processed.length > 0) {
+          const { data: insertData, error } = await supabase
+            .from('platzi_general')
+            .upsert(processResult.processed, { 
+              onConflict: 'email',
+              ignoreDuplicates: false 
+            });
+
+          if (error) {
+            console.error('Error insertando datos:', error);
+            throw new Error(`Error al guardar datos: ${error.message}`);
+          }
+          setUploadProgress(75);
         }
-        return prev + 10;
+      } else {
+        processResult = await processSheet2Data(jsonData);
+        setUploadProgress(50);
+
+        // Insertar en platzi_seguimiento
+        if (processResult.processed.length > 0) {
+          const { data: insertData, error } = await supabase
+            .from('platzi_seguimiento')
+            .upsert(processResult.processed, { 
+              onConflict: 'email,id_curso',
+              ignoreDuplicates: false 
+            });
+
+          if (error) {
+            console.error('Error insertando datos:', error);
+            throw new Error(`Error al guardar datos: ${error.message}`);
+          }
+          setUploadProgress(75);
+        }
+      }
+
+      // Ejecutar sincronización
+      const { error: syncError } = await supabase.rpc('sync_platzi_with_solicitudes');
+      if (syncError) {
+        console.error('Error en sincronización:', syncError);
+      }
+
+      setUploadProgress(100);
+
+      const results = {
+        success: processResult.processed.length,
+        errors: processResult.errors.length,
+        total: jsonData.length,
+        errorDetails: processResult.errors
+      };
+
+      setUploadResults(results);
+
+      toast({
+        title: "Archivo procesado exitosamente",
+        description: `${results.success} registros cargados, ${results.errors} errores encontrados`,
+        variant: results.errors > 0 ? "destructive" : "default"
       });
-    }, 200);
+
+    } catch (error: any) {
+      console.error('Error procesando archivo:', error);
+      toast({
+        title: "Error al procesar archivo",
+        description: error.message || "Ocurrió un error inesperado",
+        variant: "destructive"
+      });
+
+      setUploadResults({
+        success: 0,
+        errors: 1,
+        total: 0,
+        errorDetails: [error.message || "Error desconocido"]
+      });
+    } finally {
+      setIsUploading(false);
+      // No cerrar el diálogo para mostrar los resultados
+    }
   };
 
   const reportPreview = {
@@ -431,21 +594,80 @@ export default function Ajustes() {
                 </div>
               )}
 
-              {/* Summary */}
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-medium text-sm mb-2">Resumen de Importación:</h4>
-                <div className="text-xs text-muted-foreground space-y-1">
-                  <p>• Se validarán automáticamente las columnas requeridas</p>
-                  <p>• Los datos se cruzarán con las solicitudes existentes</p>
-                  <p>• Se actualizará el progreso y niveles de los usuarios</p>
-                  <p>• Se generará un reporte de inconsistencias si las hay</p>
+              {/* Results */}
+              {uploadResults && (
+                <div className={`p-4 rounded-lg border ${
+                  uploadResults.errors > 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'
+                }`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    {uploadResults.errors > 0 ? (
+                      <XCircle className="h-4 w-4 text-red-600" />
+                    ) : (
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    )}
+                    <h4 className="font-medium text-sm">Resultados de la Importación</h4>
+                  </div>
+                  <div className="text-xs space-y-1">
+                    <p><strong>Total de registros:</strong> {uploadResults.total}</p>
+                    <p className="text-green-700"><strong>Importados exitosamente:</strong> {uploadResults.success}</p>
+                    {uploadResults.errors > 0 && (
+                      <p className="text-red-700"><strong>Errores:</strong> {uploadResults.errors}</p>
+                    )}
+                  </div>
+                  {uploadResults.errorDetails && uploadResults.errorDetails.length > 0 && (
+                    <div className="mt-2 max-h-32 overflow-y-auto">
+                      <p className="text-xs font-medium text-red-700 mb-1">Detalles de errores:</p>
+                      <ul className="text-xs text-red-600 space-y-1">
+                        {uploadResults.errorDetails.slice(0, 5).map((error, index) => (
+                          <li key={index}>• {error}</li>
+                        ))}
+                        {uploadResults.errorDetails.length > 5 && (
+                          <li>• ... y {uploadResults.errorDetails.length - 5} errores más</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
+
+              {/* Summary */}
+              {!uploadResults && (
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-sm mb-2">Resumen de Importación:</h4>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p>• Se validarán automáticamente las columnas requeridas</p>
+                    <p>• Los datos se cruzarán con las solicitudes existentes</p>
+                    <p>• Se actualizará el progreso y niveles de los usuarios</p>
+                    <p>• Se generará un reporte de inconsistencias si las hay</p>
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isUploading}>
-                  Cancelar
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsDialogOpen(false);
+                    setUploadResults(null);
+                    setUploadProgress(0);
+                  }} 
+                  disabled={isUploading}
+                >
+                  {uploadResults ? 'Cerrar' : 'Cancelar'}
                 </Button>
+                {uploadResults && uploadResults.success > 0 && (
+                  <Button 
+                    onClick={() => {
+                      setIsDialogOpen(false);
+                      setUploadResults(null);
+                      setUploadProgress(0);
+                      // Opcional: recargar página para refrescar datos
+                      window.location.reload();
+                    }}
+                  >
+                    Actualizar Vista
+                  </Button>
+                )}
               </div>
             </div>
           )}
