@@ -183,7 +183,7 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData }: 
                 : 'bg-amber-100 text-amber-700 border-amber-200'
               }`}
             >
-              {hasCompletedTest ? 'Licencia entregada' : 'Test pendiente'}
+              {hasCompletedTest ? 'Licencia consumida' : 'Licencia no consumida'}
             </Badge>
           )}
           {!isApproved && <div />}
@@ -357,10 +357,15 @@ export default function Solicitudes() {
   });
 
   // Calculate stats
+  const approvedApplications = baseApplications.filter(sol => sol.estado === 'Aprobada');
+  const consumedApplications = approvedApplications.filter(sol => 
+    platziData.some(p => p.email === sol.email)
+  );
+
   const stats = {
     total: baseApplications.length,
-    approved: baseApplications.filter(sol => sol.estado === 'Aprobada').length,
-    pending: baseApplications.filter(sol => sol.estado === 'Pendiente').length,
+    approved: approvedApplications.length,
+    consumed: consumedApplications.length,
     rejected: baseApplications.filter(sol => sol.estado === 'Rechazada').length,
   };
 
@@ -409,10 +414,10 @@ export default function Solicitudes() {
           variant="success"
         />
         <StatCard
-          title="Pendientes"
-          value={stats.pending}
-          description="En revisión"
-          icon={Clock}
+          title="Consumidas"
+          value={stats.consumed}
+          description="Licencias activadas"
+          icon={TrendingUp}
           variant="warning"
         />
         <StatCard

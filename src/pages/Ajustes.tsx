@@ -262,18 +262,31 @@ export default function Ajustes() {
 
       // Procesar datos según el tipo de hoja
       let processResult;
+
       if (selectedReport === 'sheet1') {
         processResult = await processSheet1Data(jsonData);
+        setUploadProgress(40);
+
+        // Borrar todos los registros existentes de platzi_general antes de cargar nuevos datos
+        console.log('Borrando registros existentes de platzi_general...');
+        const { error: deleteError } = await supabase
+          .from('platzi_general')
+          .delete()
+          .gte('created_at', '1900-01-01'); // Delete all records using a condition that matches all
+
+        if (deleteError) {
+          console.error('Error borrando datos existentes:', deleteError);
+          throw new Error(`Error al borrar datos existentes: ${deleteError.message}`);
+        }
+
+        console.log('Registros de platzi_general eliminados exitosamente');
         setUploadProgress(50);
 
         // Insertar en platzi_general
         if (processResult.processed.length > 0) {
           const { data: insertData, error } = await supabase
             .from('platzi_general')
-            .upsert(processResult.processed, { 
-              onConflict: 'email',
-              ignoreDuplicates: false 
-            });
+            .insert(processResult.processed); // Cambio de upsert a insert ya que borramos todo
 
           if (error) {
             console.error('Error insertando datos:', error);
@@ -283,16 +296,28 @@ export default function Ajustes() {
         }
       } else {
         processResult = await processSheet2Data(jsonData);
+        setUploadProgress(40);
+
+        // Borrar todos los registros existentes de platzi_seguimiento antes de cargar nuevos datos
+        console.log('Borrando registros existentes de platzi_seguimiento...');
+        const { error: deleteError } = await supabase
+          .from('platzi_seguimiento')
+          .delete()
+          .gte('created_at', '1900-01-01'); // Delete all records using a condition that matches all
+
+        if (deleteError) {
+          console.error('Error borrando datos existentes:', deleteError);
+          throw new Error(`Error al borrar datos existentes: ${deleteError.message}`);
+        }
+
+        console.log('Registros de platzi_seguimiento eliminados exitosamente');
         setUploadProgress(50);
 
         // Insertar en platzi_seguimiento
         if (processResult.processed.length > 0) {
           const { data: insertData, error } = await supabase
             .from('platzi_seguimiento')
-            .upsert(processResult.processed, { 
-              onConflict: 'email,id_curso',
-              ignoreDuplicates: false 
-            });
+            .insert(processResult.processed); // Cambio de upsert a insert ya que borramos todo
 
           if (error) {
             console.error('Error insertando datos:', error);
@@ -321,7 +346,7 @@ export default function Ajustes() {
 
       toast({
         title: "Archivo procesado exitosamente",
-        description: `${results.success} registros cargados, ${results.errors} errores encontrados`,
+        description: `Datos anteriores eliminados, ${results.success} registros nuevos cargados, ${results.errors} errores encontrados`,
         variant: results.errors > 0 ? "destructive" : "default"
       });
 
