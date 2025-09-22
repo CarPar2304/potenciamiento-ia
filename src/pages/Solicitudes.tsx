@@ -40,7 +40,7 @@ import {
   Hash,
   TrendingUp,
 } from 'lucide-react';
-import { useSolicitudes, useCamaras } from '@/hooks/useSupabaseData';
+import { useSolicitudes, useCamaras, usePlatziGeneral } from '@/hooks/useSupabaseData';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
 
 const StatCard = ({ title, value, description, icon: Icon, variant }: {
@@ -91,10 +91,11 @@ const StatCard = ({ title, value, description, icon: Icon, variant }: {
   );
 };
 
-const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails }: {
+const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData }: {
   solicitud: any;
   canViewGlobal: boolean;
   onViewDetails: () => void;
+  platziData: any[];
 }) => {
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { color: string; bg: string; border: string }> = {
@@ -125,6 +126,10 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails }: {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  // Verificar si ya hizo el test (existe en platzi_general)
+  const hasCompletedTest = platziData.some(p => p.email === solicitud.email);
+  const isApproved = solicitud.estado === 'Aprobada';
+
   const statusConfig = getStatusConfig(solicitud.estado);
 
   return (
@@ -138,8 +143,8 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails }: {
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-base text-foreground truncate">{solicitud.nombres_apellidos}</h3>
-              <p className="text-sm text-muted-foreground flex items-center gap-1 truncate">
+              <h3 className="font-semibold text-base text-foreground">{solicitud.nombres_apellidos}</h3>
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
                 <Mail className="h-3 w-3 flex-shrink-0" />
                 <span className="truncate">{solicitud.email}</span>
               </p>
@@ -154,43 +159,34 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails }: {
           <div className="grid grid-cols-1 gap-2 text-sm">
             <div className="flex items-center gap-2 text-muted-foreground">
               <Building className="h-4 w-4 text-primary/60" />
-              <span className="truncate">{solicitud.empresas?.nombre || 'N/A'}</span>
+              <span className="truncate">{solicitud.empresas?.nombre || 'Sin empresa'}</span>
             </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Hash className="h-4 w-4 text-primary/60" />
-              <span>{solicitud.empresas?.nit || 'N/A'}</span>
-            </div>
-          </div>
-          
-          {canViewGlobal && (
-            <div className="grid grid-cols-1 gap-2 text-sm">
+            {solicitud.cargo && (
               <div className="flex items-center gap-2 text-muted-foreground">
-                <MapPin className="h-4 w-4 text-primary/60" />
-                <span className="truncate">{solicitud.empresas?.camaras?.nombre || 'N/A'}</span>
+                <Briefcase className="h-4 w-4 text-primary/60" />
+                <span className="truncate">{solicitud.cargo}</span>
               </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <TrendingUp className="h-4 w-4 text-primary/60" />
-                <span>{solicitud.empresas?.sector || 'N/A'}</span>
-              </div>
-            </div>
-          )}
-          
-          <div className="grid grid-cols-2 gap-2 text-sm">
+            )}
             <div className="flex items-center gap-2 text-muted-foreground">
               <Calendar className="h-4 w-4 text-primary/60" />
-              <span className="text-xs">{new Date(solicitud.fecha_solicitud).toLocaleDateString('es-CO')}</span>
-            </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Briefcase className="h-4 w-4 text-primary/60" />
-              <span className="truncate text-xs">{solicitud.cargo || 'N/A'}</span>
+              <span>{new Date(solicitud.fecha_solicitud).toLocaleDateString('es-CO')}</span>
             </div>
           </div>
         </div>
 
         <div className="flex items-center justify-between pt-3 border-t border-muted/20">
-          <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
-            Test: Pendiente
-          </Badge>
+          {isApproved && (
+            <Badge 
+              variant={hasCompletedTest ? "default" : "secondary"} 
+              className={`text-xs ${hasCompletedTest 
+                ? 'bg-green-100 text-green-700 border-green-200' 
+                : 'bg-amber-100 text-amber-700 border-amber-200'
+              }`}
+            >
+              {hasCompletedTest ? 'Licencia entregada' : 'Test pendiente'}
+            </Badge>
+          )}
+          {!isApproved && <div />}
           <Button 
             variant="ghost" 
             size="sm" 
@@ -328,6 +324,7 @@ export default function Solicitudes() {
   const { profile } = useAuth();
   const { solicitudes, loading } = useSolicitudes();
   const { camaras } = useCamaras();
+  const { platziData } = usePlatziGeneral();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [chamberFilter, setChamberFilter] = useState('todas');
@@ -552,6 +549,7 @@ export default function Solicitudes() {
                 solicitud={solicitud}
                 canViewGlobal={canViewGlobal}
                 onViewDetails={() => handleViewDetails(solicitud)}
+                platziData={platziData}
               />
             ))}
           </div>
