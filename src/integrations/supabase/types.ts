@@ -396,7 +396,11 @@ export type Database = {
         | "Palenquero(a) de San Basilio"
         | "Negro(a), mulato(a), afrodescendiente, afrocolombiano(a)"
         | "Ningún grupo étnico"
-      mercado_enum: "Local" | "Nacional" | "Internacional"
+      mercado_enum:
+        | "Local (ciudad/municipio)"
+        | "Regional (departamento / región del país)"
+        | "Nacional"
+        | "Internacional"
       si_no_enum: "Sí" | "No"
       tipo_identificacion_enum:
         | "Cédula de Ciudadanía"
@@ -540,7 +544,12 @@ export const Constants = {
         "Negro(a), mulato(a), afrodescendiente, afrocolombiano(a)",
         "Ningún grupo étnico",
       ],
-      mercado_enum: ["Local", "Nacional", "Internacional"],
+      mercado_enum: [
+        "Local (ciudad/municipio)",
+        "Regional (departamento / región del país)",
+        "Nacional",
+        "Internacional",
+      ],
       si_no_enum: ["Sí", "No"],
       tipo_identificacion_enum: [
         "Cédula de Ciudadanía",
