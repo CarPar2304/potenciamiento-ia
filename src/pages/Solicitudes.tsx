@@ -43,109 +43,159 @@ import {
 import { useSolicitudes, useCamaras } from '@/hooks/useSupabaseData';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
 
-const StatCard = ({ title, value, description, icon: Icon, gradient }: {
+const StatCard = ({ title, value, description, icon: Icon, variant }: {
   title: string;
   value: number;
   description: string;
   icon: any;
-  gradient: string;
-}) => (
-  <Card className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-    <div className={`absolute inset-0 ${gradient} opacity-5 group-hover:opacity-10 transition-opacity`} />
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-      <div className={`p-2 rounded-lg ${gradient} bg-opacity-10`}>
-        <Icon className="h-4 w-4 text-primary" />
-      </div>
-    </CardHeader>
-    <CardContent>
-      <div className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">{value}</div>
-      <p className="text-xs text-muted-foreground mt-1">{description}</p>
-    </CardContent>
-  </Card>
-);
+  variant: 'primary' | 'success' | 'warning' | 'error';
+}) => {
+  const variants = {
+    primary: {
+      bg: 'bg-primary/10',
+      icon: 'text-primary',
+      border: 'border-primary/20'
+    },
+    success: {
+      bg: 'bg-green-500/10',
+      icon: 'text-green-600',
+      border: 'border-green-500/20'
+    },
+    warning: {
+      bg: 'bg-amber-500/10', 
+      icon: 'text-amber-600',
+      border: 'border-amber-500/20'
+    },
+    error: {
+      bg: 'bg-red-500/10',
+      icon: 'text-red-600', 
+      border: 'border-red-500/20'
+    }
+  };
+
+  const style = variants[variant];
+
+  return (
+    <Card className={`relative overflow-hidden group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-l-4 ${style.border}`}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
+        <div className={`p-2 rounded-lg ${style.bg}`}>
+          <Icon className={`h-4 w-4 ${style.icon}`} />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">{value}</div>
+        <p className="text-xs text-muted-foreground mt-1">{description}</p>
+      </CardContent>
+    </Card>
+  );
+};
 
 const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails }: {
   solicitud: any;
   canViewGlobal: boolean;
   onViewDetails: () => void;
 }) => {
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      'Aprobada': 'text-green-700 bg-green-50 border-green-200',
-      'Pendiente': 'text-amber-700 bg-amber-50 border-amber-200',
-      'Rechazada': 'text-red-700 bg-red-50 border-red-200',
+  const getStatusConfig = (status: string) => {
+    const configs: Record<string, { color: string; bg: string; border: string }> = {
+      'Aprobada': { 
+        color: 'text-green-700', 
+        bg: 'bg-green-50', 
+        border: 'border-green-200' 
+      },
+      'Pendiente': { 
+        color: 'text-amber-700', 
+        bg: 'bg-amber-50', 
+        border: 'border-amber-200' 
+      },
+      'Rechazada': { 
+        color: 'text-red-700', 
+        bg: 'bg-red-50', 
+        border: 'border-red-200' 
+      },
     };
-    return colors[status] || 'text-gray-700 bg-gray-50 border-gray-200';
+    return configs[status] || { 
+      color: 'text-gray-700', 
+      bg: 'bg-gray-50', 
+      border: 'border-gray-200' 
+    };
   };
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  const statusConfig = getStatusConfig(solicitud.estado);
+
   return (
-    <Card className="group hover:shadow-md transition-all duration-200 hover:-translate-y-1 cursor-pointer border-l-4 border-l-primary/20 hover:border-l-primary/60">
+    <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-l-4 border-l-primary/20 hover:border-l-primary">
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <Avatar className="h-10 w-10">
+          <div className="flex items-center space-x-3 min-w-0 flex-1">
+            <Avatar className="h-10 w-10 flex-shrink-0">
               <AvatarFallback className="bg-gradient-primary text-white text-sm font-medium">
                 {getInitials(solicitud.nombres_apellidos)}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <h3 className="font-semibold text-base">{solicitud.nombres_apellidos}</h3>
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Mail className="h-3 w-3" />
-                {solicitud.email}
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-base text-foreground truncate">{solicitud.nombres_apellidos}</h3>
+              <p className="text-sm text-muted-foreground flex items-center gap-1 truncate">
+                <Mail className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{solicitud.email}</span>
               </p>
             </div>
           </div>
-          <Badge className={getStatusColor(solicitud.estado)}>
+          <Badge className={`${statusConfig.color} ${statusConfig.bg} ${statusConfig.border} border shrink-0 ml-2`}>
             {solicitud.estado}
           </Badge>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Building className="h-4 w-4" />
-            <span>{solicitud.empresas?.nombre || 'N/A'}</span>
+        <div className="space-y-3 mb-4">
+          <div className="grid grid-cols-1 gap-2 text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Building className="h-4 w-4 text-primary/60" />
+              <span className="truncate">{solicitud.empresas?.nombre || 'N/A'}</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Hash className="h-4 w-4 text-primary/60" />
+              <span>{solicitud.empresas?.nit || 'N/A'}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Hash className="h-4 w-4" />
-            <span>{solicitud.empresas?.nit || 'N/A'}</span>
-          </div>
+          
           {canViewGlobal && (
-            <>
+            <div className="grid grid-cols-1 gap-2 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                <span>{solicitud.empresas?.camaras?.nombre || 'N/A'}</span>
+                <MapPin className="h-4 w-4 text-primary/60" />
+                <span className="truncate">{solicitud.empresas?.camaras?.nombre || 'N/A'}</span>
               </div>
               <div className="flex items-center gap-2 text-muted-foreground">
-                <TrendingUp className="h-4 w-4" />
+                <TrendingUp className="h-4 w-4 text-primary/60" />
                 <span>{solicitud.empresas?.sector || 'N/A'}</span>
               </div>
-            </>
+            </div>
           )}
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Calendar className="h-4 w-4" />
-            <span>{new Date(solicitud.fecha_solicitud).toLocaleDateString('es-CO')}</span>
-          </div>
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Briefcase className="h-4 w-4" />
-            <span>{solicitud.cargo || 'N/A'}</span>
+          
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Calendar className="h-4 w-4 text-primary/60" />
+              <span className="text-xs">{new Date(solicitud.fecha_solicitud).toLocaleDateString('es-CO')}</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Briefcase className="h-4 w-4 text-primary/60" />
+              <span className="truncate text-xs">{solicitud.cargo || 'N/A'}</span>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center justify-between pt-3 border-t border-muted/20">
-          <Badge variant="secondary" className="text-xs">
+          <Badge variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
             Test: Pendiente
           </Badge>
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={onViewDetails}
-            className="text-primary hover:text-primary/80 hover:bg-primary/5"
+            className="text-primary hover:text-primary/80 hover:bg-primary/10 transition-colors"
           >
             <Eye className="h-4 w-4 mr-1" />
             Ver detalles
@@ -352,28 +402,28 @@ export default function Solicitudes() {
           value={stats.total}
           description="Solicitudes registradas"
           icon={Users}
-          gradient="bg-gradient-to-br from-blue-500 to-blue-600"
+          variant="primary"
         />
         <StatCard
           title="Aprobadas"
           value={stats.approved}
           description="Licencias otorgadas"
           icon={CheckCircle}
-          gradient="bg-gradient-to-br from-green-500 to-green-600"
+          variant="success"
         />
         <StatCard
           title="Pendientes"
           value={stats.pending}
           description="En revisión"
           icon={Clock}
-          gradient="bg-gradient-to-br from-amber-500 to-amber-600"
+          variant="warning"
         />
         <StatCard
           title="Rechazadas"
           value={stats.rejected}
           description="No cumplieron requisitos"
           icon={XCircle}
-          gradient="bg-gradient-to-br from-red-500 to-red-600"
+          variant="error"
         />
       </div>
 
@@ -495,7 +545,7 @@ export default function Solicitudes() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
             {filteredApplications.slice(0, 50).map((solicitud) => (
               <SolicitudCard
                 key={solicitud.id}
