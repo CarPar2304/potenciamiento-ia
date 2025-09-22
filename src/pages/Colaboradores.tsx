@@ -210,17 +210,17 @@ const ColaboradorCard = ({ colaborador, onViewDetails, platziData }: {
         </div>
 
         {userPlatziData && (
-          <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+          <div className="bg-muted/30 rounded-lg p-3 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">Progreso en Platzi</span>
               <Badge variant="outline" className="text-xs">
                 {userPlatziData.ruta || 'Sin ruta'}
               </Badge>
             </div>
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-xs text-muted-foreground">
                 <span>Progreso: {Math.round((userPlatziData.progreso_ruta || 0) * 100)}%</span>
-                <span>Cursos: {userPlatziData.cursos_totales_certificados || 0}</span>
+                <span>Cursos certificados: {userPlatziData.cursos_totales_certificados || 0}</span>
               </div>
               <div className="w-full bg-muted rounded-full h-2">
                 <div 
