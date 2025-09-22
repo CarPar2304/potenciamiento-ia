@@ -163,48 +163,49 @@ const ColaboradorCard = ({ colaborador, onViewDetails, platziData }: {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Hash className="h-3 w-3" />
-              <span className="font-medium">Documento:</span>
-              <span>{colaborador.numero_documento}</span>
-            </div>
-            {colaborador.celular && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Phone className="h-3 w-3" />
-                <span className="font-medium">Celular:</span>
-                <span>{colaborador.celular}</span>
-              </div>
-            )}
-            {colaborador.cargo && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Briefcase className="h-3 w-3" />
-                <span className="font-medium">Cargo:</span>
-                <span className="line-clamp-1">{colaborador.cargo}</span>
-              </div>
-            )}
+        <div className="space-y-3 text-sm">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Hash className="h-3 w-3 flex-shrink-0" />
+            <span className="font-medium">Documento:</span>
+            <span className="truncate">{colaborador.numero_documento}</span>
           </div>
-          <div className="space-y-2">
-            {colaborador.camaras && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Building2 className="h-3 w-3" />
-                <span className="font-medium">Cámara:</span>
-                <span className="line-clamp-1">{colaborador.camaras.nombre}</span>
-              </div>
-            )}
-            {colaborador.nivel_educativo && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <GraduationCap className="h-3 w-3" />
-                <span className="font-medium">Nivel educativo:</span>
-                <span className="line-clamp-1">{colaborador.nivel_educativo}</span>
-              </div>
-            )}
+          
+          {colaborador.celular && (
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar className="h-3 w-3" />
-              <span className="font-medium">Fecha:</span>
-              <span>{new Date(colaborador.fecha_solicitud).toLocaleDateString('es-CO')}</span>
+              <Phone className="h-3 w-3 flex-shrink-0" />
+              <span className="font-medium">Celular:</span>
+              <span className="truncate">{colaborador.celular}</span>
             </div>
+          )}
+          
+          {colaborador.cargo && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Briefcase className="h-3 w-3 flex-shrink-0" />
+              <span className="font-medium">Cargo:</span>
+              <span className="truncate">{colaborador.cargo}</span>
+            </div>
+          )}
+          
+          {colaborador.camaras && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Building2 className="h-3 w-3 flex-shrink-0" />
+              <span className="font-medium">Cámara:</span>
+              <span className="truncate">{colaborador.camaras.nombre}</span>
+            </div>
+          )}
+          
+          {colaborador.nivel_educativo && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <GraduationCap className="h-3 w-3 flex-shrink-0" />
+              <span className="font-medium">Nivel educativo:</span>
+              <span className="truncate">{colaborador.nivel_educativo}</span>
+            </div>
+          )}
+          
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Calendar className="h-3 w-3 flex-shrink-0" />
+            <span className="font-medium">Fecha:</span>
+            <span>{new Date(colaborador.fecha_solicitud).toLocaleDateString('es-CO')}</span>
           </div>
         </div>
 
