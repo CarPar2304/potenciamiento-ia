@@ -69,8 +69,8 @@ export default function Empresas() {
     const matchesChamber = chamberFilter === 'todas' || empresa.camaras?.nombre === chamberFilter;
     const matchesSector = sectorFilter === 'todos' || empresa.sector === sectorFilter;
     const matchesAI = aiFilter === 'todos' || 
-      (aiFilter === 'con_ia' && empresa.decision_adoptar_ia) ||
-      (aiFilter === 'sin_ia' && !empresa.decision_adoptar_ia);
+      (aiFilter === 'con_ia' && empresa.decision_adoptar_ia === 'Sí') ||
+      (aiFilter === 'sin_ia' && empresa.decision_adoptar_ia === 'No');
 
     return matchesSearch && matchesChamber && matchesSector && matchesAI;
   });
@@ -78,7 +78,7 @@ export default function Empresas() {
   // Calculate stats
   const stats = {
     total: baseCompanies.length,
-    withAI: baseCompanies.filter(empresa => empresa.decision_adoptar_ia).length,
+    withAI: baseCompanies.filter(empresa => empresa.decision_adoptar_ia === 'Sí').length,
     totalInvestment: baseCompanies.reduce((sum, empresa) => sum + (empresa.monto_inversion_2024 || 0), 0),
     averageEmployees: Math.round(
       baseCompanies.reduce((sum, empresa) => sum + (empresa.num_colaboradores || 0), 0) / Math.max(1, baseCompanies.length)
@@ -243,7 +243,7 @@ export default function Empresas() {
                   <CardTitle className="text-lg line-clamp-1">{empresa.nombre}</CardTitle>
                   <CardDescription>{empresa.nit}</CardDescription>
                 </div>
-                {empresa.decision_adoptar_ia && (
+                {empresa.decision_adoptar_ia === 'Sí' && (
                   <Badge className="bg-gradient-primary text-white border-none">
                     <Zap className="h-3 w-3 mr-1" />
                     IA

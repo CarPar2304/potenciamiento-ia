@@ -21,10 +21,10 @@ export interface Solicitud {
     sector?: string;
     mercado?: string;
     num_colaboradores?: number;
-    ventas_2024?: number;
-    decision_adoptar_ia?: boolean;
-    invirtio_ia_2024?: boolean;
-    monto_inversion_2024?: number;
+  ventas_2024?: number;
+  decision_adoptar_ia?: 'Sí' | 'No';
+  invirtio_ia_2024?: 'Sí' | 'No';
+  monto_inversion_2024?: number;
     camara_id?: string;
     camaras?: {
       nombre: string;
@@ -43,13 +43,13 @@ export interface Empresa {
   mujeres_colaboradoras?: number;
   ventas_2024?: number;
   utilidades_2024?: number;
-  decision_adoptar_ia?: boolean;
-  invirtio_ia_2024?: boolean;
+  decision_adoptar_ia?: 'Sí' | 'No';
+  invirtio_ia_2024?: 'Sí' | 'No';
   monto_inversion_2024?: number;
   areas_implementacion_ia?: string;
   razon_no_adopcion?: string;
   colaboradores_capacitados_ia?: number;
-  plan_capacitacion_ia?: boolean;
+  plan_capacitacion_ia?: 'Sí' | 'No';
   camara_id?: string;
   camaras?: {
     nombre: string;

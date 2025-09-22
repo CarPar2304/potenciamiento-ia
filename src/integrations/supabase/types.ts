@@ -44,13 +44,13 @@ export type Database = {
       empresas: {
         Row: {
           areas_implementacion_ia: string | null
-          asigno_recursos_ia: boolean | null
+          asigno_recursos_ia: Database["public"]["Enums"]["si_no_enum"] | null
           camara_id: string | null
           colaboradores_capacitados_ia: number | null
           created_at: string
-          decision_adoptar_ia: boolean | null
+          decision_adoptar_ia: Database["public"]["Enums"]["si_no_enum"] | null
           id: string
-          invirtio_ia_2024: boolean | null
+          invirtio_ia_2024: Database["public"]["Enums"]["si_no_enum"] | null
           mercado: Database["public"]["Enums"]["mercado_enum"] | null
           monto_inversion_2024: number | null
           monto_invertir_12m: number | null
@@ -58,7 +58,7 @@ export type Database = {
           nit: string
           nombre: string
           num_colaboradores: number | null
-          plan_capacitacion_ia: boolean | null
+          plan_capacitacion_ia: Database["public"]["Enums"]["si_no_enum"] | null
           probabilidad_adopcion_12m: number | null
           probabilidad_inversion_12m: number | null
           productos_servicios: string | null
@@ -71,13 +71,13 @@ export type Database = {
         }
         Insert: {
           areas_implementacion_ia?: string | null
-          asigno_recursos_ia?: boolean | null
+          asigno_recursos_ia?: Database["public"]["Enums"]["si_no_enum"] | null
           camara_id?: string | null
           colaboradores_capacitados_ia?: number | null
           created_at?: string
-          decision_adoptar_ia?: boolean | null
+          decision_adoptar_ia?: Database["public"]["Enums"]["si_no_enum"] | null
           id?: string
-          invirtio_ia_2024?: boolean | null
+          invirtio_ia_2024?: Database["public"]["Enums"]["si_no_enum"] | null
           mercado?: Database["public"]["Enums"]["mercado_enum"] | null
           monto_inversion_2024?: number | null
           monto_invertir_12m?: number | null
@@ -85,7 +85,9 @@ export type Database = {
           nit: string
           nombre: string
           num_colaboradores?: number | null
-          plan_capacitacion_ia?: boolean | null
+          plan_capacitacion_ia?:
+            | Database["public"]["Enums"]["si_no_enum"]
+            | null
           probabilidad_adopcion_12m?: number | null
           probabilidad_inversion_12m?: number | null
           productos_servicios?: string | null
@@ -98,13 +100,13 @@ export type Database = {
         }
         Update: {
           areas_implementacion_ia?: string | null
-          asigno_recursos_ia?: boolean | null
+          asigno_recursos_ia?: Database["public"]["Enums"]["si_no_enum"] | null
           camara_id?: string | null
           colaboradores_capacitados_ia?: number | null
           created_at?: string
-          decision_adoptar_ia?: boolean | null
+          decision_adoptar_ia?: Database["public"]["Enums"]["si_no_enum"] | null
           id?: string
-          invirtio_ia_2024?: boolean | null
+          invirtio_ia_2024?: Database["public"]["Enums"]["si_no_enum"] | null
           mercado?: Database["public"]["Enums"]["mercado_enum"] | null
           monto_inversion_2024?: number | null
           monto_invertir_12m?: number | null
@@ -112,7 +114,9 @@ export type Database = {
           nit?: string
           nombre?: string
           num_colaboradores?: number | null
-          plan_capacitacion_ia?: boolean | null
+          plan_capacitacion_ia?:
+            | Database["public"]["Enums"]["si_no_enum"]
+            | null
           probabilidad_adopcion_12m?: number | null
           probabilidad_inversion_12m?: number | null
           productos_servicios?: string | null
@@ -393,6 +397,7 @@ export type Database = {
         | "Negro(a), mulato(a), afrodescendiente, afrocolombiano(a)"
         | "Ningún grupo étnico"
       mercado_enum: "Local" | "Nacional" | "Internacional"
+      si_no_enum: "Sí" | "No"
       tipo_identificacion_enum:
         | "Cédula de Ciudadanía"
         | "Cédula de Extranjería"
@@ -536,6 +541,7 @@ export const Constants = {
         "Ningún grupo étnico",
       ],
       mercado_enum: ["Local", "Nacional", "Internacional"],
+      si_no_enum: ["Sí", "No"],
       tipo_identificacion_enum: [
         "Cédula de Ciudadanía",
         "Cédula de Extranjería",
