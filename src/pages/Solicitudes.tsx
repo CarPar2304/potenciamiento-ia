@@ -39,8 +39,11 @@ import {
   GraduationCap,
   Hash,
   TrendingUp,
+  BookOpen,
+  Award,
+  BarChart3,
 } from 'lucide-react';
-import { useSolicitudes, useCamaras, usePlatziGeneral } from '@/hooks/useSupabaseData';
+import { useSolicitudes, useCamaras, usePlatziGeneral, usePlatziSeguimiento } from '@/hooks/useSupabaseData';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
 
 const StatCard = ({ title, value, description, icon: Icon, variant }: {
@@ -202,16 +205,20 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData }: 
   );
 };
 
-const SolicitudDetailDialog = ({ solicitud, isOpen, onClose }: {
+const SolicitudDetailDialog = ({ solicitud, isOpen, onClose, platziSeguimiento }: {
   solicitud: any;
   isOpen: boolean;
   onClose: () => void;
+  platziSeguimiento: any[];
 }) => {
   if (!solicitud) return null;
 
+  // Filtrar datos de seguimiento por email de la solicitud
+  const userCourses = platziSeguimiento.filter(curso => curso.email === solicitud.email);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
@@ -314,6 +321,82 @@ const SolicitudDetailDialog = ({ solicitud, isOpen, onClose }: {
               </div>
             </div>
           </div>
+
+          {/* Información de Platzi Seguimiento */}
+          {userCourses.length > 0 && (
+            <div className="bg-muted/20 rounded-lg p-4">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <BookOpen className="h-4 w-4" />
+                Progreso de Cursos en Platzi ({userCourses.length} cursos)
+              </h3>
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {userCourses.map((curso, index) => (
+                  <div key={index} className="border rounded-lg p-3 bg-background/50">
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-sm line-clamp-2">{curso.curso || 'Curso sin nombre'}</h4>
+                        <p className="text-xs text-muted-foreground">{curso.ruta || 'Sin ruta'}</p>
+                      </div>
+                      <div className="flex items-center gap-2 ml-2">
+                        {curso.estado_curso === 'Certificado' && (
+                          <Award className="h-4 w-4 text-green-600" />
+                        )}
+                        <Badge 
+                          variant={curso.estado_curso === 'Certificado' ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {curso.estado_curso || 'En progreso'}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <label className="font-medium text-muted-foreground">Progreso</label>
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex-1 bg-muted rounded-full h-2">
+                            <div 
+                              className="bg-primary h-2 rounded-full transition-all"
+                              style={{ width: `${curso.porcentaje_avance || 0}%` }}
+                            />
+                          </div>
+                          <span className="font-medium">{curso.porcentaje_avance || 0}%</span>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="font-medium text-muted-foreground">Tiempo invertido</label>
+                        <p className="mt-1">
+                          {curso.tiempo_invertido 
+                            ? `${Math.round(curso.tiempo_invertido / 3600)} horas`
+                            : 'N/A'
+                          }
+                        </p>
+                      </div>
+                      {curso.fecha_certificacion && (
+                        <div className="col-span-2">
+                          <label className="font-medium text-muted-foreground">Fecha de certificación</label>
+                          <p className="mt-1">{new Date(curso.fecha_certificacion).toLocaleDateString('es-CO')}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Mensaje cuando no hay cursos */}
+          {userCourses.length === 0 && solicitud.estado === 'Aprobada' && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-amber-700">
+                <BarChart3 className="h-4 w-4" />
+                <span className="font-medium text-sm">Sin actividad en Platzi</span>
+              </div>
+              <p className="text-xs text-amber-600 mt-1">
+                Esta persona tiene la licencia aprobada pero aún no ha comenzado cursos o no aparece en los reportes.
+              </p>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -325,6 +408,7 @@ export default function Solicitudes() {
   const { solicitudes, loading } = useSolicitudes();
   const { camaras } = useCamaras();
   const { platziData } = usePlatziGeneral();
+  const { seguimientoData } = usePlatziSeguimiento();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [chamberFilter, setChamberFilter] = useState('todas');
@@ -566,6 +650,7 @@ export default function Solicitudes() {
         solicitud={selectedSolicitud}
         isOpen={showDetails}
         onClose={() => setShowDetails(false)}
+        platziSeguimiento={seguimientoData}
       />
     </div>
   );
