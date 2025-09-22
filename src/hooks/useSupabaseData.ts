@@ -14,6 +14,8 @@ export interface Solicitud {
   fecha_solicitud: string;
   estado: 'Pendiente' | 'Aprobada' | 'Rechazada';
   nit_empresa?: string;
+  es_colaborador?: boolean;
+  camara_colaborador_id?: string;
   empresas?: {
     id: string;
     nombre: string;
@@ -106,10 +108,11 @@ export function useSolicitudes() {
       try {
         setLoading(true);
         
-        // Primero obtener solicitudes
+        // Primero obtener solicitudes empresariales (no colaboradores)
         const { data: solicitudesData, error: solicitudesError } = await supabase
           .from('solicitudes')
           .select('*')
+          .eq('es_colaborador', false)
           .order('fecha_solicitud', { ascending: false });
 
         if (solicitudesError) throw solicitudesError;
@@ -283,6 +286,51 @@ export function useCamaras() {
   }, []);
 
   return { camaras, loading, error };
+}
+
+// Hook para colaboradores
+export function useColaboradores() {
+  const [colaboradores, setColaboradores] = useState<Solicitud[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { profile } = useAuth();
+
+  useEffect(() => {
+    const fetchColaboradores = async () => {
+      try {
+        setLoading(true);
+        
+        // Obtener colaboradores con información de su cámara
+        const { data: colaboradoresData, error: colaboradoresError } = await supabase
+          .from('solicitudes')
+          .select(`
+            *,
+            camaras!solicitudes_camara_colaborador_id_fkey (
+              id,
+              nombre,
+              nit
+            )
+          `)
+          .eq('es_colaborador', true)
+          .order('fecha_solicitud', { ascending: false });
+
+        if (colaboradoresError) throw colaboradoresError;
+
+        setColaboradores(colaboradoresData || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error cargando colaboradores');
+        console.error('Error fetching colaboradores:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (profile) {
+      fetchColaboradores();
+    }
+  }, [profile]);
+
+  return { colaboradores, loading, error, refetch: () => setColaboradores([]) };
 }
 
 // Stats hook

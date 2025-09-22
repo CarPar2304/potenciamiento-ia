@@ -298,10 +298,12 @@ export type Database = {
       }
       solicitudes: {
         Row: {
+          camara_colaborador_id: string | null
           cargo: string | null
           celular: string | null
           created_at: string
           email: string
+          es_colaborador: boolean
           estado: Database["public"]["Enums"]["estado_solicitud_enum"] | null
           fecha_nacimiento: string | null
           fecha_solicitud: string
@@ -318,10 +320,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          camara_colaborador_id?: string | null
           cargo?: string | null
           celular?: string | null
           created_at?: string
           email: string
+          es_colaborador?: boolean
           estado?: Database["public"]["Enums"]["estado_solicitud_enum"] | null
           fecha_nacimiento?: string | null
           fecha_solicitud?: string
@@ -338,10 +342,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          camara_colaborador_id?: string | null
           cargo?: string | null
           celular?: string | null
           created_at?: string
           email?: string
+          es_colaborador?: boolean
           estado?: Database["public"]["Enums"]["estado_solicitud_enum"] | null
           fecha_nacimiento?: string | null
           fecha_solicitud?: string
@@ -357,7 +363,15 @@ export type Database = {
             | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "solicitudes_camara_colaborador_id_fkey"
+            columns: ["camara_colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "camaras"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
