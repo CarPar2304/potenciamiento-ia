@@ -122,7 +122,6 @@ export function useDashboardData(filters: any = {}) {
       probabilityData,
       totalInvestment: empresas.reduce((sum, emp) => sum + (Number(emp.monto_inversion_2024) || 0), 0),
       avgProbability: 3.2 // Mock average probability
-    }
     };
   }, [empresas, camaras, loading]);
 
