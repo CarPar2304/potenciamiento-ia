@@ -127,7 +127,7 @@ const ColaboradorCard = ({ colaborador, onViewDetails, platziData }: {
   return (
     <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-background to-background/50 backdrop-blur-sm border-l-4 border-l-primary/30">
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div className="flex items-center space-x-3 flex-1">
             <Avatar className="h-12 w-12 ring-2 ring-primary/20">
               <AvatarFallback className="bg-gradient-primary text-primary-foreground font-semibold">
@@ -138,18 +138,18 @@ const ColaboradorCard = ({ colaborador, onViewDetails, platziData }: {
               <CardTitle className="text-lg font-semibold line-clamp-1">
                 {colaborador.nombres_apellidos}
               </CardTitle>
-              <CardDescription className="flex items-center gap-2 text-sm">
-                <Mail className="h-3 w-3" />
-                {colaborador.email}
+              <CardDescription className="flex items-center gap-2 text-sm truncate">
+                <Mail className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{colaborador.email}</span>
               </CardDescription>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <Badge className={`${statusConfig.bg} ${statusConfig.color} ${statusConfig.border} border`}>
+          <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2 w-full sm:w-auto">
+            <Badge className={`${statusConfig.bg} ${statusConfig.color} ${statusConfig.border} border whitespace-nowrap`}>
               {colaborador.estado}
             </Badge>
             {hasConsumedLicense ? (
-              <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
+              <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 whitespace-nowrap">
                 <Award className="h-3 w-3 mr-1" />
                 Licencia consumida
               </Badge>
