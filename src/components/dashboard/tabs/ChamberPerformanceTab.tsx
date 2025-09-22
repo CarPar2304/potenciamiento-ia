@@ -108,17 +108,17 @@ export function ChamberPerformanceTab({ data }: ChamberPerformanceTabProps) {
           value={Math.round(data.chamberStats.reduce((sum, c) => sum + c.avgProgress, 0) / data.chamberStats.length)}
           format="percentage"
           icon={TrendingUp}
-          trend="up"
-          trendValue="+7.2%"
-          subtitle="Across all chambers"
+          trend="neutral"
+          trendValue=""
+          subtitle="Promedio entre todas las cámaras"
         />
         <ExecutiveKPI
           title="Utilización Promedio"
           value={Math.round(data.chamberStats.reduce((sum, c) => sum + c.licenseUtilization, 0) / data.chamberStats.length)}
           format="percentage"
           icon={Target}
-          trend="up"
-          trendValue="+12%"
+          trend="neutral"
+          trendValue=""
           subtitle="De licencias disponibles"
         />
         <ExecutiveKPI
@@ -126,8 +126,8 @@ export function ChamberPerformanceTab({ data }: ChamberPerformanceTabProps) {
           value={data.chamberStats.reduce((sum, c) => sum + c.totalInvestment, 0)}
           format="currency"
           icon={DollarSign}
-          trend="up"
-          trendValue="+25M"
+          trend="neutral"
+          trendValue=""
           subtitle="Movilizada por cámaras"
         />
       </div>

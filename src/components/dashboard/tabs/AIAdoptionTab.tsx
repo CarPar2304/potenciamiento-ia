@@ -42,16 +42,9 @@ export function AIAdoptionTab({ data, kpis }: AIAdoptionTabProps) {
   const adoptionFunnel = [
     { stage: 'Empresas Registradas', count: kpis.companiesImpacted, percentage: 100 },
     { stage: 'Con Decisión de Adoptar', count: Math.round(kpis.companiesImpacted * (kpis.aiAdoptionRate / 100)), percentage: kpis.aiAdoptionRate },
-    { stage: 'Con Inversión 2024', count: data.investmentData.length, percentage: (data.investmentData.length / kpis.companiesImpacted) * 100 },
-    { stage: 'Alta Probabilidad Futura', count: data.probabilityData.filter(p => p.level >= 4).reduce((sum, p) => sum + p.value, 0), percentage: ((data.probabilityData.filter(p => p.level >= 4).reduce((sum, p) => sum + p.value, 0)) / kpis.companiesImpacted) * 100 }
+    { stage: 'Con Inversión 2024', count: data.investmentData.length, percentage: (data.investmentData.length / kpis.companiesImpacted) * 100 }
   ];
 
-  const barrierAnalysis = [
-    { barrier: 'Falta de conocimiento', percentage: 35, description: 'Principal barrera identificada' },
-    { barrier: 'Costos elevados', percentage: 28, description: 'Segunda preocupación más común' },
-    { barrier: 'Falta de personal capacitado', percentage: 22, description: 'Necesidad de formación' },
-    { barrier: 'Incertidumbre tecnológica', percentage: 15, description: 'Dudas sobre implementación' }
-  ];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -62,8 +55,8 @@ export function AIAdoptionTab({ data, kpis }: AIAdoptionTabProps) {
           value={kpis.aiAdoptionRate}
           format="percentage"
           icon={Brain}
-          trend="up"
-          trendValue="+5.2%"
+          trend="neutral"
+          trendValue=""
           subtitle="Del total de empresas"
         />
         <ExecutiveKPI
@@ -71,8 +64,8 @@ export function AIAdoptionTab({ data, kpis }: AIAdoptionTabProps) {
           value={kpis.totalInvestment2024}
           format="currency"
           icon={DollarSign}
-          trend="up"
-          trendValue="+12.8%"
+          trend="neutral"
+          trendValue=""
           subtitle="Millones invertidos en IA"
         />
         <ExecutiveKPI
@@ -80,8 +73,8 @@ export function AIAdoptionTab({ data, kpis }: AIAdoptionTabProps) {
           value={kpis.projectedInvestment}
           format="currency"
           icon={TrendingUp}
-          trend="up"
-          trendValue="+45%"
+          trend="neutral"
+          trendValue=""
           subtitle="Inversión proyectada"
         />
         <ExecutiveKPI
@@ -89,8 +82,8 @@ export function AIAdoptionTab({ data, kpis }: AIAdoptionTabProps) {
           value={kpis.companiesImpacted}
           format="number"
           icon={Building2}
-          trend="up"
-          trendValue="+18"
+          trend="neutral"
+          trendValue=""
           subtitle="Empresas en el programa"
         />
       </div>
@@ -177,35 +170,31 @@ export function AIAdoptionTab({ data, kpis }: AIAdoptionTabProps) {
           </CardContent>
         </Card>
 
-        {/* Barriers Analysis */}
+        {/* Investment Summary */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-warning" />
-              Barreras de Adopción
+              <DollarSign className="h-5 w-5 text-success" />
+              Resumen de Inversión
             </CardTitle>
             <CardDescription>
-              Principales obstáculos identificados para la adopción de IA
+              Inversión total movilizada en IA
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {barrierAnalysis.map((barrier, index) => (
-              <div key={barrier.barrier} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">{barrier.barrier}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {barrier.percentage}%
-                  </span>
-                </div>
-                <Progress 
-                  value={barrier.percentage} 
-                  className="h-2"
-                />
+          <CardContent>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-primary mb-2">
+                ${(data.totalInvestment / 1000000).toFixed(1)}M
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Inversión total 2024
+              </p>
+              <div className="mt-4">
                 <p className="text-xs text-muted-foreground">
-                  {barrier.description}
+                  {data.investmentData.length} empresas han invertido en IA
                 </p>
               </div>
-            ))}
+            </div>
           </CardContent>
         </Card>
       </div>

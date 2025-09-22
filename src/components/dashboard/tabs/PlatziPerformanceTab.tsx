@@ -53,37 +53,26 @@ export function PlatziPerformanceTab({ data, kpis }: PlatziPerformanceTabProps) 
     .sort((a, b) => b.progress - a.progress)
     .slice(0, 5);
 
+  const currentProgress = data.avgProgressOverall;
   const graduationProjections = [
-    { month: '3 meses', users: Math.floor(data.totalUsers * 0.15), percentage: 15 },
-    { month: '6 meses', users: Math.floor(data.totalUsers * 0.35), percentage: 35 },
-    { month: '9 meses', users: Math.floor(data.totalUsers * 0.65), percentage: 65 },
-    { month: '12 meses', users: Math.floor(data.totalUsers * 0.85), percentage: 85 }
+    { month: 'Progreso Actual', users: data.activeUsers, percentage: currentProgress }
   ];
 
   const engagementInsights = [
     {
-      metric: 'Retención semanal',
-      value: '78%',
-      trend: 'up',
-      description: 'Usuarios activos por semana'
+      metric: 'Usuarios Activos',
+      value: data.activeUsers.toString(),
+      description: 'Con licencias activas actualmente'
     },
     {
-      metric: 'Tiempo promedio por sesión',
-      value: '45min',
-      trend: 'up',
-      description: 'Duración promedio de estudio'
+      metric: 'Progreso Promedio',
+      value: `${Math.round(data.avgProgressOverall)}%`,
+      description: 'En rutas de aprendizaje'
     },
     {
-      metric: 'Tasa de certificación',
-      value: '62%',
-      trend: 'up',
+      metric: 'Total Certificados',
+      value: kpis.totalCertificates.toString(),
       description: 'Cursos completados exitosamente'
-    },
-    {
-      metric: 'Abandono temprano',
-      value: '12%',
-      trend: 'down',
-      description: 'Usuarios que abandonan en la primera semana'
     }
   ];
 
@@ -96,8 +85,8 @@ export function PlatziPerformanceTab({ data, kpis }: PlatziPerformanceTabProps) 
           value={kpis.avgProgress}
           format="percentage"
           icon={TrendingUp}
-          trend="up"
-          trendValue="+8.5%"
+          trend="neutral"
+          trendValue=""
           subtitle="En rutas de aprendizaje"
         />
         <ExecutiveKPI
@@ -105,8 +94,8 @@ export function PlatziPerformanceTab({ data, kpis }: PlatziPerformanceTabProps) 
           value={kpis.totalCertificates}
           format="number"
           icon={Award}
-          trend="up"
-          trendValue="+127"
+          trend="neutral"
+          trendValue=""
           subtitle="Cursos completados"
         />
         <ExecutiveKPI
@@ -114,8 +103,8 @@ export function PlatziPerformanceTab({ data, kpis }: PlatziPerformanceTabProps) 
           value={Math.round(kpis.totalHoursStudied)}
           format="number"
           icon={Clock}
-          trend="up"
-          trendValue="+456h"
+          trend="neutral"
+          trendValue=""
           subtitle="Tiempo total dedicado"
         />
         <ExecutiveKPI
@@ -123,8 +112,8 @@ export function PlatziPerformanceTab({ data, kpis }: PlatziPerformanceTabProps) 
           value={kpis.activeUsers}
           format="number"
           icon={Users}
-          trend="up"
-          trendValue="+23"
+          trend="neutral"
+          trendValue=""
           subtitle="Con licencias activas"
         />
       </div>
@@ -220,15 +209,15 @@ export function PlatziPerformanceTab({ data, kpis }: PlatziPerformanceTabProps) 
           </CardContent>
         </Card>
 
-        {/* Graduation Projections */}
+        {/* Current Progress */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <GraduationCap className="h-5 w-5 text-primary" />
-              Proyección de Graduación
+              Estado Actual del Programa
             </CardTitle>
             <CardDescription>
-              Estimación de completar rutas por período
+              Progreso actual de los participantes
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -276,16 +265,6 @@ export function PlatziPerformanceTab({ data, kpis }: PlatziPerformanceTabProps) 
                   <div className="text-lg font-bold text-primary">
                     {insight.value}
                   </div>
-                  <Badge 
-                    variant="outline" 
-                    className={
-                      insight.trend === 'up' 
-                        ? 'text-success border-success/20 bg-success/10' 
-                        : 'text-destructive border-destructive/20 bg-destructive/10'
-                    }
-                  >
-                    {insight.trend === 'up' ? '↗' : '↘'}
-                  </Badge>
                 </div>
               </div>
             ))}

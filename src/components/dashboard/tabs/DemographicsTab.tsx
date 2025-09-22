@@ -96,9 +96,9 @@ export function DemographicsTab({ data, totalParticipants }: DemographicsTabProp
           value={data.womenParticipationRate}
           format="percentage"
           icon={Heart}
-          trend="up"
-          trendValue="+3.2%"
-          subtitle={`${data.totalWomen} mujeres participantes`}
+          trend="neutral"
+          trendValue=""
+          subtitle="Información no disponible"
         />
         <ExecutiveKPI
           title="Tamaño Promedio Empresa"
@@ -114,8 +114,8 @@ export function DemographicsTab({ data, totalParticipants }: DemographicsTabProp
           value={regionalImpact.length}
           format="number"
           icon={Globe}
-          trend="up"
-          trendValue="+2"
+          trend="neutral"
+          trendValue=""
           subtitle="Regiones representadas"
         />
         <ExecutiveKPI
@@ -123,22 +123,30 @@ export function DemographicsTab({ data, totalParticipants }: DemographicsTabProp
           value={Math.round(diversityMetrics[3].current)}
           format="percentage"
           icon={GraduationCap}
-          trend="up"
-          trendValue="+5.8%"
+          trend="neutral"
+          trendValue=""
           subtitle="Educación superior"
         />
       </div>
 
       {/* Main Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <InteractiveChart
-          title="Distribución por Género"
-          description="Participación de hombres y mujeres en el programa"
-          data={data.genderChart}
-          type="pie"
-          config={chartConfig}
-          onDataPointClick={(data) => console.log('Gender selected:', data)}
-        />
+        <Card>
+          <CardHeader>
+            <CardTitle>Total de Participantes</CardTitle>
+            <CardDescription>Número total de participantes en el programa</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-primary mb-2">
+                {totalParticipants}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Participantes activos en el programa
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         <InteractiveChart
           title="Segmentación por Tamaño de Empresa"
