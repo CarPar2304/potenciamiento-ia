@@ -150,8 +150,9 @@ export default function Ajustes() {
             new Date(row['Fecha en que activó su primera licencia'] || row['fecha_primera_activacion']) : null,
         };
 
+        // Validar campos esenciales (misma validación que sheet2)
         if (!processedRow.nombre || !processedRow.email) {
-          errors.push(`Fila ${i + 2}: Nombre o email faltante - Nombre: "${processedRow.nombre}", Email: "${processedRow.email}"`);
+          errors.push(`Fila ${i + 2}: Datos esenciales faltantes - Nombre: "${processedRow.nombre}", Email: "${processedRow.email}"`);
           continue;
         }
 

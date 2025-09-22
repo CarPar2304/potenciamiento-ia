@@ -210,7 +210,7 @@ export type Database = {
           created_at: string
           curso: string | null
           email: string
-          estado_curso: Database["public"]["Enums"]["estado_curso_enum"] | null
+          estado_curso: string | null
           fecha_certificacion: string | null
           id_curso: string
           nombre: string
@@ -222,7 +222,7 @@ export type Database = {
           created_at?: string
           curso?: string | null
           email: string
-          estado_curso?: Database["public"]["Enums"]["estado_curso_enum"] | null
+          estado_curso?: string | null
           fecha_certificacion?: string | null
           id_curso: string
           nombre: string
@@ -234,7 +234,7 @@ export type Database = {
           created_at?: string
           curso?: string | null
           email?: string
-          estado_curso?: Database["public"]["Enums"]["estado_curso_enum"] | null
+          estado_curso?: string | null
           fecha_certificacion?: string | null
           id_curso?: string
           nombre?: string
@@ -386,7 +386,6 @@ export type Database = {
       }
     }
     Enums: {
-      estado_curso_enum: "En_progreso" | "Completado" | "Certificado"
       estado_solicitud_enum: "Pendiente" | "Aprobada" | "Rechazada"
       genero_enum: "Hombre" | "Mujer" | "No Binario"
       grupo_etnico_enum:
@@ -533,7 +532,6 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      estado_curso_enum: ["En_progreso", "Completado", "Certificado"],
       estado_solicitud_enum: ["Pendiente", "Aprobada", "Rechazada"],
       genero_enum: ["Hombre", "Mujer", "No Binario"],
       grupo_etnico_enum: [
