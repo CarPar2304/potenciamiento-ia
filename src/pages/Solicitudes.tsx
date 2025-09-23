@@ -42,9 +42,12 @@ import {
   BookOpen,
   Award,
   BarChart3,
+  Send,
 } from 'lucide-react';
 import { useSolicitudes, useCamaras, usePlatziGeneral, usePlatziSeguimiento } from '@/hooks/useSupabaseData';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const StatCard = ({ title, value, description, icon: Icon, variant }: {
   title: string;
@@ -94,11 +97,12 @@ const StatCard = ({ title, value, description, icon: Icon, variant }: {
   );
 };
 
-const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData }: {
+const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, onSendReminder }: {
   solicitud: any;
   canViewGlobal: boolean;
   onViewDetails: () => void;
   platziData: any[];
+  onSendReminder: (solicitud: any) => void;
 }) => {
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { color: string; bg: string; border: string }> = {
@@ -190,15 +194,28 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData }: 
             </Badge>
           )}
           {!isApproved && <div />}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onViewDetails}
-            className="text-primary hover:text-primary/80 hover:bg-primary/10 transition-colors"
-          >
-            <Eye className="h-4 w-4 mr-1" />
-            Ver detalles
-          </Button>
+          <div className="flex items-center gap-2">
+            {isApproved && !hasCompletedTest && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onSendReminder(solicitud)}
+                className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-200 transition-colors"
+              >
+                <Send className="h-4 w-4 mr-1" />
+                Enviar recordatorio
+              </Button>
+            )}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onViewDetails}
+              className="text-primary hover:text-primary/80 hover:bg-primary/10 transition-colors"
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              Ver detalles
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -411,16 +428,83 @@ export default function Solicitudes() {
   const { camaras } = useCamaras();
   const { platziData } = usePlatziGeneral();
   const { seguimientoData } = usePlatziSeguimiento();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [chamberFilter, setChamberFilter] = useState('todas');
   const [sectorFilter, setSectorFilter] = useState('todos');
   const [selectedSolicitud, setSelectedSolicitud] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [sendingReminder, setSendingReminder] = useState(false);
 
   if (!profile) return null;
 
   const canViewGlobal = hasPermission(profile.role, 'view_global') || hasPermission(profile.role, 'view_all');
+
+  const handleSendReminder = async (solicitud: any) => {
+    if (!solicitud.celular) {
+      toast({
+        title: "Error",
+        description: "Esta solicitud no tiene número de celular registrado.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSendingReminder(true);
+    try {
+      // Obtener configuración de webhook
+      const { data: webhookConfig, error: webhookError } = await supabase
+        .from('webhook_config')
+        .select('*')
+        .eq('name', 'Recordatorio Licencia')
+        .eq('is_active', true)
+        .single();
+
+      if (webhookError || !webhookConfig) {
+        toast({
+          title: "Error de configuración",
+          description: "No se encontró configuración de webhook activa para recordatorios.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Enviar webhook
+      const response = await fetch(webhookConfig.url, {
+        method: webhookConfig.method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          celular: solicitud.celular,
+          nombre: solicitud.nombres_apellidos,
+          email: solicitud.email,
+          empresa: solicitud.empresas?.nombre,
+          timestamp: new Date().toISOString(),
+          tipo: 'recordatorio_licencia'
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Recordatorio enviado",
+          description: `Se envió el recordatorio a ${solicitud.nombres_apellidos} (${solicitud.celular}).`,
+        });
+      } else {
+        throw new Error('Error en la respuesta del webhook');
+      }
+    } catch (error: any) {
+      console.error('Error enviando recordatorio:', error);
+      toast({
+        title: "Error al enviar recordatorio",
+        description: error.message || "Ocurrió un error inesperado.",
+        variant: "destructive"
+      });
+    } finally {
+      setSendingReminder(false);
+    }
+  };
 
   // Filter applications based on user permissions
   const baseApplications = canViewGlobal 
@@ -640,6 +724,7 @@ export default function Solicitudes() {
                 solicitud={solicitud}
                 canViewGlobal={canViewGlobal}
                 onViewDetails={() => handleViewDetails(solicitud)}
+                onSendReminder={handleSendReminder}
                 platziData={platziData}
               />
             ))}

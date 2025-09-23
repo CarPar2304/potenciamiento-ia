@@ -1,8 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { 
   Dialog,
   DialogContent,
@@ -73,12 +80,145 @@ export default function Ajustes() {
     total: number;
     errorDetails?: string[];
   } | null>(null);
+  
+  // Webhook configuration states
+  const [webhookConfig, setWebhookConfig] = useState<any>(null);
+  const [isLoadingWebhook, setIsLoadingWebhook] = useState(true);
+  const [isSavingWebhook, setIsSavingWebhook] = useState(false);
+  const [webhookForm, setWebhookForm] = useState({
+    name: 'Recordatorio Licencia',
+    url: '',
+    method: 'POST'
+  });
 
   if (!profile) return null;
 
   const canManageUsers = hasPermission(profile.role, 'user_management');
   const canUploadReports = hasPermission(profile.role, 'reports_upload');
   const isFromCCC = profile.chamber === 'Cámara de Comercio de Cali';
+
+  // Load webhook configuration
+  useEffect(() => {
+    const loadWebhookConfig = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('webhook_config')
+          .select('*')
+          .eq('name', 'Recordatorio Licencia')
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          throw error;
+        }
+
+        if (data) {
+          setWebhookConfig(data);
+          setWebhookForm({
+            name: data.name,
+            url: data.url,
+            method: data.method
+          });
+        }
+      } catch (error: any) {
+        console.error('Error loading webhook config:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo cargar la configuración de webhooks",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoadingWebhook(false);
+      }
+    };
+
+    loadWebhookConfig();
+  }, []);
+
+  const handleSaveWebhookConfig = async () => {
+    setIsSavingWebhook(true);
+    try {
+      if (webhookConfig) {
+        // Update existing
+        const { error } = await supabase
+          .from('webhook_config')
+          .update({
+            url: webhookForm.url,
+            method: webhookForm.method,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', webhookConfig.id);
+
+        if (error) throw error;
+      } else {
+        // Create new
+        const { data, error } = await supabase
+          .from('webhook_config')
+          .insert({
+            name: webhookForm.name,
+            url: webhookForm.url,
+            method: webhookForm.method
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        setWebhookConfig(data);
+      }
+
+      toast({
+        title: "Configuración guardada",
+        description: "La configuración del webhook se guardó exitosamente.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo guardar la configuración",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSavingWebhook(false);
+    }
+  };
+
+  const handleTestWebhook = async () => {
+    if (!webhookForm.url) {
+      toast({
+        title: "URL requerida",
+        description: "Ingresa una URL antes de probar el webhook.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(webhookForm.url, {
+        method: webhookForm.method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          test: true,
+          timestamp: new Date().toISOString(),
+          message: 'Prueba de conexión desde el panel de administración'
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Webhook funcionando",
+          description: "La conexión al webhook fue exitosa.",
+        });
+      } else {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error de conexión",
+        description: error.message || "No se pudo conectar al webhook",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handlePromoteToAdmin = async () => {
     if (!profile?.id) return;
@@ -457,31 +597,78 @@ export default function Ajustes() {
             </div>
           </div>
         </SettingCard>
-        {/* Webhooks */}
+        {/* Webhooks Configuration */}
         <SettingCard
-          title="Administrador de Webhooks"
-          description="Configura webhooks para recibir notificaciones automáticas de eventos del sistema"
+          title="Configuración de Webhooks"
+          description="Gestiona las URLs y métodos para notificaciones automáticas del sistema"
           icon={Webhook}
-          variant="info"
         >
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm text-blue-600">
-              <Info className="h-4 w-4" />
-              <span>Próximamente: Integración automática con formularios externos</span>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label>Tipo de Webhook</Label>
+                <Select value={webhookForm.name} onValueChange={(value) => setWebhookForm({...webhookForm, name: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar tipo de webhook" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Recordatorio Licencia">Recordatorio Licencia</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Método HTTP</Label>
+                <Select value={webhookForm.method} onValueChange={(value) => setWebhookForm({...webhookForm, method: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar método" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GET">GET</SelectItem>
+                    <SelectItem value="POST">POST</SelectItem>
+                    <SelectItem value="PUT">PUT</SelectItem>
+                    <SelectItem value="PATCH">PATCH</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>URL del Webhook</Label>
+                <Input 
+                  placeholder="https://n8n-n8n.5cj84u.easypanel.host/webhook-test/..."
+                  value={webhookForm.url}
+                  onChange={(e) => setWebhookForm({...webhookForm, url: e.target.value})}
+                  disabled={isLoadingWebhook}
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>URL del Webhook</Label>
-              <Input 
-                placeholder="https://tu-sistema.com/webhook/adopcion-ia"
-                disabled
-                className="bg-muted"
-              />
-            </div>
+            
+            {webhookConfig && (
+              <div className="bg-muted/50 p-3 rounded-lg">
+                <div className="flex items-center gap-2 text-sm text-green-700">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>Configuración guardada exitosamente</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Última actualización: {new Date(webhookConfig.updated_at).toLocaleString('es-CO')}
+                </p>
+              </div>
+            )}
+            
             <div className="flex gap-2">
-              <Button variant="outline" disabled>
-                Configurar
+              <Button 
+                onClick={handleSaveWebhookConfig}
+                disabled={isLoadingWebhook || isSavingWebhook || !webhookForm.url}
+                className="gap-2"
+              >
+                {isSavingWebhook ? 'Guardando...' : 'Guardar Configuración'}
               </Button>
-              <Button variant="outline" disabled>
+              <Button 
+                variant="outline" 
+                onClick={handleTestWebhook}
+                disabled={isLoadingWebhook || !webhookForm.url}
+                className="gap-2"
+              >
                 Probar Conexión
               </Button>
             </div>
