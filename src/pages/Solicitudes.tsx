@@ -60,38 +60,38 @@ const StatCard = ({ title, value, description, icon: Icon, variant }: {
     primary: {
       bg: 'bg-primary/10',
       icon: 'text-primary',
-      border: 'border-primary/20'
+      border: 'border-l-primary'
     },
     success: {
-      bg: 'bg-green-500/10',
-      icon: 'text-green-600',
-      border: 'border-green-500/20'
+      bg: 'bg-success/10',
+      icon: 'text-success',
+      border: 'border-l-success'
     },
     warning: {
-      bg: 'bg-amber-500/10', 
-      icon: 'text-amber-600',
-      border: 'border-amber-500/20'
+      bg: 'bg-warning/10', 
+      icon: 'text-warning',
+      border: 'border-l-warning'
     },
     error: {
-      bg: 'bg-red-500/10',
-      icon: 'text-red-600', 
-      border: 'border-red-500/20'
+      bg: 'bg-destructive/10',
+      icon: 'text-destructive', 
+      border: 'border-l-destructive'
     }
   };
 
   const style = variants[variant];
 
   return (
-    <Card className={`relative overflow-hidden group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-l-4 ${style.border}`}>
+    <Card className={`relative overflow-hidden group hover:shadow-card transition-all duration-300 hover:-translate-y-1 animate-fade-in border-l-4 ${style.border} backdrop-blur-sm`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <div className={`p-2 rounded-lg ${style.bg}`}>
-          <Icon className={`h-4 w-4 ${style.icon}`} />
+        <div className={`p-3 rounded-xl ${style.bg} group-hover:scale-110 transition-transform duration-300`}>
+          <Icon className={`h-5 w-5 ${style.icon}`} />
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">{value}</div>
-        <p className="text-xs text-muted-foreground mt-1">{description}</p>
+        <div className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent group-hover:scale-105 transition-transform duration-300">{value}</div>
+        <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{description}</p>
       </CardContent>
     </Card>
   );
@@ -107,25 +107,25 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { color: string; bg: string; border: string }> = {
       'Aprobada': { 
-        color: 'text-green-700', 
-        bg: 'bg-green-50', 
-        border: 'border-green-200' 
+        color: 'text-success-foreground', 
+        bg: 'bg-success/10 border-success/20', 
+        border: 'hover:bg-success/20' 
       },
       'Pendiente': { 
-        color: 'text-amber-700', 
-        bg: 'bg-amber-50', 
-        border: 'border-amber-200' 
+        color: 'text-warning-foreground', 
+        bg: 'bg-warning/10 border-warning/20', 
+        border: 'hover:bg-warning/20' 
       },
       'Rechazada': { 
-        color: 'text-red-700', 
-        bg: 'bg-red-50', 
-        border: 'border-red-200' 
+        color: 'text-destructive-foreground', 
+        bg: 'bg-destructive/10 border-destructive/20', 
+        border: 'hover:bg-destructive/20' 
       },
     };
     return configs[status] || { 
-      color: 'text-gray-700', 
-      bg: 'bg-gray-50', 
-      border: 'border-gray-200' 
+      color: 'text-muted-foreground', 
+      bg: 'bg-muted/10 border-muted/20', 
+      border: 'hover:bg-muted/20' 
     };
   };
 
@@ -140,69 +140,75 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
   const statusConfig = getStatusConfig(solicitud.estado);
 
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-l-4 border-l-primary/20 hover:border-l-primary">
+    <Card className="group hover:shadow-card transition-all duration-500 hover:-translate-y-2 border-l-4 border-l-primary/30 hover:border-l-primary animate-fade-in backdrop-blur-sm hover:bg-gradient-secondary/5">
       <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center space-x-3 min-w-0 flex-1">
-            <Avatar className="h-10 w-10 flex-shrink-0">
-              <AvatarFallback className="bg-gradient-primary text-white text-sm font-medium">
+        <div className="flex items-start justify-between mb-6">
+          <div className="flex items-center space-x-4 min-w-0 flex-1">
+            <Avatar className="h-12 w-12 flex-shrink-0 ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all duration-300">
+              <AvatarFallback className="bg-gradient-primary text-primary-foreground text-sm font-bold group-hover:scale-110 transition-transform duration-300">
                 {getInitials(solicitud.nombres_apellidos)}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-base text-foreground">{solicitud.nombres_apellidos}</h3>
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Mail className="h-3 w-3 flex-shrink-0" />
+              <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors duration-300">{solicitud.nombres_apellidos}</h3>
+              <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                <Mail className="h-4 w-4 flex-shrink-0 text-primary/60" />
                 <span className="truncate">{solicitud.email}</span>
               </p>
             </div>
           </div>
-          <Badge className={`${statusConfig.color} ${statusConfig.bg} ${statusConfig.border} border shrink-0 ml-2`}>
+          <Badge className={`${statusConfig.color} ${statusConfig.bg} transition-all duration-300 ${statusConfig.border} border font-medium px-3 py-1 shrink-0 ml-3`}>
             {solicitud.estado}
           </Badge>
         </div>
 
-        <div className="space-y-3 mb-4">
-          <div className="grid grid-cols-1 gap-2 text-sm">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Building className="h-4 w-4 text-primary/60" />
-              <span className="truncate">{solicitud.empresas?.nombre || 'Sin empresa'}</span>
+        <div className="space-y-3 mb-6">
+          <div className="grid grid-cols-1 gap-3 text-sm">
+            <div className="flex items-center gap-3 text-muted-foreground p-2 rounded-lg bg-muted/5 hover:bg-muted/10 transition-colors">
+              <div className="p-1.5 rounded-md bg-primary/10">
+                <Building className="h-4 w-4 text-primary" />
+              </div>
+              <span className="truncate font-medium">{solicitud.empresas?.nombre || 'Sin empresa'}</span>
             </div>
             {solicitud.cargo && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Briefcase className="h-4 w-4 text-primary/60" />
-                <span className="truncate">{solicitud.cargo}</span>
+              <div className="flex items-center gap-3 text-muted-foreground p-2 rounded-lg bg-muted/5 hover:bg-muted/10 transition-colors">
+                <div className="p-1.5 rounded-md bg-primary/10">
+                  <Briefcase className="h-4 w-4 text-primary" />
+                </div>
+                <span className="truncate font-medium">{solicitud.cargo}</span>
               </div>
             )}
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Calendar className="h-4 w-4 text-primary/60" />
-              <span>{new Date(solicitud.fecha_solicitud).toLocaleDateString('es-CO')}</span>
+            <div className="flex items-center gap-3 text-muted-foreground p-2 rounded-lg bg-muted/5 hover:bg-muted/10 transition-colors">
+              <div className="p-1.5 rounded-md bg-primary/10">
+                <Calendar className="h-4 w-4 text-primary" />
+              </div>
+              <span className="font-medium">{new Date(solicitud.fecha_solicitud).toLocaleDateString('es-CO')}</span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-3 border-t border-muted/20">
+        <div className="flex items-center justify-between pt-4 border-t border-gradient-primary/10">
           {isApproved && (
             <Badge 
               variant={hasCompletedTest ? "default" : "secondary"} 
-              className={`text-xs ${hasCompletedTest 
-                ? 'bg-green-100 text-green-700 border-green-200' 
-                : 'bg-amber-100 text-amber-700 border-amber-200'
-              }`}
+              className={`text-xs font-semibold px-3 py-1.5 ${hasCompletedTest 
+                ? 'bg-success/10 text-success border-success/20 hover:bg-success/20' 
+                : 'bg-warning/10 text-warning border-warning/20 hover:bg-warning/20'
+              } transition-all duration-300`}
             >
               {hasCompletedTest ? 'Licencia consumida' : 'Licencia no consumida'}
             </Badge>
           )}
           {!isApproved && <div />}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {isApproved && !hasCompletedTest && (
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={() => onSendReminder(solicitud)}
-                className="text-orange-600 hover:text-orange-700 hover:bg-orange-50 border-orange-200 transition-colors"
+                className="text-warning hover:text-warning-foreground hover:bg-warning/10 border-warning/30 hover:border-warning transition-all duration-300 font-medium shadow-sm hover:shadow-md"
               >
-                <Send className="h-4 w-4 mr-1" />
+                <Send className="h-4 w-4 mr-2" />
                 Enviar recordatorio
               </Button>
             )}
@@ -210,9 +216,9 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
               variant="ghost" 
               size="sm" 
               onClick={onViewDetails}
-              className="text-primary hover:text-primary/80 hover:bg-primary/10 transition-colors"
+              className="text-primary hover:text-primary-foreground hover:bg-primary/90 transition-all duration-300 font-medium shadow-sm hover:shadow-md"
             >
-              <Eye className="h-4 w-4 mr-1" />
+              <Eye className="h-4 w-4 mr-2" />
               Ver detalles
             </Button>
           </div>
