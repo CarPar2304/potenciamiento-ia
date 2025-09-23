@@ -30,17 +30,13 @@ export default function Auth() {
   const [error, setError] = useState('');
   const [camaras, setCamaras] = useState<Array<{id: string, nombre: string, nit: string}>>([]);
 
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, profile, loading: authLoading } = useAuth();
   const { theme } = useTheme();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Cargar cámaras y redirigir si ya está autenticado
+  // Cargar cámaras y manejar redirección con mejor lógica
   useEffect(() => {
-    if (user) {
-      navigate('/');
-    }
-    
     // Cargar cámaras para el formulario de registro
     const fetchCamaras = async () => {
       const { data, error } = await supabase
@@ -54,7 +50,14 @@ export default function Auth() {
     };
     
     fetchCamaras();
-  }, [user, navigate]);
+  }, []);
+
+  // Manejar redirección solo cuando el auth esté completamente cargado
+  useEffect(() => {
+    if (!authLoading && user && profile) {
+      navigate('/', { replace: true });
+    }
+  }, [authLoading, user, profile, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

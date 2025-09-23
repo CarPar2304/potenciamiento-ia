@@ -33,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   const getUserRole = async (camaraId?: string, isAdmin?: boolean): Promise<UserRole> => {
     if (isAdmin) return 'admin';
@@ -57,6 +58,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const fetchProfile = async (userId: string) => {
+    if (profileLoading) return; // Evitar múltiples llamadas
+    
+    setProfileLoading(true);
     try {
       const { data: profileData, error } = await supabase
         .from('profiles')
@@ -89,44 +93,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
+      setProfile(null);
+    } finally {
+      setProfileLoading(false);
     }
   };
 
   useEffect(() => {
-    // Configurar listener de cambios de auth
+    let isMounted = true;
+
+    // Configurar listener de cambios de auth PRIMERO
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
+        if (!isMounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch profile after session is established
-          setTimeout(() => {
+          // Defer profile fetching to avoid blocking
+          if (!profileLoading) {
             fetchProfile(session.user.id);
-          }, 0);
+          }
         } else {
           setProfile(null);
+          setProfileLoading(false);
         }
         
-        setLoading(false);
+        // Solo establecer loading false una vez
+        if (loading) {
+          setLoading(false);
+        }
       }
     );
 
-    // Verificar sesión existente
+    // LUEGO verificar sesión existente
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!isMounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        setTimeout(() => {
-          fetchProfile(session.user.id);
-        }, 0);
+        fetchProfile(session.user.id);
       }
       
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (
