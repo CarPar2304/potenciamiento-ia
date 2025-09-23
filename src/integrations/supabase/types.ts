@@ -308,7 +308,7 @@ export type Database = {
           fecha_nacimiento: string | null
           fecha_solicitud: string
           genero: Database["public"]["Enums"]["genero_enum"] | null
-          grupo_etnico: Database["public"]["Enums"]["grupo_etnico_enum"] | null
+          grupo_etnico: string | null
           id: string
           nit_empresa: string
           nivel_educativo: string | null
@@ -330,7 +330,7 @@ export type Database = {
           fecha_nacimiento?: string | null
           fecha_solicitud?: string
           genero?: Database["public"]["Enums"]["genero_enum"] | null
-          grupo_etnico?: Database["public"]["Enums"]["grupo_etnico_enum"] | null
+          grupo_etnico?: string | null
           id?: string
           nit_empresa: string
           nivel_educativo?: string | null
@@ -352,7 +352,7 @@ export type Database = {
           fecha_nacimiento?: string | null
           fecha_solicitud?: string
           genero?: Database["public"]["Enums"]["genero_enum"] | null
-          grupo_etnico?: Database["public"]["Enums"]["grupo_etnico_enum"] | null
+          grupo_etnico?: string | null
           id?: string
           nit_empresa?: string
           nivel_educativo?: string | null
@@ -402,13 +402,6 @@ export type Database = {
     Enums: {
       estado_solicitud_enum: "Pendiente" | "Aprobada" | "Rechazada"
       genero_enum: "Hombre" | "Mujer" | "No Binario"
-      grupo_etnico_enum:
-        | "Indígena"
-        | "Gitano(a) o Rrom"
-        | "Raizal de San Andrés y Providencia"
-        | "Palenquero(a) de San Basilio"
-        | "Negro(a), mulato(a), afrodescendiente, afrocolombiano(a)"
-        | "Ningún grupo étnico"
       mercado_enum:
         | "Local (ciudad/municipio)"
         | "Regional (departamento / región del país)"
@@ -548,14 +541,6 @@ export const Constants = {
     Enums: {
       estado_solicitud_enum: ["Pendiente", "Aprobada", "Rechazada"],
       genero_enum: ["Hombre", "Mujer", "No Binario"],
-      grupo_etnico_enum: [
-        "Indígena",
-        "Gitano(a) o Rrom",
-        "Raizal de San Andrés y Providencia",
-        "Palenquero(a) de San Basilio",
-        "Negro(a), mulato(a), afrodescendiente, afrocolombiano(a)",
-        "Ningún grupo étnico",
-      ],
       mercado_enum: [
         "Local (ciudad/municipio)",
         "Regional (departamento / región del país)",
