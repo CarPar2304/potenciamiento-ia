@@ -97,12 +97,14 @@ const StatCard = ({ title, value, description, icon: Icon, variant }: {
   );
 };
 
-const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, onSendReminder }: {
+const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, onSendReminder, sendingReminder, isSent }: {
   solicitud: any;
   canViewGlobal: boolean;
   onViewDetails: () => void;
   platziData: any[];
   onSendReminder: (solicitud: any) => void;
+  sendingReminder: boolean;
+  isSent: boolean;
 }) => {
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { color: string; bg: string; border: string }> = {
@@ -198,11 +200,32 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
                 variant="outline" 
                 size="sm" 
                 onClick={() => onSendReminder(solicitud)}
-                className="text-primary hover:text-primary hover:bg-primary/10 border-primary/30 hover:border-primary transition-colors"
+                disabled={sendingReminder || isSent}
+                className={`transition-all duration-500 font-medium shadow-sm hover:shadow-md ${
+                  isSent 
+                    ? 'text-success bg-success/10 border-success/30 animate-pulse-subtle' 
+                    : 'text-primary hover:text-primary hover:bg-primary/10 border-primary/30 hover:border-primary'
+                } ${sendingReminder ? 'animate-pulse' : ''}`}
               >
-                <Send className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Enviar recordatorio</span>
-                <span className="sm:hidden">Recordatorio</span>
+                {sendingReminder ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-primary" />
+                    <span className="hidden sm:inline">Enviando...</span>
+                    <span className="sm:hidden">Enviando</span>
+                  </>
+                ) : isSent ? (
+                  <>
+                    <div className="animate-bounce mr-2">✓</div>
+                    <span className="hidden sm:inline">Recordatorio enviado</span>
+                    <span className="sm:hidden">Enviado</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-1" />
+                    <span className="hidden sm:inline">Enviar recordatorio</span>
+                    <span className="sm:hidden">Recordatorio</span>
+                  </>
+                )}
               </Button>
             )}
             <Button 
@@ -436,6 +459,7 @@ export default function Solicitudes() {
   const [selectedSolicitud, setSelectedSolicitud] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
+  const [sentReminders, setSentReminders] = useState<Set<string>>(new Set());
 
   if (!profile) return null;
 
@@ -487,6 +511,9 @@ export default function Solicitudes() {
       });
 
       if (response.ok) {
+        // Marcar como enviado y añadir a la lista de recordatorios enviados
+        setSentReminders(prev => new Set(prev).add(solicitud.id));
+        
         toast({
           title: "Recordatorio enviado",
           description: `Se envió el recordatorio a ${solicitud.nombres_apellidos} (${solicitud.celular}).`,
@@ -726,6 +753,8 @@ export default function Solicitudes() {
                 onViewDetails={() => handleViewDetails(solicitud)}
                 onSendReminder={handleSendReminder}
                 platziData={platziData}
+                sendingReminder={sendingReminder}
+                isSent={sentReminders.has(solicitud.id)}
               />
             ))}
           </div>
