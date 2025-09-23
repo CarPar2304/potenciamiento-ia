@@ -97,14 +97,17 @@ const StatCard = ({ title, value, description, icon: Icon, variant }: {
   );
 };
 
-const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, onSendReminder, sendingReminder, isSent }: {
+const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, onSendReminder, onApproveRequest, sendingReminder, approvingRequest, isSent, isApproved }: {
   solicitud: any;
   canViewGlobal: boolean;
   onViewDetails: () => void;
   platziData: any[];
   onSendReminder: (solicitud: any) => void;
+  onApproveRequest: (solicitud: any) => void;
   sendingReminder: boolean;
+  approvingRequest: boolean;
   isSent: boolean;
+  isApproved: boolean;
 }) => {
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { color: string; bg: string; border: string }> = {
@@ -137,7 +140,8 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
 
   // Verificar si ya hizo el test (existe en platzi_general)
   const hasCompletedTest = platziData.some(p => p.email === solicitud.email);
-  const isApproved = solicitud.estado === 'Aprobada';
+  const isApprovedStatus = solicitud.estado === 'Aprobada';
+  const isRejectedStatus = solicitud.estado === 'Rechazada';
 
   const statusConfig = getStatusConfig(solicitud.estado);
 
@@ -182,7 +186,7 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-muted/20">
-          {isApproved && (
+          {isApprovedStatus && (
             <Badge 
               variant={hasCompletedTest ? "default" : "secondary"} 
               className={`text-xs w-fit ${hasCompletedTest 
@@ -193,9 +197,10 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
               {hasCompletedTest ? 'Licencia consumida' : 'Licencia no consumida'}
             </Badge>
           )}
-          {!isApproved && <div />}
+          {!isApprovedStatus && <div />}
           <div className="flex items-center gap-2 flex-wrap">
-            {isApproved && !hasCompletedTest && (
+            {/* Botón para enviar recordatorio (solo para aprobadas sin licencia consumida) */}
+            {isApprovedStatus && !hasCompletedTest && (
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -224,6 +229,41 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
                     <Send className="h-4 w-4 mr-1" />
                     <span className="hidden sm:inline">Enviar recordatorio</span>
                     <span className="sm:hidden">Recordatorio</span>
+                  </>
+                )}
+              </Button>
+            )}
+            
+            {/* Botón para aprobar solicitud (solo para rechazadas) */}
+            {isRejectedStatus && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onApproveRequest(solicitud)}
+                disabled={approvingRequest || isApproved}
+                className={`transition-all duration-500 font-medium shadow-sm hover:shadow-md ${
+                  isApproved 
+                    ? 'text-success bg-success/10 border-success/30 animate-pulse-subtle' 
+                    : 'text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200 hover:border-green-400'
+                } ${approvingRequest ? 'animate-pulse' : ''}`}
+              >
+                {approvingRequest ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-green-600" />
+                    <span className="hidden sm:inline">Aprobando...</span>
+                    <span className="sm:hidden">Aprobando</span>
+                  </>
+                ) : isApproved ? (
+                  <>
+                    <div className="animate-bounce mr-2">✓</div>
+                    <span className="hidden sm:inline">Solicitud aprobada</span>
+                    <span className="sm:hidden">Aprobada</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    <span className="hidden sm:inline">Aprobar solicitud</span>
+                    <span className="sm:hidden">Aprobar</span>
                   </>
                 )}
               </Button>
@@ -460,6 +500,8 @@ export default function Solicitudes() {
   const [showDetails, setShowDetails] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
   const [sentReminders, setSentReminders] = useState<Set<string>>(new Set());
+  const [approvingRequest, setApprovingRequest] = useState(false);
+  const [approvedRequests, setApprovedRequests] = useState<Set<string>>(new Set());
 
   if (!profile) return null;
 
@@ -533,6 +575,90 @@ export default function Solicitudes() {
     }
   };
 
+  const handleApproveRequest = async (solicitud: any) => {
+    if (!solicitud.celular) {
+      toast({
+        title: "Error",
+        description: "Esta solicitud no tiene número de celular registrado.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setApprovingRequest(true);
+    try {
+      // Obtener configuración de webhook
+      const { data: webhookConfig, error: webhookError } = await supabase
+        .from('webhook_config')
+        .select('*')
+        .eq('name', 'Aprobar Solicitud')
+        .eq('is_active', true)
+        .single();
+
+      if (webhookError || !webhookConfig) {
+        toast({
+          title: "Error de configuración",
+          description: "No se encontró configuración de webhook activa para aprobación.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Enviar webhook
+      const response = await fetch(webhookConfig.url, {
+        method: webhookConfig.method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          celular: solicitud.celular,
+          nombre: solicitud.nombres_apellidos,
+          email: solicitud.email,
+          empresa: solicitud.empresas?.nombre,
+          nit_empresa: solicitud.nit_empresa,
+          timestamp: new Date().toISOString(),
+          tipo: 'aprobar_solicitud'
+        }),
+      });
+
+      if (response.ok) {
+        // Marcar como aprobado y añadir a la lista de solicitudes aprobadas
+        setApprovedRequests(prev => new Set(prev).add(solicitud.id));
+        
+        // Actualizar el estado de la solicitud en la base de datos
+        const { error: updateError } = await supabase
+          .from('solicitudes')
+          .update({ estado: 'Aprobada' })
+          .eq('id', solicitud.id);
+
+        if (updateError) {
+          console.error('Error updating solicitud status:', updateError);
+        }
+        
+        toast({
+          title: "Solicitud aprobada",
+          description: `Se aprobó la solicitud de ${solicitud.nombres_apellidos}.`,
+        });
+
+        // Recargar las solicitudes para reflejar el cambio
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        throw new Error('Error en la respuesta del webhook');
+      }
+    } catch (error: any) {
+      console.error('Error aprobando solicitud:', error);
+      toast({
+        title: "Error al aprobar solicitud",
+        description: error.message || "Ocurrió un error inesperado.",
+        variant: "destructive"
+      });
+    } finally {
+      setApprovingRequest(false);
+    }
+  };
+
   // Filter applications based on user permissions
   const baseApplications = canViewGlobal 
     ? solicitudes 
@@ -546,7 +672,7 @@ export default function Solicitudes() {
       (sol.empresas?.nombre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       sol.numero_documento.includes(searchTerm);
     
-    const matchesStatus = statusFilter === 'todos' || sol.estado.toLowerCase() === statusFilter.toLowerCase();
+    const matchesStatus = statusFilter === 'todos' || sol.estado === statusFilter;
     const matchesChamber = chamberFilter === 'todas' || sol.empresas?.camaras?.nombre === chamberFilter;
     const matchesSector = sectorFilter === 'todos' || sol.empresas?.sector === sectorFilter;
 
@@ -581,21 +707,15 @@ export default function Solicitudes() {
           </h1>
           <p className="text-muted-foreground mt-1">
             {canViewGlobal 
-              ? 'Gestiona todas las solicitudes de licencias Platzi' 
-              : `Solicitudes de ${profile?.chamber}`
+              ? `Panel global: todas las solicitudes del programa` 
+              : `Solicitudes de ${profile.chamber}`
             }
           </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2 hover:bg-primary/5">
-            <Download className="h-4 w-4" />
-            Exportar
-          </Button>
         </div>
       </div>
 
       {/* Enhanced Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Solicitudes"
           value={stats.total}
@@ -611,16 +731,16 @@ export default function Solicitudes() {
           variant="success"
         />
         <StatCard
-          title="Consumidas"
+          title="Licencias Activas"
           value={stats.consumed}
-          description="Licencias activadas"
+          description="Usuarios con progreso"
           icon={TrendingUp}
           variant="warning"
         />
         <StatCard
           title="Rechazadas"
           value={stats.rejected}
-          description="No cumplieron requisitos"
+          description="Solicitudes no aprobadas"
           icon={XCircle}
           variant="error"
         />
@@ -628,114 +748,52 @@ export default function Solicitudes() {
 
       {/* Enhanced Filters */}
       <Card className="border-0 shadow-sm bg-gradient-to-r from-background to-muted/20">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Filter className="h-5 w-5" />
-            Filtros de Búsqueda
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Buscar</label>
+        <CardContent className="p-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center">
+            <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Nombre, email, empresa..."
+                  placeholder="Buscar por nombre, email, empresa o documento..."
+                  className="pl-9 bg-background/50 border-muted-foreground/20"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 transition-all focus:ring-2 focus:ring-primary/20"
                 />
               </div>
             </div>
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Estado</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="transition-all focus:ring-2 focus:ring-primary/20">
-                  <SelectValue placeholder="Todos los estados" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos los estados</SelectItem>
-                  <SelectItem value="pendiente">Pendiente</SelectItem>
-                  <SelectItem value="aprobada">Aprobada</SelectItem>
-                  <SelectItem value="rechazada">Rechazada</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
             {canViewGlobal && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Cámara</label>
-                <Select value={chamberFilter} onValueChange={setChamberFilter}>
-                  <SelectTrigger className="transition-all focus:ring-2 focus:ring-primary/20">
-                    <SelectValue placeholder="Todas las cámaras" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todas">Todas las cámaras</SelectItem>
-                    {camaras.map(camara => (
-                      <SelectItem key={camara.id} value={camara.nombre}>{camara.nombre}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Sector</label>
-              <Select value={sectorFilter} onValueChange={setSectorFilter}>
-                <SelectTrigger className="transition-all focus:ring-2 focus:ring-primary/20">
-                  <SelectValue placeholder="Todos los sectores" />
+              <Select value={chamberFilter} onValueChange={setChamberFilter}>
+                <SelectTrigger className="w-[200px] bg-background/50 border-muted-foreground/20">
+                  <SelectValue placeholder="Todas las cámaras" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todos">Todos los sectores</SelectItem>
-                  {['Tecnología', 'Comercio', 'Manufactura', 'Servicios', 'Agricultura', 'Turismo', 'Construcción', 'Transporte', 'Educación', 'Salud'].map(sector => (
-                    <SelectItem key={sector} value={sector}>{sector}</SelectItem>
+                  <SelectItem value="todas">Todas las cámaras</SelectItem>
+                  {camaras.map(camara => (
+                    <SelectItem key={camara.id} value={camara.nombre}>
+                      {camara.nombre}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
       {/* Modern Cards Grid */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Lista de Solicitudes
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            {filteredApplications.length} de {baseApplications.length} solicitudes
-          </p>
-        </div>
-
+      <div className="space-y-4">
         {loading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="space-y-3">
-                    <div className="flex items-center space-x-3">
-                      <div className="h-10 w-10 bg-muted rounded-full" />
-                      <div className="space-y-2">
-                        <div className="h-4 bg-muted rounded w-32" />
-                        <div className="h-3 bg-muted rounded w-24" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="h-3 bg-muted rounded w-20" />
-                      <div className="h-3 bg-muted rounded w-16" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <Card>
+            <CardContent className="p-8">
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                <span className="ml-2 text-muted-foreground">Cargando solicitudes...</span>
+              </div>
+            </CardContent>
+          </Card>
         ) : filteredApplications.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardContent>
+          <Card>
+            <CardContent className="p-8 text-center">
               <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No se encontraron solicitudes</h3>
               <p className="text-muted-foreground">
@@ -752,9 +810,12 @@ export default function Solicitudes() {
                 canViewGlobal={canViewGlobal}
                 onViewDetails={() => handleViewDetails(solicitud)}
                 onSendReminder={handleSendReminder}
+                onApproveRequest={handleApproveRequest}
                 platziData={platziData}
                 sendingReminder={sendingReminder}
+                approvingRequest={approvingRequest}
                 isSent={sentReminders.has(solicitud.id)}
+                isApproved={approvedRequests.has(solicitud.id)}
               />
             ))}
           </div>

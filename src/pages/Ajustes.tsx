@@ -613,6 +613,7 @@ export default function Ajustes() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Recordatorio Licencia">Recordatorio Licencia</SelectItem>
+                    <SelectItem value="Aprobar Solicitud">Aprobar Solicitud</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
