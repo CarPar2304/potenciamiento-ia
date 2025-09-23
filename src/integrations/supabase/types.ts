@@ -41,6 +41,53 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_actividades: {
+        Row: {
+          camara_id: string
+          created_at: string
+          descripcion: string
+          estado: string
+          fecha: string
+          id: string
+          notas: string | null
+          tipo_actividad: string
+          updated_at: string
+          usuario_id: string
+        }
+        Insert: {
+          camara_id: string
+          created_at?: string
+          descripcion: string
+          estado?: string
+          fecha?: string
+          id?: string
+          notas?: string | null
+          tipo_actividad: string
+          updated_at?: string
+          usuario_id: string
+        }
+        Update: {
+          camara_id?: string
+          created_at?: string
+          descripcion?: string
+          estado?: string
+          fecha?: string
+          id?: string
+          notas?: string | null
+          tipo_actividad?: string
+          updated_at?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_actividades_camara_id_fkey"
+            columns: ["camara_id"]
+            isOneToOne: false
+            referencedRelation: "camaras"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       empresas: {
         Row: {
           areas_implementacion_ia: string | null
@@ -136,6 +183,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      insights: {
+        Row: {
+          activo: boolean
+          audiencia: string
+          autor_id: string
+          contenido: string
+          created_at: string
+          fecha_publicacion: string
+          id: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          audiencia: string
+          autor_id: string
+          contenido: string
+          created_at?: string
+          fecha_publicacion?: string
+          id?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          audiencia?: string
+          autor_id?: string
+          contenido?: string
+          created_at?: string
+          fecha_publicacion?: string
+          id?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       platzi_general: {
         Row: {

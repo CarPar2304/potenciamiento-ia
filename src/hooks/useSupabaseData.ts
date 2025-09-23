@@ -163,7 +163,9 @@ export function useEmpresas() {
     const fetchEmpresas = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
+        
+        // Obtener todas las empresas
+        const { data: empresasData, error: empresasError } = await supabase
           .from('empresas')
           .select(`
             *,
@@ -174,8 +176,26 @@ export function useEmpresas() {
           `)
           .order('nombre');
 
-        if (error) throw error;
-        setEmpresas(data || []);
+        if (empresasError) throw empresasError;
+
+        // Obtener solicitudes empresariales (no colaboradores) para filtrar empresas
+        const { data: solicitudesEmpresariales, error: solicitudesError } = await supabase
+          .from('solicitudes')
+          .select('nit_empresa')
+          .eq('es_colaborador', false);
+
+        if (solicitudesError) throw solicitudesError;
+
+        // Filtrar empresas que tienen solicitudes empresariales reales
+        const nitsConSolicitudesEmpresariales = new Set(
+          solicitudesEmpresariales?.map(s => s.nit_empresa) || []
+        );
+
+        const empresasFiltradas = empresasData?.filter(empresa => 
+          nitsConSolicitudesEmpresariales.has(empresa.nit)
+        ) || [];
+
+        setEmpresas(empresasFiltradas);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error cargando empresas');
         console.error('Error fetching empresas:', err);
@@ -331,6 +351,191 @@ export function useColaboradores() {
   }, [profile]);
 
   return { colaboradores, loading, error, refetch: () => setColaboradores([]) };
+}
+
+// Insights types and hooks
+export interface Insight {
+  id: string;
+  titulo: string;
+  contenido: string;
+  autor_id: string;
+  audiencia: string;
+  fecha_publicacion: string;
+  activo: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export function useInsights() {
+  const [insights, setInsights] = useState<Insight[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { profile } = useAuth();
+
+  useEffect(() => {
+    const fetchInsights = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('insights')
+          .select('*')
+          .order('fecha_publicacion', { ascending: false });
+
+        if (error) throw error;
+        setInsights(data || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error cargando insights');
+        console.error('Error fetching insights:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (profile) {
+      fetchInsights();
+    }
+  }, [profile]);
+
+  const createInsight = async (insight: Omit<Insight, 'id' | 'created_at' | 'updated_at'>) => {
+    const { data, error } = await supabase
+      .from('insights')
+      .insert(insight)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    setInsights(prev => [data, ...prev]);
+    return data;
+  };
+
+  const updateInsight = async (id: string, updates: Partial<Insight>) => {
+    const { data, error } = await supabase
+      .from('insights')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    setInsights(prev => prev.map(i => i.id === id ? data : i));
+    return data;
+  };
+
+  const deleteInsight = async (id: string) => {
+    const { error } = await supabase
+      .from('insights')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+    setInsights(prev => prev.filter(i => i.id !== id));
+  };
+
+  return { insights, loading, error, createInsight, updateInsight, deleteInsight };
+}
+
+// CRM types and hooks
+export interface CRMActividad {
+  id: string;
+  camara_id: string;
+  tipo_actividad: string;
+  descripcion: string;
+  fecha: string;
+  usuario_id: string;
+  estado: string;
+  notas?: string;
+  created_at: string;
+  updated_at: string;
+  camaras?: {
+    nombre: string;
+    nit: string;
+  };
+}
+
+export function useCRMActividades() {
+  const [actividades, setActividades] = useState<CRMActividad[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { profile } = useAuth();
+
+  useEffect(() => {
+    const fetchActividades = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('crm_actividades')
+          .select(`
+            *,
+            camaras (
+              nombre,
+              nit
+            )
+          `)
+          .order('fecha', { ascending: false });
+
+        if (error) throw error;
+        setActividades(data || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Error cargando actividades CRM');
+        console.error('Error fetching CRM activities:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (profile) {
+      fetchActividades();
+    }
+  }, [profile]);
+
+  const createActividad = async (actividad: Omit<CRMActividad, 'id' | 'created_at' | 'updated_at' | 'camaras'>) => {
+    const { data, error } = await supabase
+      .from('crm_actividades')
+      .insert(actividad)
+      .select(`
+        *,
+        camaras (
+          nombre,
+          nit
+        )
+      `)
+      .single();
+    
+    if (error) throw error;
+    setActividades(prev => [data, ...prev]);
+    return data;
+  };
+
+  const updateActividad = async (id: string, updates: Partial<CRMActividad>) => {
+    const { data, error } = await supabase
+      .from('crm_actividades')
+      .update(updates)
+      .eq('id', id)
+      .select(`
+        *,
+        camaras (
+          nombre,
+          nit
+        )
+      `)
+      .single();
+    
+    if (error) throw error;
+    setActividades(prev => prev.map(a => a.id === id ? data : a));
+    return data;
+  };
+
+  const deleteActividad = async (id: string) => {
+    const { error } = await supabase
+      .from('crm_actividades')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+    setActividades(prev => prev.filter(a => a.id !== id));
+  };
+
+  return { actividades, loading, error, createActividad, updateActividad, deleteActividad };
 }
 
 // Stats hook
