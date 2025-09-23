@@ -362,6 +362,9 @@ export interface Insight {
   audiencia: string;
   fecha_publicacion: string;
   activo: boolean;
+  icono?: string;
+  color?: string;
+  camaras_especificas?: string[];
   created_at: string;
   updated_at: string;
 }

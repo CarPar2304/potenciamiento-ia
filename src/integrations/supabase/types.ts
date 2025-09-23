@@ -189,9 +189,12 @@ export type Database = {
           activo: boolean
           audiencia: string
           autor_id: string
+          camaras_especificas: string[] | null
+          color: string | null
           contenido: string
           created_at: string
           fecha_publicacion: string
+          icono: string | null
           id: string
           titulo: string
           updated_at: string
@@ -200,9 +203,12 @@ export type Database = {
           activo?: boolean
           audiencia: string
           autor_id: string
+          camaras_especificas?: string[] | null
+          color?: string | null
           contenido: string
           created_at?: string
           fecha_publicacion?: string
+          icono?: string | null
           id?: string
           titulo: string
           updated_at?: string
@@ -211,9 +217,12 @@ export type Database = {
           activo?: boolean
           audiencia?: string
           autor_id?: string
+          camaras_especificas?: string[] | null
+          color?: string | null
           contenido?: string
           created_at?: string
           fecha_publicacion?: string
+          icono?: string | null
           id?: string
           titulo?: string
           updated_at?: string

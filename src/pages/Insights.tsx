@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -17,23 +18,70 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { 
   Plus, 
-  TrendingUp, 
-  Users, 
   Calendar, 
   Edit, 
   Trash2,
   Eye,
   Lightbulb,
+  TrendingUp,
+  Users,
   Target,
-  BarChart3
+  BarChart3,
+  Globe,
+  Building,
+  Shield,
+  Heart,
+  Star,
+  Zap,
+  Rocket,
+  Award,
+  Briefcase,
+  Camera,
+  Compass,
+  Coffee,
+  Book,
+  Bookmark
 } from 'lucide-react';
-import { useInsights } from '@/hooks/useSupabaseData';
-import { useAuth, hasPermission } from '@/contexts/AuthContext';
+import { useInsights, useCamaras } from '@/hooks/useSupabaseData';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+
+const AVAILABLE_ICONS = [
+  { name: 'Lightbulb', component: Lightbulb },
+  { name: 'TrendingUp', component: TrendingUp },
+  { name: 'Users', component: Users },
+  { name: 'Target', component: Target },
+  { name: 'BarChart3', component: BarChart3 },
+  { name: 'Globe', component: Globe },
+  { name: 'Building', component: Building },
+  { name: 'Shield', component: Shield },
+  { name: 'Heart', component: Heart },
+  { name: 'Star', component: Star },
+  { name: 'Zap', component: Zap },
+  { name: 'Rocket', component: Rocket },
+  { name: 'Award', component: Award },
+  { name: 'Briefcase', component: Briefcase },
+  { name: 'Camera', component: Camera },
+  { name: 'Compass', component: Compass },
+  { name: 'Coffee', component: Coffee },
+  { name: 'Book', component: Book },
+  { name: 'Bookmark', component: Bookmark },
+];
+
+const COLOR_OPTIONS = [
+  '#8B5CF6', // Purple (default)
+  '#3B82F6', // Blue
+  '#10B981', // Green
+  '#F59E0B', // Yellow
+  '#EF4444', // Red
+  '#EC4899', // Pink
+  '#6366F1', // Indigo
+  '#8B5A2B', // Brown
+  '#6B7280', // Gray
+];
 
 const InsightCard = ({ insight, canEdit, onEdit, onDelete, onView }: {
   insight: any;
@@ -42,46 +90,63 @@ const InsightCard = ({ insight, canEdit, onEdit, onDelete, onView }: {
   onDelete: () => void;
   onView: () => void;
 }) => {
-  const getAudienceBadge = (audiencia: string) => {
-    const badges = {
-      admin: { label: 'Administradores', variant: 'default' as const },
-      ccc: { label: 'CCC', variant: 'secondary' as const },
-      camara_aliada: { label: 'Cámaras Aliadas', variant: 'outline' as const },
-      todos: { label: 'Todos', variant: 'default' as const }
-    };
-    return badges[audiencia] || badges.todos;
+  const getIcon = (iconName?: string) => {
+    const icon = AVAILABLE_ICONS.find(i => i.name === iconName);
+    return icon ? icon.component : Lightbulb;
   };
 
-  const audienceBadge = getAudienceBadge(insight.audiencia);
+  const IconComponent = getIcon(insight.icono);
+  const cardColor = insight.color || '#8B5CF6';
 
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-      <CardHeader>
+    <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
+      {/* Color accent bar */}
+      <div 
+        className="absolute top-0 left-0 right-0 h-1"
+        style={{ backgroundColor: cardColor }}
+      />
+      
+      <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <div className="space-y-1 flex-1">
-            <CardTitle className="text-lg font-semibold leading-tight">
-              {insight.titulo}
-            </CardTitle>
-            <CardDescription className="flex items-center gap-2">
-              <Calendar className="h-3 w-3" />
-              {new Date(insight.fecha_publicacion).toLocaleDateString('es-CO')}
-            </CardDescription>
+          <div className="flex items-center gap-3 flex-1">
+            <div 
+              className="p-2 rounded-lg flex-shrink-0"
+              style={{ backgroundColor: `${cardColor}15`, color: cardColor }}
+            >
+              <IconComponent className="h-5 w-5" />
+            </div>
+            <div className="space-y-1 flex-1 min-w-0">
+              <CardTitle className="text-lg font-semibold leading-tight truncate">
+                {insight.titulo}
+              </CardTitle>
+              <CardDescription className="flex items-center gap-2">
+                <Calendar className="h-3 w-3" />
+                {new Date(insight.fecha_publicacion).toLocaleDateString('es-CO')}
+              </CardDescription>
+            </div>
           </div>
-          <Badge variant={audienceBadge.variant}>
-            {audienceBadge.label}
-          </Badge>
         </div>
       </CardHeader>
+      
       <CardContent>
         <p className="text-muted-foreground mb-4 line-clamp-3">
           {insight.contenido}
         </p>
+        
+        {/* Audience badge */}
+        {insight.audiencia === 'camara_aliada' && insight.camaras_especificas?.length > 0 && (
+          <Badge variant="outline" className="mb-3">
+            {insight.camaras_especificas.length} cámara(s) específica(s)
+          </Badge>
+        )}
+        
         <div className="flex items-center justify-between">
           <Button
             variant="ghost"
             size="sm"
             onClick={onView}
-            className="text-primary hover:text-primary/80"
+            style={{ color: cardColor }}
+            className="hover:bg-background/80"
           >
             <Eye className="h-4 w-4 mr-1" />
             Ver completo
@@ -119,29 +184,77 @@ const InsightDialog = ({ insight, isOpen, onClose, mode, onSave }: {
   mode: 'create' | 'edit' | 'view';
   onSave: (data: any) => void;
 }) => {
+  const { camaras } = useCamaras();
   const [formData, setFormData] = useState({
     titulo: insight?.titulo || '',
     contenido: insight?.contenido || '',
-    audiencia: insight?.audiencia || 'todos'
+    audiencia: insight?.audiencia || 'todos',
+    icono: insight?.icono || 'Lightbulb',
+    color: insight?.color || '#8B5CF6',
+    camaras_especificas: insight?.camaras_especificas || []
   });
+
+  useEffect(() => {
+    if (insight) {
+      setFormData({
+        titulo: insight.titulo || '',
+        contenido: insight.contenido || '',
+        audiencia: insight.audiencia || 'todos',
+        icono: insight.icono || 'Lightbulb',
+        color: insight.color || '#8B5CF6',
+        camaras_especificas: insight.camaras_especificas || []
+      });
+    }
+  }, [insight]);
 
   const handleSave = () => {
     if (formData.titulo.trim() && formData.contenido.trim()) {
       onSave(formData);
       onClose();
       if (mode === 'create') {
-        setFormData({ titulo: '', contenido: '', audiencia: 'todos' });
+        setFormData({ 
+          titulo: '', 
+          contenido: '', 
+          audiencia: 'todos',
+          icono: 'Lightbulb',
+          color: '#8B5CF6',
+          camaras_especificas: []
+        });
       }
     }
   };
 
+  const handleCamaraToggle = (camaraId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      camaras_especificas: prev.camaras_especificas.includes(camaraId)
+        ? prev.camaras_especificas.filter(id => id !== camaraId)
+        : [...prev.camaras_especificas, camaraId]
+    }));
+  };
+
+  const getSelectedIcon = () => {
+    const icon = AVAILABLE_ICONS.find(i => i.name === formData.icono);
+    return icon ? icon.component : Lightbulb;
+  };
+
+  const SelectedIcon = getSelectedIcon();
   const isReadOnly = mode === 'view';
+  const showCamaraSelection = formData.audiencia === 'camara_aliada' && !isReadOnly;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="flex items-center gap-3">
+            {!isReadOnly && (
+              <div 
+                className="p-2 rounded-lg"
+                style={{ backgroundColor: `${formData.color}15`, color: formData.color }}
+              >
+                <SelectedIcon className="h-5 w-5" />
+              </div>
+            )}
             {mode === 'create' && 'Crear Nuevo Insight'}
             {mode === 'edit' && 'Editar Insight'}
             {mode === 'view' && insight?.titulo}
@@ -158,59 +271,190 @@ const InsightDialog = ({ insight, isOpen, onClose, mode, onSave }: {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Título</label>
-            <Input
-              value={formData.titulo}
-              onChange={(e) => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
-              placeholder="Título del insight..."
-              disabled={isReadOnly}
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">Contenido</label>
-            <Textarea
-              value={formData.contenido}
-              onChange={(e) => setFormData(prev => ({ ...prev, contenido: e.target.value }))}
-              placeholder="Escribe el contenido completo del insight..."
-              rows={8}
-              disabled={isReadOnly}
-            />
-          </div>
-
-          {!isReadOnly && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left column - Form */}
+          <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Audiencia</label>
-              <Select 
-                value={formData.audiencia} 
-                onValueChange={(value) => setFormData(prev => ({ ...prev, audiencia: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona la audiencia" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos</SelectItem>
-                  <SelectItem value="admin">Solo Administradores</SelectItem>
-                  <SelectItem value="ccc">CCC y Administradores</SelectItem>
-                  <SelectItem value="camara_aliada">Cámaras Aliadas y CCC</SelectItem>
-                </SelectContent>
-              </Select>
+              <label className="text-sm font-medium">Título</label>
+              <Input
+                value={formData.titulo}
+                onChange={(e) => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
+                placeholder="Título del insight..."
+                disabled={isReadOnly}
+              />
             </div>
-          )}
 
-          {!isReadOnly && (
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={onClose}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSave}>
-                {mode === 'create' ? 'Crear Insight' : 'Guardar Cambios'}
-              </Button>
+            <div>
+              <label className="text-sm font-medium">Contenido</label>
+              <Textarea
+                value={formData.contenido}
+                onChange={(e) => setFormData(prev => ({ ...prev, contenido: e.target.value }))}
+                placeholder="Escribe el contenido completo del insight..."
+                rows={6}
+                disabled={isReadOnly}
+              />
             </div>
-          )}
+
+            {!isReadOnly && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Ícono</label>
+                    <Select 
+                      value={formData.icono} 
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, icono: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {AVAILABLE_ICONS.map((icon) => {
+                          const IconComp = icon.component;
+                          return (
+                            <SelectItem key={icon.name} value={icon.name}>
+                              <div className="flex items-center gap-2">
+                                <IconComp className="h-4 w-4" />
+                                {icon.name}
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">Color</label>
+                    <div className="flex gap-2 mt-1">
+                      {COLOR_OPTIONS.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => setFormData(prev => ({ ...prev, color }))}
+                          className={`w-8 h-8 rounded-full border-2 transition-all ${
+                            formData.color === color ? 'border-foreground' : 'border-muted'
+                          }`}
+                          style={{ backgroundColor: color }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">Audiencia</label>
+                  <Select 
+                    value={formData.audiencia} 
+                    onValueChange={(value) => setFormData(prev => ({ 
+                      ...prev, 
+                      audiencia: value,
+                      camaras_especificas: value === 'camara_aliada' ? prev.camaras_especificas : []
+                    }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona la audiencia" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todos">General</SelectItem>
+                      <SelectItem value="camara_aliada">Cámaras Aliadas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {showCamaraSelection && (
+                  <div>
+                    <label className="text-sm font-medium">Cámaras específicas (opcional)</label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Si no seleccionas ninguna, se mostrará a todas las cámaras aliadas
+                    </p>
+                    <div className="space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
+                      {camaras.map((camara) => (
+                        <div key={camara.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={camara.id}
+                            checked={formData.camaras_especificas.includes(camara.id)}
+                            onCheckedChange={() => handleCamaraToggle(camara.id)}
+                          />
+                          <label htmlFor={camara.id} className="text-sm">
+                            {camara.nombre}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Right column - Preview */}
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Vista previa</label>
+              <Card className="mt-2">
+                <div 
+                  className="h-1"
+                  style={{ backgroundColor: formData.color }}
+                />
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
+                    <div 
+                      className="p-2 rounded-lg"
+                      style={{ backgroundColor: `${formData.color}15`, color: formData.color }}
+                    >
+                      <SelectedIcon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">
+                        {formData.titulo || 'Título del insight'}
+                      </CardTitle>
+                      <CardDescription className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        Hoy
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">
+                    {formData.contenido || 'El contenido aparecerá aquí...'}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {formData.audiencia === 'camara_aliada' && formData.camaras_especificas.length > 0 && (
+              <div>
+                <label className="text-sm font-medium">Cámaras seleccionadas</label>
+                <div className="mt-1 space-y-1">
+                  {formData.camaras_especificas.map(camaraId => {
+                    const camara = camaras.find(c => c.id === camaraId);
+                    return (
+                      <Badge key={camaraId} variant="secondary">
+                        {camara?.nombre}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
+
+        {!isReadOnly && (
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleSave}
+              style={{ backgroundColor: formData.color }}
+              className="text-white hover:opacity-90"
+            >
+              {mode === 'create' ? 'Publicar Insight' : 'Guardar Cambios'}
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -219,28 +463,55 @@ const InsightDialog = ({ insight, isOpen, onClose, mode, onSave }: {
 export default function Insights() {
   const { profile } = useAuth();
   const { insights, loading, createInsight, updateInsight, deleteInsight } = useInsights();
+  const { camaras } = useCamaras();
   const { toast } = useToast();
   const [showDialog, setShowDialog] = useState(false);
   const [dialogMode, setDialogMode] = useState<'create' | 'edit' | 'view'>('create');
   const [selectedInsight, setSelectedInsight] = useState(null);
   const [audienceFilter, setAudienceFilter] = useState('todos');
+  const [selectedCamara, setSelectedCamara] = useState('todas');
 
   if (!profile) return null;
 
-  const isAdmin = hasPermission(profile.role, 'admin');
-  
-  // Filter insights based on user role and filter
+  const isAdmin = profile.role === 'admin';
+  const isCCC = profile.role === 'ccc' || isAdmin;
+  const canCreate = isAdmin; // Only admin can create/edit/delete
+
+  // Filter insights based on user role and filters
   const filteredInsights = insights.filter(insight => {
-    // First apply role-based filtering
-    const canView = insight.audiencia === 'todos' ||
-                   (insight.audiencia === 'admin' && profile.role === 'admin') ||
-                   (insight.audiencia === 'ccc' && ['admin', 'ccc'].includes(profile.role)) ||
-                   (insight.audiencia === 'camara_aliada' && ['admin', 'ccc', 'camara_aliada'].includes(profile.role));
+    // Role-based filtering (RLS handles this but we add UI logic)
+    let canView = false;
     
-    // Then apply audience filter
-    const matchesFilter = audienceFilter === 'todos' || insight.audiencia === audienceFilter;
-    
-    return canView && matchesFilter;
+    if (isAdmin) {
+      canView = true; // Admin sees everything
+    } else if (profile.role === 'ccc') {
+      canView = true; // CCC sees everything but can't edit
+    } else if (profile.role === 'camara_aliada') {
+      // Allied chambers see general + content for their chamber
+      canView = insight.audiencia === 'todos' || 
+               (insight.audiencia === 'camara_aliada' && 
+                (!insight.camaras_especificas?.length || 
+                 insight.camaras_especificas.includes(profile.camara_id)));
+    }
+
+    // Apply UI filters (only for admin/CCC)
+    if (!canView) return false;
+
+    if (audienceFilter !== 'todos') {
+      if (audienceFilter === 'general') {
+        return insight.audiencia === 'todos';
+      } else if (audienceFilter === 'camara_aliada') {
+        if (selectedCamara === 'todas') {
+          return insight.audiencia === 'camara_aliada';
+        } else {
+          return insight.audiencia === 'camara_aliada' && 
+                 (!insight.camaras_especificas?.length || 
+                  insight.camaras_especificas.includes(selectedCamara));
+        }
+      }
+    }
+
+    return true;
   });
 
   const handleCreate = () => {
@@ -271,7 +542,7 @@ export default function Insights() {
           activo: true
         });
         toast({
-          title: "Insight creado",
+          title: "Insight publicado",
           description: "El insight ha sido publicado exitosamente.",
         });
       } else if (dialogMode === 'edit' && selectedInsight) {
@@ -332,71 +603,45 @@ export default function Insights() {
             Análisis, tendencias y casos de éxito en adopción de IA
           </p>
         </div>
-        {isAdmin && (
+        {canCreate && (
           <Button onClick={handleCreate} className="bg-gradient-primary text-white border-none hover:opacity-90">
             <Plus className="h-4 w-4 mr-2" />
-            Crear Insight
+            Publicar Insight
           </Button>
         )}
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-l-4 border-l-blue-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Insights</CardTitle>
-            <Lightbulb className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{insights.length}</div>
-            <p className="text-xs text-muted-foreground">Contenido disponible</p>
-          </CardContent>
-        </Card>
+      {/* Filters - Only for Admin and CCC */}
+      {isCCC && (
+        <div className="flex gap-4">
+          <Select value={audienceFilter} onValueChange={setAudienceFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Filtrar por audiencia" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas las audiencias</SelectItem>
+              <SelectItem value="general">General</SelectItem>
+              <SelectItem value="camara_aliada">Cámaras Aliadas</SelectItem>
+            </SelectContent>
+          </Select>
 
-        <Card className="border-l-4 border-l-green-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Visibles para ti</CardTitle>
-            <Target className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{filteredInsights.length}</div>
-            <p className="text-xs text-muted-foreground">Según tu rol</p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-purple-500">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Este mes</CardTitle>
-            <BarChart3 className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {insights.filter(i => {
-                const insightDate = new Date(i.fecha_publicacion);
-                const now = new Date();
-                return insightDate.getMonth() === now.getMonth() && 
-                       insightDate.getFullYear() === now.getFullYear();
-              }).length}
-            </div>
-            <p className="text-xs text-muted-foreground">Nuevos insights</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <div className="flex gap-4">
-        <Select value={audienceFilter} onValueChange={setAudienceFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filtrar por audiencia" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todas las audiencias</SelectItem>
-            <SelectItem value="admin">Solo Administradores</SelectItem>
-            <SelectItem value="ccc">CCC</SelectItem>
-            <SelectItem value="camara_aliada">Cámaras Aliadas</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+          {audienceFilter === 'camara_aliada' && (
+            <Select value={selectedCamara} onValueChange={setSelectedCamara}>
+              <SelectTrigger className="w-64">
+                <SelectValue placeholder="Seleccionar cámara" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas las cámaras</SelectItem>
+                {camaras.map((camara) => (
+                  <SelectItem key={camara.id} value={camara.id}>
+                    {camara.nombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      )}
 
       {/* Insights Grid */}
       {filteredInsights.length > 0 ? (
@@ -405,7 +650,7 @@ export default function Insights() {
             <InsightCard
               key={insight.id}
               insight={insight}
-              canEdit={isAdmin}
+              canEdit={canCreate}
               onEdit={() => handleEdit(insight)}
               onDelete={() => handleDelete(insight)}
               onView={() => handleView(insight)}
@@ -418,16 +663,16 @@ export default function Insights() {
             <Lightbulb className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No hay insights disponibles</h3>
             <p className="text-muted-foreground text-center">
-              {isAdmin ? (
-                "Comienza creando el primer insight para compartir análisis y tendencias."
+              {canCreate ? (
+                "Comienza publicando el primer insight para compartir análisis y tendencias."
               ) : (
                 "Aún no hay insights publicados para tu perfil."
               )}
             </p>
-            {isAdmin && (
+            {canCreate && (
               <Button className="mt-4" onClick={handleCreate}>
                 <Plus className="h-4 w-4 mr-2" />
-                Crear Primer Insight
+                Publicar Primer Insight
               </Button>
             )}
           </CardContent>
