@@ -98,41 +98,58 @@ export default function Ajustes() {
   const isFromCCC = profile.chamber === 'Cámara de Comercio de Cali';
 
   // Load webhook configuration
-  useEffect(() => {
-    const loadWebhookConfig = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('webhook_config')
-          .select('*')
-          .eq('name', 'Recordatorio Licencia')
-          .single();
+  const loadWebhookConfig = async (webhookName: string) => {
+    setIsLoadingWebhook(true);
+    try {
+      const { data, error } = await supabase
+        .from('webhook_config')
+        .select('*')
+        .eq('name', webhookName)
+        .single();
 
-        if (error && error.code !== 'PGRST116') {
-          throw error;
-        }
-
-        if (data) {
-          setWebhookConfig(data);
-          setWebhookForm({
-            name: data.name,
-            url: data.url,
-            method: data.method
-          });
-        }
-      } catch (error: any) {
-        console.error('Error loading webhook config:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo cargar la configuración de webhooks",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoadingWebhook(false);
+      if (error && error.code !== 'PGRST116') {
+        throw error;
       }
-    };
 
-    loadWebhookConfig();
+      if (data) {
+        setWebhookConfig(data);
+        setWebhookForm({
+          name: data.name,
+          url: data.url,
+          method: data.method
+        });
+      } else {
+        // No existe configuración para este webhook, resetear el formulario
+        setWebhookConfig(null);
+        setWebhookForm({
+          name: webhookName,
+          url: '',
+          method: 'POST'
+        });
+      }
+    } catch (error: any) {
+      console.error('Error loading webhook config:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo cargar la configuración de webhooks",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingWebhook(false);
+    }
+  };
+
+  // Cargar configuración inicial
+  useEffect(() => {
+    loadWebhookConfig('Recordatorio Licencia');
   }, []);
+
+  // Recargar configuración cuando cambie el tipo de webhook
+  useEffect(() => {
+    if (webhookForm.name) {
+      loadWebhookConfig(webhookForm.name);
+    }
+  }, [webhookForm.name]);
 
   const handleSaveWebhookConfig = async () => {
     setIsSavingWebhook(true);
@@ -607,7 +624,15 @@ export default function Ajustes() {
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label>Tipo de Webhook</Label>
-                <Select value={webhookForm.name} onValueChange={(value) => setWebhookForm({...webhookForm, name: value})}>
+                <Select 
+                  value={webhookForm.name} 
+                  onValueChange={(value) => {
+                    // Solo actualizar el nombre sin cargar la config aquí
+                    // El useEffect se encargará de cargar la config
+                    setWebhookForm({...webhookForm, name: value});
+                  }}
+                  disabled={isLoadingWebhook}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar tipo de webhook" />
                   </SelectTrigger>
