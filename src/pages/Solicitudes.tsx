@@ -97,7 +97,7 @@ const StatCard = ({ title, value, description, icon: Icon, variant }: {
   );
 };
 
-const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, onSendReminder, onApproveRequest, sendingReminder, approvingRequest, isSent, isApproved }: {
+const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, onSendReminder, onApproveRequest, sendingReminder, approvingRequest, isSent }: {
   solicitud: any;
   canViewGlobal: boolean;
   onViewDetails: () => void;
@@ -107,7 +107,6 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
   sendingReminder: boolean;
   approvingRequest: boolean;
   isSent: boolean;
-  isApproved: boolean;
 }) => {
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { color: string; bg: string; border: string }> = {
@@ -240,35 +239,25 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
                 variant="outline" 
                 size="sm" 
                 onClick={() => onApproveRequest(solicitud)}
-                disabled={approvingRequest || isApproved}
-                className={`transition-all duration-500 font-medium shadow-sm hover:shadow-md ${
-                  isApproved 
-                    ? 'text-success bg-success/10 border-success/30 animate-pulse-subtle' 
-                    : 'text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200 hover:border-green-400'
-                } ${approvingRequest ? 'animate-pulse' : ''}`}
+                disabled={approvingRequest}
+                className={`transition-all duration-500 font-medium shadow-sm hover:shadow-md text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200 hover:border-green-400 ${approvingRequest ? 'animate-pulse' : ''}`}
               >
                 {approvingRequest ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-green-600" />
-                    <span className="hidden sm:inline">Aprobando...</span>
-                    <span className="sm:hidden">Aprobando</span>
-                  </>
-                ) : isApproved ? (
-                  <>
-                    <div className="animate-bounce mr-2">✓</div>
-                    <span className="hidden sm:inline">Solicitud aprobada</span>
-                    <span className="sm:hidden">Aprobada</span>
+                    <span className="hidden sm:inline">Enviando...</span>
+                    <span className="sm:hidden">Enviando</span>
                   </>
                 ) : (
                   <>
-                    <CheckCircle className="h-4 w-4 mr-1" />
+                    <Send className="h-4 w-4 mr-1" />
                     <span className="hidden sm:inline">Aprobar solicitud</span>
                     <span className="sm:hidden">Aprobar</span>
                   </>
                 )}
-              </Button>
+               </Button>
             )}
-            <Button 
+            <Button
               variant="ghost" 
               size="sm" 
               onClick={onViewDetails}
@@ -501,7 +490,6 @@ export default function Solicitudes() {
   const [sendingReminder, setSendingReminder] = useState(false);
   const [sentReminders, setSentReminders] = useState<Set<string>>(new Set());
   const [approvingRequest, setApprovingRequest] = useState(false);
-  const [approvedRequests, setApprovedRequests] = useState<Set<string>>(new Set());
 
   if (!profile) return null;
 
@@ -622,28 +610,10 @@ export default function Solicitudes() {
       });
 
       if (response.ok) {
-        // Marcar como aprobado y añadir a la lista de solicitudes aprobadas
-        setApprovedRequests(prev => new Set(prev).add(solicitud.id));
-        
-        // Actualizar el estado de la solicitud en la base de datos
-        const { error: updateError } = await supabase
-          .from('solicitudes')
-          .update({ estado: 'Aprobada' })
-          .eq('id', solicitud.id);
-
-        if (updateError) {
-          console.error('Error updating solicitud status:', updateError);
-        }
-        
         toast({
-          title: "Solicitud aprobada",
-          description: `Se aprobó la solicitud de ${solicitud.nombres_apellidos}.`,
+          title: "Notificación enviada",
+          description: `Se envió la notificación para ${solicitud.nombres_apellidos}.`,
         });
-
-        // Recargar las solicitudes para reflejar el cambio
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
       } else {
         throw new Error('Error en la respuesta del webhook');
       }
@@ -815,7 +785,6 @@ export default function Solicitudes() {
                 sendingReminder={sendingReminder}
                 approvingRequest={approvingRequest}
                 isSent={sentReminders.has(solicitud.id)}
-                isApproved={approvedRequests.has(solicitud.id)}
               />
             ))}
           </div>
