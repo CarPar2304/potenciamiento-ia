@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
+import { ChatBubble } from '@/components/chat/ChatBubble';
 
 interface LayoutProps {
   children: ReactNode;
@@ -16,6 +17,7 @@ export function Layout({ children }: LayoutProps) {
           {children}
         </main>
       </div>
+      <ChatBubble />
     </div>
   );
 }

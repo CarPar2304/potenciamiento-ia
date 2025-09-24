@@ -154,3 +154,77 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Chat animations and utilities */
+@layer utilities {
+  /* Fade animations */
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+
+  .animate-fade-out {
+    animation: fade-out 0.3s ease-out;
+  }
+
+  /* Scale animations */
+  .animate-scale-in {
+    animation: scale-in 0.2s ease-out;
+  }
+
+  .animate-scale-out {
+    animation: scale-out 0.2s ease-out;
+  }
+
+  /* Hover effects */
+  .hover-scale {
+    transition: transform 0.2s ease-in-out;
+  }
+
+  .hover-scale:hover {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-out {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes scale-in {
+  0% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes scale-out {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+}
