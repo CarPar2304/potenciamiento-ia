@@ -117,24 +117,37 @@ export function ChatInterface({ onClose }: ChatInterfaceProps) {
       // Extraer el texto de la respuesta del webhook
       let responseText = 'No se pudo obtener respuesta';
       
-      if (typeof data === 'string') {
-        responseText = data;
-      } else if (data) {
-        // Intentar diferentes campos comunes para la respuesta
-        responseText = data.response || 
-                     data.message || 
-                     data.reply || 
-                     data.text || 
-                     data.content || 
-                     data.answer ||
-                     JSON.stringify(data);
+      // Normalizar data -> podría venir como objeto o string JSON
+      const raw: any = data;
+
+      if (typeof raw === 'string') {
+        responseText = raw;
+        try {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') {
+            responseText = parsed.output || parsed.response || parsed.message || parsed.text || parsed.reply || parsed.content || parsed.answer || responseText;
+          }
+        } catch {}
+      } else if (raw && typeof raw === 'object') {
+        responseText =
+          raw.output ||
+          raw.response ||
+          raw.message ||
+          raw.reply ||
+          raw.text ||
+          raw.content ||
+          raw.answer ||
+          JSON.stringify(raw);
       }
 
       // Limpiar el formato de la respuesta
-      responseText = responseText
-        .replace(/^\[|\]$/g, '') // Quitar corchetes del inicio y final
+      responseText = String(responseText)
+        .replace(/^\s*\[(.*)\]\s*$/s, '$1') // Quitar corchetes [ ... ] externos
+        .replace(/^\s*\{?\s*"output"\s*:\s*"([\s\S]*)"\s*\}?\s*$/s, '$1') // {"output":"..."} -> ...
         .replace(/^output:\s*/i, '') // Quitar "output:" del inicio
-        .trim(); // Limpiar espacios extras
+        .replace(/^"([\s\S]*)"$/s, '$1') // Quitar comillas envolventes
+        .replace(/^\{\s*([\s\S]*)\s*\}$/s, '$1') // Quitar llaves exteriores
+        .trim();
 
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
