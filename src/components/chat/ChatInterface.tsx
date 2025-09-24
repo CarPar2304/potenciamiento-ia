@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { TypingIndicator } from './TypingIndicator';
 import { MessageFormatter } from './MessageFormatter';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,6 +21,7 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({ onClose }: ChatInterfaceProps) {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -99,7 +101,7 @@ export function ChatInterface({ onClose }: ChatInterfaceProps) {
         body: JSON.stringify({
           message: userMessage.text,
           timestamp: userMessage.timestamp.toISOString(),
-          userId: 'anonymous', // Podrías usar el ID del usuario autenticado
+          userId: user?.id || 'anonymous',
         }),
       });
 
