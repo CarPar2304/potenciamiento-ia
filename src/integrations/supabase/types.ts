@@ -112,6 +112,7 @@ export type Database = {
           razon_no_adopcion: string | null
           sector: string | null
           tipo_cliente: string | null
+          tipo_sociedad: string | null
           updated_at: string
           utilidades_2024: number | null
           ventas_2024: number | null
@@ -141,6 +142,7 @@ export type Database = {
           razon_no_adopcion?: string | null
           sector?: string | null
           tipo_cliente?: string | null
+          tipo_sociedad?: string | null
           updated_at?: string
           utilidades_2024?: number | null
           ventas_2024?: number | null
@@ -170,6 +172,7 @@ export type Database = {
           razon_no_adopcion?: string | null
           sector?: string | null
           tipo_cliente?: string | null
+          tipo_sociedad?: string | null
           updated_at?: string
           utilidades_2024?: number | null
           ventas_2024?: number | null
