@@ -323,13 +323,22 @@ export default function Ajustes() {
       }
     }
 
+    // Deduplicar por email (mantener el último registro por email)
+    const deduplicatedMap = new Map();
+    processed.forEach(row => {
+      deduplicatedMap.set(row.email, row);
+    });
+    const deduplicatedProcessed = Array.from(deduplicatedMap.values());
+
     console.log('Procesamiento completado:', {
       total: data.length,
       procesados: processed.length,
+      duplicados_removidos: processed.length - deduplicatedProcessed.length,
+      finales: deduplicatedProcessed.length,
       errores: errors.length
     });
 
-    return { processed, errors };
+    return { processed: deduplicatedProcessed, errors };
   };
 
   const processSheet2Data = async (data: any[]) => {
@@ -376,13 +385,23 @@ export default function Ajustes() {
       }
     }
 
+    // Deduplicar por email+id_curso (mantener el último registro por combinación única)
+    const deduplicatedMap = new Map();
+    processed.forEach(row => {
+      const key = `${row.email}|${row.id_curso}`;
+      deduplicatedMap.set(key, row);
+    });
+    const deduplicatedProcessed = Array.from(deduplicatedMap.values());
+
     console.log('Procesamiento completado:', {
       total: data.length,
       procesados: processed.length,
+      duplicados_removidos: processed.length - deduplicatedProcessed.length,
+      finales: deduplicatedProcessed.length,
       errores: errors.length
     });
 
-    return { processed, errors };
+    return { processed: deduplicatedProcessed, errors };
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
