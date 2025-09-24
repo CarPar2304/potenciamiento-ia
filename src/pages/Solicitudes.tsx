@@ -731,21 +731,34 @@ export default function Solicitudes() {
                 />
               </div>
             </div>
-            {canViewGlobal && (
-              <Select value={chamberFilter} onValueChange={setChamberFilter}>
-                <SelectTrigger className="w-[200px] bg-background/50 border-muted-foreground/20">
-                  <SelectValue placeholder="Todas las cámaras" />
+            <div className="flex gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[160px] bg-background/50 border-muted-foreground/20">
+                  <SelectValue placeholder="Estado" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todas">Todas las cámaras</SelectItem>
-                  {camaras.map(camara => (
-                    <SelectItem key={camara.id} value={camara.nombre}>
-                      {camara.nombre}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="todos">Todos los estados</SelectItem>
+                  <SelectItem value="Pendiente">Pendiente</SelectItem>
+                  <SelectItem value="Aprobada">Aprobada</SelectItem>
+                  <SelectItem value="Rechazada">Rechazada</SelectItem>
                 </SelectContent>
               </Select>
-            )}
+              {canViewGlobal && (
+                <Select value={chamberFilter} onValueChange={setChamberFilter}>
+                  <SelectTrigger className="w-[200px] bg-background/50 border-muted-foreground/20">
+                    <SelectValue placeholder="Todas las cámaras" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas las cámaras</SelectItem>
+                    {camaras.map(camara => (
+                      <SelectItem key={camara.id} value={camara.nombre}>
+                        {camara.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
