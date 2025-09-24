@@ -112,9 +112,25 @@ export function ChatInterface({ onClose }: ChatInterfaceProps) {
       // Simular delay de escritura
       await new Promise(resolve => setTimeout(resolve, 1000));
 
+      // Extraer el texto de la respuesta del webhook
+      let responseText = 'No se pudo obtener respuesta';
+      
+      if (typeof data === 'string') {
+        responseText = data;
+      } else if (data) {
+        // Intentar diferentes campos comunes para la respuesta
+        responseText = data.response || 
+                     data.message || 
+                     data.reply || 
+                     data.text || 
+                     data.content || 
+                     data.answer ||
+                     JSON.stringify(data);
+      }
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: data.response || data.message || 'Respuesta recibida',
+        text: responseText,
         isUser: false,
         timestamp: new Date()
       };
