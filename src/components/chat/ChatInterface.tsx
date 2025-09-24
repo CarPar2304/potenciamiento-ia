@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { TypingIndicator } from './TypingIndicator';
+import { MessageFormatter } from './MessageFormatter';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Message {
@@ -182,7 +183,11 @@ export function ChatInterface({ onClose }: ChatInterfaceProps) {
                     : 'bg-muted text-muted-foreground mr-4'
                 }`}
               >
-                <p className="text-sm">{message.text}</p>
+                {message.isUser ? (
+                  <p className="text-sm">{message.text}</p>
+                ) : (
+                  <MessageFormatter message={message.text} />
+                )}
                 <span className="text-xs opacity-70 mt-1 block">
                   {message.timestamp.toLocaleTimeString([], { 
                     hour: '2-digit', 
