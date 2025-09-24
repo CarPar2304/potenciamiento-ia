@@ -424,62 +424,46 @@ export default function Ajustes() {
         processResult = await processSheet1Data(jsonData);
         setUploadProgress(40);
 
-        // Borrar todos los registros existentes de platzi_general antes de cargar nuevos datos
-        console.log('Borrando registros existentes de platzi_general...');
-        const { error: deleteError } = await supabase
-          .from('platzi_general')
-          .delete()
-          .gte('created_at', '1900-01-01'); // Delete all records using a condition that matches all
-
-        if (deleteError) {
-          console.error('Error borrando datos existentes:', deleteError);
-          throw new Error(`Error al borrar datos existentes: ${deleteError.message}`);
-        }
-
-        console.log('Registros de platzi_general eliminados exitosamente');
         setUploadProgress(50);
 
-        // Insertar en platzi_general
+        // Usar upsert para insertar/actualizar en platzi_general (evita conflictos de clave duplicada)
         if (processResult.processed.length > 0) {
-          const { data: insertData, error } = await supabase
+          console.log('Insertando/actualizando registros en platzi_general...');
+          const { data: upsertData, error } = await supabase
             .from('platzi_general')
-            .insert(processResult.processed); // Cambio de upsert a insert ya que borramos todo
+            .upsert(processResult.processed, { 
+              onConflict: 'email',
+              ignoreDuplicates: false 
+            });
 
           if (error) {
-            console.error('Error insertando datos:', error);
+            console.error('Error insertando/actualizando datos:', error);
             throw new Error(`Error al guardar datos: ${error.message}`);
           }
+          console.log('Datos de platzi_general guardados exitosamente');
           setUploadProgress(75);
         }
       } else {
         processResult = await processSheet2Data(jsonData);
         setUploadProgress(40);
 
-        // Borrar todos los registros existentes de platzi_seguimiento antes de cargar nuevos datos
-        console.log('Borrando registros existentes de platzi_seguimiento...');
-        const { error: deleteError } = await supabase
-          .from('platzi_seguimiento')
-          .delete()
-          .gte('created_at', '1900-01-01'); // Delete all records using a condition that matches all
-
-        if (deleteError) {
-          console.error('Error borrando datos existentes:', deleteError);
-          throw new Error(`Error al borrar datos existentes: ${deleteError.message}`);
-        }
-
-        console.log('Registros de platzi_seguimiento eliminados exitosamente');
         setUploadProgress(50);
 
-        // Insertar en platzi_seguimiento
+        // Usar upsert para insertar/actualizar en platzi_seguimiento (evita conflictos de clave duplicada)
         if (processResult.processed.length > 0) {
-          const { data: insertData, error } = await supabase
+          console.log('Insertando/actualizando registros en platzi_seguimiento...');
+          const { data: upsertData, error } = await supabase
             .from('platzi_seguimiento')
-            .insert(processResult.processed); // Cambio de upsert a insert ya que borramos todo
+            .upsert(processResult.processed, { 
+              onConflict: 'email,id_curso',
+              ignoreDuplicates: false 
+            });
 
           if (error) {
-            console.error('Error insertando datos:', error);
+            console.error('Error insertando/actualizando datos:', error);
             throw new Error(`Error al guardar datos: ${error.message}`);
           }
+          console.log('Datos de platzi_seguimiento guardados exitosamente');
           setUploadProgress(75);
         }
       }
