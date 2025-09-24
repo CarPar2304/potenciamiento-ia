@@ -526,7 +526,7 @@ export type Database = {
     }
     Enums: {
       estado_solicitud_enum: "Pendiente" | "Aprobada" | "Rechazada"
-      genero_enum: "Hombre" | "Mujer" | "No Binario"
+      genero_enum: "Hombre" | "Mujer" | "No Binario" | "Prefiero no especificar"
       mercado_enum:
         | "Local (ciudad/municipio)"
         | "Regional (departamento / región del país)"
@@ -665,7 +665,7 @@ export const Constants = {
   public: {
     Enums: {
       estado_solicitud_enum: ["Pendiente", "Aprobada", "Rechazada"],
-      genero_enum: ["Hombre", "Mujer", "No Binario"],
+      genero_enum: ["Hombre", "Mujer", "No Binario", "Prefiero no especificar"],
       mercado_enum: [
         "Local (ciudad/municipio)",
         "Regional (departamento / región del país)",
