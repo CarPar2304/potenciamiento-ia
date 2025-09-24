@@ -99,56 +99,70 @@ const InsightCard = ({ insight, canEdit, onEdit, onDelete, onView }: {
   const cardColor = insight.color || '#8B5CF6';
 
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
+    <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 relative overflow-hidden h-full flex flex-col">
       {/* Color accent bar */}
       <div 
         className="absolute top-0 left-0 right-0 h-1"
         style={{ backgroundColor: cardColor }}
       />
       
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3 flex-1">
+      <CardHeader className="pb-3 flex-shrink-0">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
             <div 
-              className="p-2 rounded-lg flex-shrink-0"
+              className="p-2 rounded-lg flex-shrink-0 mt-0.5"
               style={{ backgroundColor: `${cardColor}15`, color: cardColor }}
             >
               <IconComponent className="h-5 w-5" />
             </div>
             <div className="space-y-1 flex-1 min-w-0">
-              <CardTitle className="text-lg font-semibold leading-tight truncate">
-                {insight.titulo}
+              <CardTitle 
+                className="text-lg font-semibold leading-tight group-hover:text-primary transition-colors"
+                title={insight.titulo}
+              >
+                <div className="break-words line-clamp-2">
+                  {insight.titulo}
+                </div>
               </CardTitle>
-              <CardDescription className="flex items-center gap-2">
-                <Calendar className="h-3 w-3" />
-                {new Date(insight.fecha_publicacion).toLocaleDateString('es-CO')}
+              <CardDescription className="flex items-center gap-2 text-xs">
+                <Calendar className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">
+                  {new Date(insight.fecha_publicacion).toLocaleDateString('es-CO', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  })}
+                </span>
               </CardDescription>
             </div>
           </div>
         </div>
       </CardHeader>
       
-      <CardContent>
-        <p className="text-muted-foreground mb-4 line-clamp-3">
-          {insight.contenido}
-        </p>
+      <CardContent className="flex-1 flex flex-col">
+        <div className="flex-1">
+          <p className="text-muted-foreground mb-4 line-clamp-4 text-sm leading-relaxed break-words">
+            {insight.contenido}
+          </p>
+          
+          {/* Audience badge */}
+          {insight.audiencia === 'camara_aliada' && insight.camaras_especificas?.length > 0 && (
+            <Badge variant="outline" className="mb-3 text-xs">
+              <Users className="h-3 w-3 mr-1" />
+              {insight.camaras_especificas.length} cámara{insight.camaras_especificas.length !== 1 ? 's' : ''}
+            </Badge>
+          )}
+        </div>
         
-        {/* Audience badge */}
-        {insight.audiencia === 'camara_aliada' && insight.camaras_especificas?.length > 0 && (
-          <Badge variant="outline" className="mb-3">
-            {insight.camaras_especificas.length} cámara(s) específica(s)
-          </Badge>
-        )}
-        
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pt-2 mt-auto">
           <Button
             variant="ghost"
             size="sm"
             onClick={onView}
             style={{ color: cardColor }}
-            className="hover:bg-background/80"
+            className="hover:bg-background/80 text-xs px-2"
           >
-            <Eye className="h-4 w-4 mr-1" />
+            <Eye className="h-3 w-3 mr-1" />
             Ver completo
           </Button>
           {canEdit && (
@@ -157,17 +171,19 @@ const InsightCard = ({ insight, canEdit, onEdit, onDelete, onView }: {
                 variant="ghost"
                 size="sm"
                 onClick={onEdit}
-                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 p-1"
+                title="Editar insight"
               >
-                <Edit className="h-4 w-4" />
+                <Edit className="h-3 w-3" />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onDelete}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 p-1"
+                title="Eliminar insight"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-3 w-3" />
               </Button>
             </div>
           )}
