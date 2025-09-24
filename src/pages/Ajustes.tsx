@@ -345,15 +345,16 @@ export default function Ajustes() {
       }
     }
 
-    // Deduplicar por email (conservar última ocurrencia)
+    // Deduplicar por email + ruta (conservar última ocurrencia)
     const emailMap = new Map();
     let duplicatesRemoved = 0;
     
     processed.forEach(record => {
-      if (emailMap.has(record.email)) {
+      const key = `${record.email}|${record.ruta || ''}`;
+      if (emailMap.has(key)) {
         duplicatesRemoved++;
       }
-      emailMap.set(record.email, record);
+      emailMap.set(key, record);
     });
 
     const deduplicatedProcessed = Array.from(emailMap.values());

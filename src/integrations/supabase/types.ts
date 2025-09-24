@@ -246,6 +246,7 @@ export type Database = {
           fecha_expiracion_ultima_licencia: string | null
           fecha_inicio_ultima_licencia: string | null
           fecha_primera_activacion: string | null
+          id: string
           nombre: string
           progreso_ruta: number | null
           ruta: string | null
@@ -265,6 +266,7 @@ export type Database = {
           fecha_expiracion_ultima_licencia?: string | null
           fecha_inicio_ultima_licencia?: string | null
           fecha_primera_activacion?: string | null
+          id?: string
           nombre: string
           progreso_ruta?: number | null
           ruta?: string | null
@@ -284,6 +286,7 @@ export type Database = {
           fecha_expiracion_ultima_licencia?: string | null
           fecha_inicio_ultima_licencia?: string | null
           fecha_primera_activacion?: string | null
+          id?: string
           nombre?: string
           progreso_ruta?: number | null
           ruta?: string | null
