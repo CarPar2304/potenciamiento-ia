@@ -79,6 +79,8 @@ export default function Ajustes() {
     errors: number;
     total: number;
     errorDetails?: string[];
+    duplicatesRemoved?: number;
+    emailsNotFound?: number;
   } | null>(null);
   
   // Webhook configuration states
@@ -277,6 +279,20 @@ export default function Ajustes() {
     console.log('Procesando sheet1 con', data.length, 'filas');
     console.log('Primera fila de ejemplo:', data[0]);
 
+    // Obtener emails aprobados de solicitudes
+    const { data: approvedEmails, error: emailError } = await supabase
+      .from('solicitudes')
+      .select('email')
+      .eq('estado', 'Aprobada');
+
+    if (emailError) {
+      console.error('Error obteniendo emails aprobados:', emailError);
+      throw new Error(`Error al obtener emails aprobados: ${emailError.message}`);
+    }
+
+    const approvedEmailsSet = new Set(approvedEmails?.map(s => s.email.toLowerCase()) || []);
+    console.log('Emails aprobados encontrados:', approvedEmailsSet.size);
+
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
       try {
@@ -307,7 +323,7 @@ export default function Ajustes() {
             new Date(row['Fecha en que activó su primera licencia'] || row['fecha_primera_activacion']) : null,
         };
 
-        // Validar campos esenciales (misma validación que sheet2)
+        // Validar campos esenciales
         if (!processedRow.nombre || !processedRow.email) {
           errors.push(`Fila ${i + 2}: Datos esenciales faltantes - Nombre: "${processedRow.nombre}", Email: "${processedRow.email}"`);
           continue;
@@ -316,6 +332,12 @@ export default function Ajustes() {
         // Limpiar email
         processedRow.email = processedRow.email.toString().trim().toLowerCase();
 
+        // Verificar si el email está en solicitudes aprobadas
+        if (!approvedEmailsSet.has(processedRow.email)) {
+          errors.push(`Fila ${i + 2}: Email "${processedRow.email}" no tiene solicitud aprobada`);
+          continue;
+        }
+
         processed.push(processedRow);
       } catch (error) {
         console.error(`Error procesando fila ${i + 2}:`, error);
@@ -323,13 +345,36 @@ export default function Ajustes() {
       }
     }
 
+    // Deduplicar por email (conservar última ocurrencia)
+    const emailMap = new Map();
+    let duplicatesRemoved = 0;
+    
+    processed.forEach(record => {
+      if (emailMap.has(record.email)) {
+        duplicatesRemoved++;
+      }
+      emailMap.set(record.email, record);
+    });
+
+    const deduplicatedProcessed = Array.from(emailMap.values());
+
     console.log('Procesamiento completado:', {
       total: data.length,
       procesados: processed.length,
-      errores: errors.length
+      deduplicados: deduplicatedProcessed.length,
+      duplicadosRemovedos: duplicatesRemoved,
+      errores: errors.length,
+      emailsNoAprobados: errors.filter(e => e.includes('no tiene solicitud aprobada')).length
     });
 
-    return { processed, errors };
+    return { 
+      processed: deduplicatedProcessed, 
+      errors, 
+      stats: {
+        duplicatesRemoved,
+        emailsNotFound: errors.filter(e => e.includes('no tiene solicitud aprobada')).length
+      }
+    };
   };
 
   const processSheet2Data = async (data: any[]) => {
@@ -338,6 +383,20 @@ export default function Ajustes() {
 
     console.log('Procesando sheet2 con', data.length, 'filas');
     console.log('Primera fila de ejemplo:', data[0]);
+
+    // Obtener emails aprobados de solicitudes
+    const { data: approvedEmails, error: emailError } = await supabase
+      .from('solicitudes')
+      .select('email')
+      .eq('estado', 'Aprobada');
+
+    if (emailError) {
+      console.error('Error obteniendo emails aprobados:', emailError);
+      throw new Error(`Error al obtener emails aprobados: ${emailError.message}`);
+    }
+
+    const approvedEmailsSet = new Set(approvedEmails?.map(s => s.email.toLowerCase()) || []);
+    console.log('Emails aprobados encontrados:', approvedEmailsSet.size);
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
@@ -369,6 +428,12 @@ export default function Ajustes() {
         // Limpiar email
         processedRow.email = processedRow.email.toString().trim().toLowerCase();
 
+        // Verificar si el email está en solicitudes aprobadas
+        if (!approvedEmailsSet.has(processedRow.email)) {
+          errors.push(`Fila ${i + 2}: Email "${processedRow.email}" no tiene solicitud aprobada`);
+          continue;
+        }
+
         processed.push(processedRow);
       } catch (error) {
         console.error(`Error procesando fila ${i + 2}:`, error);
@@ -376,13 +441,37 @@ export default function Ajustes() {
       }
     }
 
+    // Deduplicar por email + id_curso (conservar última ocurrencia)
+    const courseMap = new Map();
+    let duplicatesRemoved = 0;
+    
+    processed.forEach(record => {
+      const key = `${record.email}|${record.id_curso}`;
+      if (courseMap.has(key)) {
+        duplicatesRemoved++;
+      }
+      courseMap.set(key, record);
+    });
+
+    const deduplicatedProcessed = Array.from(courseMap.values());
+
     console.log('Procesamiento completado:', {
       total: data.length,
       procesados: processed.length,
-      errores: errors.length
+      deduplicados: deduplicatedProcessed.length,
+      duplicadosRemovedos: duplicatesRemoved,
+      errores: errors.length,
+      emailsNoAprobados: errors.filter(e => e.includes('no tiene solicitud aprobada')).length
     });
 
-    return { processed, errors };
+    return { 
+      processed: deduplicatedProcessed, 
+      errors, 
+      stats: {
+        duplicatesRemoved,
+        emailsNotFound: errors.filter(e => e.includes('no tiene solicitud aprobada')).length
+      }
+    };
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -496,14 +585,23 @@ export default function Ajustes() {
         success: processResult.processed.length,
         errors: processResult.errors.length,
         total: jsonData.length,
-        errorDetails: processResult.errors
+        errorDetails: processResult.errors,
+        duplicatesRemoved: processResult.stats?.duplicatesRemoved || 0,
+        emailsNotFound: processResult.stats?.emailsNotFound || 0
       };
 
       setUploadResults(results);
 
+      const successMessage = selectedReport === 'sheet1' ? 
+        `Hoja 1: ${results.success} usuarios cargados` :
+        `Hoja 2: ${results.success} registros de cursos cargados`;
+      
+      const statsMessage = results.duplicatesRemoved > 0 || results.emailsNotFound > 0 ? 
+        ` (${results.duplicatesRemoved} duplicados removidos, ${results.emailsNotFound} emails no aprobados)` : '';
+
       toast({
         title: "Archivo procesado exitosamente",
-        description: `Datos anteriores eliminados, ${results.success} registros nuevos cargados, ${results.errors} errores encontrados`,
+        description: `${successMessage}${statsMessage}`,
         variant: results.errors > 0 ? "destructive" : "default"
       });
 
@@ -519,7 +617,9 @@ export default function Ajustes() {
         success: 0,
         errors: 1,
         total: 0,
-        errorDetails: [error.message || "Error desconocido"]
+        errorDetails: [error.message || "Error desconocido"],
+        duplicatesRemoved: 0,
+        emailsNotFound: 0
       });
     } finally {
       setIsUploading(false);
@@ -898,8 +998,14 @@ export default function Ajustes() {
                     <h4 className="font-medium text-sm">Resultados de la Importación</h4>
                   </div>
                   <div className="text-xs space-y-1">
-                    <p><strong>Total de registros:</strong> {uploadResults.total}</p>
+                    <p><strong>Total de registros en Excel:</strong> {uploadResults.total}</p>
                     <p className="text-green-700"><strong>Importados exitosamente:</strong> {uploadResults.success}</p>
+                    {uploadResults.duplicatesRemoved > 0 && (
+                      <p className="text-blue-700"><strong>Duplicados removidos:</strong> {uploadResults.duplicatesRemoved}</p>
+                    )}
+                    {uploadResults.emailsNotFound > 0 && (
+                      <p className="text-orange-700"><strong>Emails no aprobados:</strong> {uploadResults.emailsNotFound}</p>
+                    )}
                     {uploadResults.errors > 0 && (
                       <p className="text-red-700"><strong>Errores:</strong> {uploadResults.errors}</p>
                     )}
