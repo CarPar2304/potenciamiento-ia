@@ -128,6 +128,12 @@ export function ChatInterface({ onClose }: ChatInterfaceProps) {
                      JSON.stringify(data);
       }
 
+      // Limpiar el formato de la respuesta
+      responseText = responseText
+        .replace(/^\[|\]$/g, '') // Quitar corchetes del inicio y final
+        .replace(/^output:\s*/i, '') // Quitar "output:" del inicio
+        .trim(); // Limpiar espacios extras
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: responseText,
