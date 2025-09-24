@@ -485,6 +485,7 @@ export default function Solicitudes() {
   const [statusFilter, setStatusFilter] = useState('todos');
   const [chamberFilter, setChamberFilter] = useState('todas');
   const [sectorFilter, setSectorFilter] = useState('todos');
+  const [licenseFilter, setLicenseFilter] = useState('todas');
   const [selectedSolicitud, setSelectedSolicitud] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
@@ -645,8 +646,14 @@ export default function Solicitudes() {
     const matchesStatus = statusFilter === 'todos' || sol.estado === statusFilter;
     const matchesChamber = chamberFilter === 'todas' || sol.empresas?.camaras?.nombre === chamberFilter;
     const matchesSector = sectorFilter === 'todos' || sol.empresas?.sector === sectorFilter;
+    
+    // Nuevo filtro para licencias consumidas/no consumidas
+    const hasConsummed = platziData.some(p => p.email === sol.email);
+    const matchesLicense = licenseFilter === 'todas' ||
+      (licenseFilter === 'consumidas' && hasConsummed) ||
+      (licenseFilter === 'no_consumidas' && !hasConsummed);
 
-    return matchesSearch && matchesStatus && matchesChamber && matchesSector;
+    return matchesSearch && matchesStatus && matchesChamber && matchesSector && matchesLicense;
   });
 
   // Calculate stats
@@ -731,7 +738,7 @@ export default function Solicitudes() {
                 />
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[160px] bg-background/50 border-muted-foreground/20">
                   <SelectValue placeholder="Estado" />
@@ -743,6 +750,18 @@ export default function Solicitudes() {
                   <SelectItem value="Rechazada">Rechazada</SelectItem>
                 </SelectContent>
               </Select>
+              
+              <Select value={licenseFilter} onValueChange={setLicenseFilter}>
+                <SelectTrigger className="w-[180px] bg-background/50 border-muted-foreground/20">
+                  <SelectValue placeholder="Licencias" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas las licencias</SelectItem>
+                  <SelectItem value="consumidas">Licencias consumidas</SelectItem>
+                  <SelectItem value="no_consumidas">Licencias no consumidas</SelectItem>
+                </SelectContent>
+              </Select>
+              
               {canViewGlobal && (
                 <Select value={chamberFilter} onValueChange={setChamberFilter}>
                   <SelectTrigger className="w-[200px] bg-background/50 border-muted-foreground/20">
