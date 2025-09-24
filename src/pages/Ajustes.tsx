@@ -290,8 +290,12 @@ export default function Ajustes() {
       throw new Error(`Error al obtener emails aprobados: ${emailError.message}`);
     }
 
-    const approvedEmailsSet = new Set(approvedEmails?.map(s => s.email.toLowerCase()) || []);
-    console.log('Emails aprobados encontrados:', approvedEmailsSet.size);
+    // Crear mapa de emails aprobados: key = email en minúsculas, value = email canónico en BD
+    const approvedEmailsMap = new Map<string, string>();
+    (approvedEmails || []).forEach((s: any) => {
+      if (s.email) approvedEmailsMap.set(s.email.toLowerCase(), s.email);
+    });
+    console.log('Emails aprobados encontrados:', approvedEmailsMap.size);
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
@@ -329,14 +333,18 @@ export default function Ajustes() {
           continue;
         }
 
-        // Limpiar email
-        processedRow.email = processedRow.email.toString().trim().toLowerCase();
+        // Normalizar y validar email con base en BD
+        const emailLower = processedRow.email.toString().trim().toLowerCase();
+        const canonicalEmail = approvedEmailsMap.get(emailLower);
 
         // Verificar si el email está en solicitudes aprobadas
-        if (!approvedEmailsSet.has(processedRow.email)) {
+        if (!canonicalEmail) {
           errors.push(`Fila ${i + 2}: Email "${processedRow.email}" no tiene solicitud aprobada`);
           continue;
         }
+
+        // Usar el email canónico de la BD para respetar FKs (respeta mayúsculas/minúsculas)
+        processedRow.email = canonicalEmail;
 
         processed.push(processedRow);
       } catch (error) {
