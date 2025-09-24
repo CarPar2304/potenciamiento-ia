@@ -41,6 +41,7 @@ export function ChatInterface({ onClose }: ChatInterfaceProps) {
         const { data, error } = await supabase
           .from('webhook_config')
           .select('url')
+          .eq('name', 'VisorIA Chat')
           .eq('is_active', true)
           .single();
 
@@ -71,7 +72,7 @@ export function ChatInterface({ onClose }: ChatInterfaceProps) {
     if (!webhookUrl) {
       toast({
         title: "Configuración requerida",
-        description: "No hay webhook configurado. Ve a Ajustes para configurar uno.",
+        description: "VisorIA no está configurado. Ve a Ajustes para configurar el webhook.",
         variant: "destructive"
       });
       return;
@@ -133,7 +134,7 @@ export function ChatInterface({ onClose }: ChatInterfaceProps) {
 
       toast({
         title: "Error de conexión",
-        description: "No se pudo enviar el mensaje. Verifica la configuración del webhook.",
+        description: "No se pudo conectar con VisorIA. Verifica la configuración en Ajustes.",
         variant: "destructive"
       });
     } finally {
@@ -154,7 +155,7 @@ export function ChatInterface({ onClose }: ChatInterfaceProps) {
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-          <h3 className="font-semibold text-foreground">Chat de Soporte</h3>
+          <h3 className="font-semibold text-foreground">VisorIA</h3>
         </div>
         <Button
           variant="ghost"

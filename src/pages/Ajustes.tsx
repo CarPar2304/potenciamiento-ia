@@ -29,6 +29,7 @@ import {
   Info,
   Shield,
   XCircle,
+  MessageCircle,
 } from 'lucide-react';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -85,10 +86,18 @@ export default function Ajustes() {
   
   // Webhook configuration states
   const [webhookConfig, setWebhookConfig] = useState<any>(null);
+  const [chatWebhookConfig, setChatWebhookConfig] = useState<any>(null);
   const [isLoadingWebhook, setIsLoadingWebhook] = useState(true);
+  const [isLoadingChatWebhook, setIsLoadingChatWebhook] = useState(true);
   const [isSavingWebhook, setIsSavingWebhook] = useState(false);
+  const [isSavingChatWebhook, setIsSavingChatWebhook] = useState(false);
   const [webhookForm, setWebhookForm] = useState({
     name: 'Recordatorio Licencia',
+    url: '',
+    method: 'POST'
+  });
+  const [chatWebhookForm, setChatWebhookForm] = useState({
+    name: 'VisorIA Chat',
     url: '',
     method: 'POST'
   });
@@ -144,6 +153,7 @@ export default function Ajustes() {
   // Cargar configuración inicial
   useEffect(() => {
     loadWebhookConfig('Recordatorio Licencia');
+    loadChatWebhookConfig('VisorIA Chat');
   }, []);
 
   // Recargar configuración cuando cambie el tipo de webhook
@@ -152,6 +162,54 @@ export default function Ajustes() {
       loadWebhookConfig(webhookForm.name);
     }
   }, [webhookForm.name]);
+
+  useEffect(() => {
+    if (chatWebhookForm.name) {
+      loadChatWebhookConfig(chatWebhookForm.name);
+    }
+  }, [chatWebhookForm.name]);
+
+  // Load chat webhook configuration
+  const loadChatWebhookConfig = async (webhookName: string) => {
+    setIsLoadingChatWebhook(true);
+    try {
+      const { data, error } = await supabase
+        .from('webhook_config')
+        .select('*')
+        .eq('name', webhookName)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+
+      if (data) {
+        setChatWebhookConfig(data);
+        setChatWebhookForm({
+          name: data.name,
+          url: data.url,
+          method: data.method
+        });
+      } else {
+        // No existe configuración para este webhook, resetear el formulario
+        setChatWebhookConfig(null);
+        setChatWebhookForm({
+          name: webhookName,
+          url: '',
+          method: 'POST'
+        });
+      }
+    } catch (error: any) {
+      console.error('Error loading chat webhook config:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo cargar la configuración del webhook de chat",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingChatWebhook(false);
+    }
+  };
 
   const handleSaveWebhookConfig = async () => {
     setIsSavingWebhook(true);
@@ -234,6 +292,92 @@ export default function Ajustes() {
       toast({
         title: "Error de conexión",
         description: error.message || "No se pudo conectar al webhook",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSaveChatWebhookConfig = async () => {
+    setIsSavingChatWebhook(true);
+    try {
+      if (chatWebhookConfig) {
+        // Update existing
+        const { error } = await supabase
+          .from('webhook_config')
+          .update({
+            url: chatWebhookForm.url,
+            method: chatWebhookForm.method,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', chatWebhookConfig.id);
+
+        if (error) throw error;
+      } else {
+        // Create new
+        const { data, error } = await supabase
+          .from('webhook_config')
+          .insert({
+            name: chatWebhookForm.name,
+            url: chatWebhookForm.url,
+            method: chatWebhookForm.method
+          })
+          .select()
+          .single();
+
+        if (error) throw error;
+        setChatWebhookConfig(data);
+      }
+
+      toast({
+        title: "Configuración guardada",
+        description: "La configuración del webhook de VisorIA se guardó exitosamente.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo guardar la configuración del chat",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSavingChatWebhook(false);
+    }
+  };
+
+  const handleTestChatWebhook = async () => {
+    if (!chatWebhookForm.url) {
+      toast({
+        title: "URL requerida",
+        description: "Ingresa una URL antes de probar el webhook de VisorIA.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(chatWebhookForm.url, {
+        method: chatWebhookForm.method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: 'Prueba de conexión desde VisorIA',
+          timestamp: new Date().toISOString(),
+          userId: 'test_user'
+        }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Webhook de VisorIA funcionando",
+          description: "La conexión al webhook fue exitosa.",
+        });
+      } else {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error de conexión",
+        description: error.message || "No se pudo conectar al webhook de VisorIA",
         variant: "destructive"
       });
     }
@@ -805,6 +949,82 @@ export default function Ajustes() {
                 className="gap-2"
               >
                 Probar Conexión
+              </Button>
+            </div>
+          </div>
+        </SettingCard>
+
+        {/* VisorIA Chat Webhook Configuration */}
+        <SettingCard
+          title="Configuración de VisorIA"
+          description="Configura el webhook para el asistente de chat VisorIA"
+          icon={MessageCircle}
+        >
+          <div className="space-y-4">
+            <div className="bg-blue-50/50 p-3 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2 text-sm text-blue-700">
+                <Info className="h-4 w-4" />
+                <span>Este webhook se usa para el chat flotante VisorIA</span>
+              </div>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label>Método HTTP</Label>
+                <Select value={chatWebhookForm.method} onValueChange={(value) => setChatWebhookForm({...chatWebhookForm, method: value})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar método" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GET">GET</SelectItem>
+                    <SelectItem value="POST">POST</SelectItem>
+                    <SelectItem value="PUT">PUT</SelectItem>
+                    <SelectItem value="PATCH">PATCH</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>URL del Webhook</Label>
+                <Input 
+                  placeholder="https://tu-servidor.com/webhook/visoria-chat"
+                  value={chatWebhookForm.url}
+                  onChange={(e) => setChatWebhookForm({...chatWebhookForm, url: e.target.value})}
+                  disabled={isLoadingChatWebhook}
+                />
+                <p className="text-xs text-muted-foreground">
+                  El webhook recibirá: message, timestamp, userId
+                </p>
+              </div>
+            </div>
+            
+            {chatWebhookConfig && (
+              <div className="bg-muted/50 p-3 rounded-lg">
+                <div className="flex items-center gap-2 text-sm text-green-700">
+                  <CheckCircle className="h-4 w-4" />
+                  <span>VisorIA configurado exitosamente</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Última actualización: {new Date(chatWebhookConfig.updated_at).toLocaleString('es-CO')}
+                </p>
+              </div>
+            )}
+            
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleSaveChatWebhookConfig}
+                disabled={isLoadingChatWebhook || isSavingChatWebhook || !chatWebhookForm.url}
+                className="gap-2"
+              >
+                {isSavingChatWebhook ? 'Guardando...' : 'Guardar Configuración'}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleTestChatWebhook}
+                disabled={isLoadingChatWebhook || !chatWebhookForm.url}
+                className="gap-2"
+              >
+                Probar VisorIA
               </Button>
             </div>
           </div>
