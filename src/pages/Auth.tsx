@@ -3,54 +3,27 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 import logoDark from '@/assets/logo-dark.png';
 import logoLight from '@/assets/logo-light.png';
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [nombre, setNombre] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [camaraId, setCamaraId] = useState('');
-  const [celular, setCelular] = useState('');
-  const [cargo, setCargo] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [camaras, setCamaras] = useState<Array<{id: string, nombre: string, nit: string}>>([]);
 
-  const { signIn, signUp, user, profile, loading: authLoading } = useAuth();
+  const { signIn, user, profile, loading: authLoading } = useAuth();
   const { theme } = useTheme();
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  // Cargar cámaras y manejar redirección con mejor lógica
-  useEffect(() => {
-    // Cargar cámaras para el formulario de registro
-    const fetchCamaras = async () => {
-      const { data, error } = await supabase
-        .from('camaras')
-        .select('id, nombre, nit')
-        .order('nombre');
-      
-      if (!error && data) {
-        setCamaras(data);
-      }
-    };
-    
-    fetchCamaras();
-  }, []);
 
   // Manejar redirección solo cuando el auth esté completamente cargado
   useEffect(() => {
@@ -65,65 +38,15 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      if (isLogin) {
-        const { error } = await signIn(email, password);
-        if (error) {
-          setError(getErrorMessage(error.message));
-        } else {
-          toast({
-            title: "¡Bienvenido!",
-            description: "Has iniciado sesión correctamente.",
-          });
-          navigate('/');
-        }
+      const { error } = await signIn(email, password);
+      if (error) {
+        setError(getErrorMessage(error.message));
       } else {
-        // Validaciones para registro
-        if (password !== confirmPassword) {
-          setError('Las contraseñas no coinciden');
-          setLoading(false);
-          return;
-        }
-        
-        if (password.length < 6) {
-          setError('La contraseña debe tener al menos 6 caracteres');
-          setLoading(false);
-          return;
-        }
-
-        if (!nombre.trim()) {
-          setError('El nombre es requerido');
-          setLoading(false);
-          return;
-        }
-        
-        if (!camaraId) {
-          setError('Debes seleccionar una cámara de comercio');
-          setLoading(false);
-          return;
-        }
-        
-        if (!celular.trim()) {
-          setError('El número de celular es requerido');
-          setLoading(false);
-          return;
-        }
-        
-        if (!cargo.trim()) {
-          setError('El cargo es requerido');
-          setLoading(false);
-          return;
-        }
-
-        const { error } = await signUp(email, password, nombre, camaraId, celular, cargo);
-        if (error) {
-          setError(getErrorMessage(error.message));
-        } else {
-          toast({
-            title: "¡Registro exitoso!",
-            description: "Por favor revisa tu email para confirmar tu cuenta.",
-          });
-          setIsLogin(true);
-        }
+        toast({
+          title: "¡Bienvenido!",
+          description: "Has iniciado sesión correctamente.",
+        });
+        navigate('/');
       }
     } catch (error: any) {
       setError('Ocurrió un error inesperado. Inténtalo de nuevo.');
@@ -143,24 +66,6 @@ export default function Auth() {
     };
 
     return errorMap[errorMessage] || 'Error de autenticación. Inténtalo de nuevo.';
-  };
-
-  const resetForm = () => {
-    setEmail('');
-    setPassword('');
-    setNombre('');
-    setConfirmPassword('');
-    setCamaraId('');
-    setCelular('');
-    setCargo('');
-    setError('');
-    setShowPassword(false);
-    setShowConfirmPassword(false);
-  };
-
-  const toggleMode = () => {
-    setIsLogin(!isLogin);
-    resetForm();
   };
 
   const currentLogo = theme === 'dark' ? logoDark : logoLight;
@@ -185,13 +90,10 @@ export default function Auth() {
         <Card className="backdrop-blur-sm bg-card/95 border-border/50 shadow-lg">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl text-center">
-              {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
+              Iniciar Sesión
             </CardTitle>
             <CardDescription className="text-center">
-              {isLogin 
-                ? 'Ingresa tus credenciales para acceder al sistema'
-                : 'Completa la información para crear tu cuenta'
-              }
+              Ingresa tus credenciales para acceder al sistema
             </CardDescription>
           </CardHeader>
 
@@ -201,65 +103,6 @@ export default function Auth() {
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
-              )}
-
-              {!isLogin && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="nombre">Nombre completo</Label>
-                    <Input
-                      id="nombre"
-                      type="text"
-                      placeholder="Ingresa tu nombre completo"
-                      value={nombre}
-                      onChange={(e) => setNombre(e.target.value)}
-                      required={!isLogin}
-                      className="transition-colors focus:border-primary"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="camara">Cámara de Comercio</Label>
-                    <Select value={camaraId} onValueChange={setCamaraId} required={!isLogin}>
-                      <SelectTrigger className="transition-colors focus:border-primary">
-                        <SelectValue placeholder="Selecciona tu cámara de comercio" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover border-border z-50">
-                        {camaras.map((camara) => (
-                          <SelectItem key={camara.id} value={camara.id}>
-                            {camara.nombre}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="celular">Número de celular</Label>
-                    <Input
-                      id="celular"
-                      type="tel"
-                      placeholder="Ej: 300 123 4567"
-                      value={celular}
-                      onChange={(e) => setCelular(e.target.value)}
-                      required={!isLogin}
-                      className="transition-colors focus:border-primary"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="cargo">Cargo en la empresa</Label>
-                    <Input
-                      id="cargo"
-                      type="text"
-                      placeholder="Ej: Gerente General, Director, etc."
-                      value={cargo}
-                      onChange={(e) => setCargo(e.target.value)}
-                      required={!isLogin}
-                      className="transition-colors focus:border-primary"
-                    />
-                  </div>
-                </>
               )}
 
               <div className="space-y-2">
@@ -302,62 +145,17 @@ export default function Auth() {
                   </Button>
                 </div>
               </div>
-
-              {!isLogin && (
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
-                  <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Confirma tu contraseña"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required={!isLogin}
-                      className="pr-10 transition-colors focus:border-primary"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
             </CardContent>
 
-            <CardFooter className="flex flex-col space-y-4">
+            <CardFooter>
               <Button 
                 type="submit" 
                 className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-primary-foreground transition-all duration-200"
                 disabled={loading}
               >
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
+                Iniciar Sesión
               </Button>
-
-              <div className="text-center text-sm">
-                <span className="text-muted-foreground">
-                  {isLogin ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?'}
-                </span>{' '}
-                <Button
-                  type="button"
-                  variant="link"
-                  className="p-0 h-auto font-semibold text-primary hover:text-primary/80"
-                  onClick={toggleMode}
-                  disabled={loading}
-                >
-                  {isLogin ? 'Crear cuenta' : 'Iniciar sesión'}
-                </Button>
-              </div>
             </CardFooter>
           </form>
         </Card>
