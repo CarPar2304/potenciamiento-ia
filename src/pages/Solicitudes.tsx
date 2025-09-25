@@ -97,7 +97,7 @@ const StatCard = ({ title, value, description, icon: Icon, variant }: {
   );
 };
 
-const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, onSendReminder, onApproveRequest, sendingReminder, approvingRequest, isSent }: {
+const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, onSendReminder, onApproveRequest, sendingReminder, approvingRequest, isSent, canExecuteActions }: {
   solicitud: any;
   canViewGlobal: boolean;
   onViewDetails: () => void;
@@ -107,6 +107,7 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
   sendingReminder: boolean;
   approvingRequest: boolean;
   isSent: boolean;
+  canExecuteActions: boolean;
 }) => {
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { color: string; bg: string; border: string }> = {
@@ -199,7 +200,7 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
           {!isApprovedStatus && <div />}
           <div className="flex items-center gap-2 flex-wrap">
             {/* Botón para enviar recordatorio (solo para aprobadas sin licencia consumida) */}
-            {isApprovedStatus && !hasCompletedTest && (
+            {canExecuteActions && isApprovedStatus && !hasCompletedTest && (
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -234,7 +235,7 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
             )}
             
             {/* Botón para aprobar solicitud (solo para rechazadas) */}
-            {isRejectedStatus && (
+            {canExecuteActions && isRejectedStatus && (
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -494,7 +495,8 @@ export default function Solicitudes() {
 
   if (!profile) return null;
 
-  const canViewGlobal = hasPermission(profile.role, 'view_global') || hasPermission(profile.role, 'view_all');
+  const canViewGlobal = hasPermission(profile.role, 'view_all');
+  const canExecuteActions = hasPermission(profile.role, 'admin_actions');
 
   const handleSendReminder = async (solicitud: any) => {
     if (!solicitud.celular) {
@@ -810,6 +812,7 @@ export default function Solicitudes() {
                 key={solicitud.id}
                 solicitud={solicitud}
                 canViewGlobal={canViewGlobal}
+                canExecuteActions={canExecuteActions}
                 onViewDetails={() => handleViewDetails(solicitud)}
                 onSendReminder={handleSendReminder}
                 onApproveRequest={handleApproveRequest}

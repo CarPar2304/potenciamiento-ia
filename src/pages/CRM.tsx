@@ -43,10 +43,11 @@ import { useCRMActividades, useCamaras, useSolicitudes, usePlatziGeneral } from 
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
-const ActivityCard = ({ actividad, onEdit, onDelete }: {
+const ActivityCard = ({ actividad, onEdit, onDelete, canEdit }: {
   actividad: any;
   onEdit: () => void;
   onDelete: () => void;
+  canEdit: boolean;
 }) => {
   const getActivityIcon = (tipo: string) => {
     const icons = {
@@ -114,24 +115,26 @@ const ActivityCard = ({ actividad, onEdit, onDelete }: {
             </div>
           )}
         </div>
-        <div className="flex justify-end gap-1 mt-4 pt-3 border-t">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onEdit}
-            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-          >
-            <Edit className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onDelete}
-            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+        {canEdit && (
+          <div className="flex justify-end gap-1 mt-4 pt-3 border-t">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onEdit}
+              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onDelete}
+              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -310,7 +313,8 @@ export default function CRM() {
 
   if (!profile) return null;
 
-  const canViewGlobal = hasPermission(profile.role, 'view_global') || hasPermission(profile.role, 'view_all');
+  const canViewGlobal = hasPermission(profile.role, 'view_all');
+  const canEdit = hasPermission(profile.role, 'crm_edit');
 
   if (!canViewGlobal) {
     return (
@@ -441,10 +445,12 @@ export default function CRM() {
             Gestión de relaciones con {camaras.length} cámaras aliadas
           </p>
         </div>
-        <Button onClick={handleCreate} className="bg-gradient-primary text-white border-none hover:opacity-90">
-          <Plus className="h-4 w-4 mr-2" />
-          Nueva Actividad
-        </Button>
+        {canEdit && (
+          <Button onClick={handleCreate} className="bg-gradient-primary text-white border-none hover:opacity-90">
+            <Plus className="h-4 w-4 mr-2" />
+            Nueva Actividad
+          </Button>
+        )}
       </div>
 
       {/* KPI Cards */}
@@ -582,6 +588,7 @@ export default function CRM() {
             <ActivityCard
               key={actividad.id}
               actividad={actividad}
+              canEdit={canEdit}
               onEdit={() => handleEdit(actividad)}
               onDelete={() => handleDelete(actividad)}
             />

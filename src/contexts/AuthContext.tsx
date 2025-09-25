@@ -216,10 +216,10 @@ export function hasPermission(userRole: UserRole, permission: string): boolean {
     admin: [
       'view_all', 'edit_all', 'crm_edit', 'insights_edit', 'reports_upload', 
       'user_management', 'ajustes', 'dashboard', 'insights_read', 'solicitudes', 
-      'empresas', 'colaboradores', 'crm_view'
+      'empresas', 'colaboradores', 'crm_view', 'admin_actions'
     ],
     ccc: [
-      'view_global', 'dashboard', 'crm_view', 'insights_read', 'solicitudes', 
+      'view_all', 'dashboard', 'crm_view', 'insights_read', 'solicitudes', 
       'empresas', 'colaboradores_cali', 'colaboradores'
     ],
     camara_aliada: [
