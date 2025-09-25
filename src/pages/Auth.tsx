@@ -14,6 +14,7 @@ import logoDark from '@/assets/logo-dark.png';
 import logoLight from '@/assets/logo-light.png';
 
 export default function Auth() {
+  console.log('Auth component loaded - login only version');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
