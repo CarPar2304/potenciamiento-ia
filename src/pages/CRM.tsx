@@ -334,10 +334,11 @@ export default function CRM() {
   // Calculate chamber metrics
   const chamberMetrics = camaras.map(camara => {
     const camaraActividades = actividades.filter(a => a.camara_id === camara.id);
-    const camaraSolicitudes = solicitudes.filter(s => s.empresas?.camara_id === camara.id);
+    const camaraSolicitudes = solicitudes.filter(s => s.empresas?.camara_id === camara.id && !s.es_colaborador);
+    const camaraColaboradores = solicitudes.filter(s => s.camara_colaborador_id === camara.id && s.es_colaborador);
     const camaraPlatziUsers = platziData.filter(p => {
       const solicitud = solicitudes.find(s => s.email === p.email);
-      return solicitud?.empresas?.camara_id === camara.id;
+      return solicitud?.empresas?.camara_id === camara.id || solicitud?.camara_colaborador_id === camara.id;
     });
 
     const licenciasAsignadas = camaraPlatziUsers.length;
@@ -347,6 +348,7 @@ export default function CRM() {
       ...camara,
       actividades: camaraActividades.length,
       solicitudes: camaraSolicitudes.length,
+      colaboradores: camaraColaboradores.length,
       licenciasAsignadas,
       utilizacionPorcentaje,
       ultimaActividad: camaraActividades.length > 0 ? 
@@ -532,6 +534,10 @@ export default function CRM() {
                       <div>
                         <span className="text-muted-foreground">Solicitudes:</span>
                         <p className="font-medium">{camara.solicitudes}</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Colaboradores:</span>
+                        <p className="font-medium">{camara.colaboradores}</p>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Actividades:</span>
