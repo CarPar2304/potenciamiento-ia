@@ -412,6 +412,7 @@ export type Database = {
           nivel_educativo: string | null
           nombres_apellidos: string
           numero_documento: string
+          razon_rechazo: string | null
           tipo_identificacion:
             | Database["public"]["Enums"]["tipo_identificacion_enum"]
             | null
@@ -434,6 +435,7 @@ export type Database = {
           nivel_educativo?: string | null
           nombres_apellidos: string
           numero_documento: string
+          razon_rechazo?: string | null
           tipo_identificacion?:
             | Database["public"]["Enums"]["tipo_identificacion_enum"]
             | null
@@ -456,6 +458,7 @@ export type Database = {
           nivel_educativo?: string | null
           nombres_apellidos?: string
           numero_documento?: string
+          razon_rechazo?: string | null
           tipo_identificacion?:
             | Database["public"]["Enums"]["tipo_identificacion_enum"]
             | null
