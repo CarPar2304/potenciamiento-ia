@@ -606,6 +606,7 @@ export default function Solicitudes() {
           nombre: solicitud.nombres_apellidos,
           email: solicitud.email,
           empresa: solicitud.empresas?.nombre,
+          nit: solicitud.nit_empresa,
           nit_empresa: solicitud.nit_empresa,
           timestamp: new Date().toISOString(),
           tipo: 'aprobar_solicitud'
