@@ -126,99 +126,115 @@ const ColaboradorCard = ({ colaborador, onViewDetails, platziData }: {
 
   return (
     <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-background to-background/50 backdrop-blur-sm border-l-4 border-l-primary/30">
-      <CardHeader className="pb-3">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div className="flex items-center space-x-3 flex-1">
-            <Avatar className="h-12 w-12 ring-2 ring-primary/20">
-              <AvatarFallback className="bg-gradient-primary text-primary-foreground font-semibold">
+      <CardHeader className="pb-4">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center space-x-4">
+            <Avatar className="h-14 w-14 ring-2 ring-primary/20">
+              <AvatarFallback className="bg-gradient-primary text-primary-foreground font-semibold text-lg">
                 {colaborador.nombres_apellidos.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <CardTitle className="text-lg font-semibold line-clamp-1">
+              <CardTitle className="text-xl font-semibold line-clamp-2 mb-2">
                 {colaborador.nombres_apellidos}
               </CardTitle>
-              <CardDescription className="flex items-center gap-2 text-sm truncate">
-                <Mail className="h-3 w-3 flex-shrink-0" />
-                <span className="truncate">{colaborador.email}</span>
+              <CardDescription className="flex items-center gap-2 text-sm">
+                <Mail className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate text-base">{colaborador.email}</span>
               </CardDescription>
             </div>
           </div>
-          <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2 w-full sm:w-auto">
-            <Badge className={`${statusConfig.bg} ${statusConfig.color} ${statusConfig.border} border whitespace-nowrap`}>
+          
+          <div className="flex flex-wrap items-center gap-3">
+            <Badge className={`${statusConfig.bg} ${statusConfig.color} ${statusConfig.border} border px-3 py-1 text-sm font-medium`}>
               {colaborador.estado}
             </Badge>
             {hasConsumedLicense ? (
-              <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 whitespace-nowrap">
-                <Award className="h-3 w-3 mr-1" />
+              <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50 px-3 py-1 text-sm">
+                <Award className="h-4 w-4 mr-2" />
                 Licencia consumida
               </Badge>
             ) : colaborador.estado === 'Aprobada' ? (
-              <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">
-                <Clock className="h-3 w-3 mr-1" />
+              <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 px-3 py-1 text-sm">
+                <Clock className="h-4 w-4 mr-2" />
                 Licencia no consumida
               </Badge>
             ) : null}
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-3 text-sm">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Hash className="h-3 w-3 flex-shrink-0" />
-            <span className="font-medium">Documento:</span>
-            <span className="truncate">{colaborador.numero_documento}</span>
+      
+      <CardContent className="space-y-6">
+        <div className="grid gap-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex items-center gap-3 text-muted-foreground p-2 rounded-lg bg-muted/20">
+              <Hash className="h-4 w-4 flex-shrink-0" />
+              <div>
+                <span className="font-medium block">Documento</span>
+                <span className="text-foreground">{colaborador.numero_documento}</span>
+              </div>
+            </div>
+            
+            {colaborador.celular && (
+              <div className="flex items-center gap-3 text-muted-foreground p-2 rounded-lg bg-muted/20">
+                <Phone className="h-4 w-4 flex-shrink-0" />
+                <div>
+                  <span className="font-medium block">Celular</span>
+                  <span className="text-foreground">{colaborador.celular}</span>
+                </div>
+              </div>
+            )}
           </div>
           
-          {colaborador.celular && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Phone className="h-3 w-3 flex-shrink-0" />
-              <span className="font-medium">Celular:</span>
-              <span className="truncate">{colaborador.celular}</span>
-            </div>
-          )}
-          
           {colaborador.cargo && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Briefcase className="h-3 w-3 flex-shrink-0" />
-              <span className="font-medium">Cargo:</span>
-              <span className="truncate">{colaborador.cargo}</span>
+            <div className="flex items-center gap-3 text-muted-foreground p-2 rounded-lg bg-muted/20">
+              <Briefcase className="h-4 w-4 flex-shrink-0" />
+              <div>
+                <span className="font-medium block">Cargo</span>
+                <span className="text-foreground">{colaborador.cargo}</span>
+              </div>
             </div>
           )}
           
           {colaborador.camaras && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Building2 className="h-3 w-3 flex-shrink-0" />
-              <span className="font-medium">Cámara:</span>
-              <span className="truncate">{colaborador.camaras.nombre}</span>
+            <div className="flex items-center gap-3 text-muted-foreground p-2 rounded-lg bg-muted/20">
+              <Building2 className="h-4 w-4 flex-shrink-0" />
+              <div>
+                <span className="font-medium block">Cámara</span>
+                <span className="text-foreground">{colaborador.camaras.nombre}</span>
+              </div>
             </div>
           )}
           
           {colaborador.nivel_educativo && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <GraduationCap className="h-3 w-3 flex-shrink-0" />
-              <span className="font-medium">Nivel educativo:</span>
-              <span className="truncate">{colaborador.nivel_educativo}</span>
+            <div className="flex items-center gap-3 text-muted-foreground p-2 rounded-lg bg-muted/20">
+              <GraduationCap className="h-4 w-4 flex-shrink-0" />
+              <div>
+                <span className="font-medium block">Nivel educativo</span>
+                <span className="text-foreground">{colaborador.nivel_educativo}</span>
+              </div>
             </div>
           )}
           
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Calendar className="h-3 w-3 flex-shrink-0" />
-            <span className="font-medium">Fecha:</span>
-            <span>{new Date(colaborador.fecha_solicitud).toLocaleDateString('es-CO')}</span>
+          <div className="flex items-center gap-3 text-muted-foreground p-2 rounded-lg bg-muted/20">
+            <Calendar className="h-4 w-4 flex-shrink-0" />
+            <div>
+              <span className="font-medium block">Fecha de solicitud</span>
+              <span className="text-foreground">{new Date(colaborador.fecha_solicitud).toLocaleDateString('es-CO')}</span>
+            </div>
           </div>
         </div>
 
         {userPlatziData && (
-          <div className="bg-muted/30 rounded-lg p-3 space-y-3">
+          <div className="bg-muted/30 rounded-lg p-4 space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-muted-foreground">Progreso en Platzi</span>
               <Badge variant="outline" className="text-xs">
                 {userPlatziData.ruta || 'Sin ruta'}
               </Badge>
             </div>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-xs text-muted-foreground">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center text-sm text-muted-foreground">
                 <span>Progreso: {Math.round((userPlatziData.progreso_ruta || 0) * 100)}%</span>
                 <span>Cursos certificados: {userPlatziData.cursos_totales_certificados || 0}</span>
               </div>
@@ -232,17 +248,17 @@ const ColaboradorCard = ({ colaborador, onViewDetails, platziData }: {
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-2 border-t">
-          <div className="text-xs text-muted-foreground">
-            Colaborador de {colaborador.camaras?.nombre || 'Cámara no especificada'}
+        <div className="flex items-center justify-between pt-4 border-t">
+          <div className="text-sm text-muted-foreground">
+            Colaborador de <span className="font-medium text-foreground">{colaborador.camaras?.nombre || 'Cámara no especificada'}</span>
           </div>
           <Button 
             variant="outline" 
             size="sm"
             onClick={onViewDetails}
-            className="hover:bg-primary hover:text-primary-foreground"
+            className="hover:bg-primary hover:text-primary-foreground px-4 py-2"
           >
-            <Eye className="h-3 w-3 mr-1" />
+            <Eye className="h-4 w-4 mr-2" />
             Ver detalles
           </Button>
         </div>
@@ -456,7 +472,7 @@ export default function Colaboradores() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
             {filteredColaboradores.map((colaborador) => (
               <ColaboradorCard
                 key={colaborador.id}
