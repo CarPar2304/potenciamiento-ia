@@ -246,7 +246,12 @@ export function BusinessEnvironmentTab({ data, userRole }: BusinessEnvironmentTa
                 <XAxis dataKey="market" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="companies" fill="hsl(var(--secondary))" />
+                <Bar dataKey="companies">
+                  {data.marketReach.map((entry, index) => {
+                    const colors = ['hsl(262, 83%, 58%)', 'hsl(280, 65%, 60%)', 'hsl(330, 75%, 65%)'];
+                    return <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />;
+                  })}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
