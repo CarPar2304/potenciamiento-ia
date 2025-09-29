@@ -302,11 +302,12 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
   );
 };
 
-const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave }: {
+const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave, camaras }: {
   solicitud: any;
   isOpen: boolean;
   onClose: () => void;
   onSave: (updatedSolicitud: any) => void;
+  camaras: any[];
 }) => {
   const [formData, setFormData] = useState({
     // Solo datos de solicitud
@@ -323,6 +324,8 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave }: {
     estado: '',
     razon_rechazo: '',
     nit_empresa: '',
+    es_colaborador: false,
+    camara_colaborador_id: '',
   });
   
   const [saving, setSaving] = useState(false);
@@ -344,11 +347,13 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave }: {
         estado: solicitud.estado || '',
         razon_rechazo: solicitud.razon_rechazo || '',
         nit_empresa: solicitud.nit_empresa || '',
+        es_colaborador: solicitud.es_colaborador || false,
+        camara_colaborador_id: solicitud.camara_colaborador_id || '',
       });
     }
   }, [solicitud]);
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -372,6 +377,8 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave }: {
         estado: formData.estado,
         razon_rechazo: formData.razon_rechazo,
         nit_empresa: formData.nit_empresa,
+        es_colaborador: formData.es_colaborador,
+        camara_colaborador_id: formData.es_colaborador ? formData.camara_colaborador_id : null,
       };
 
       await onSave(updatedSolicitud);
@@ -531,16 +538,58 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave }: {
                   onChange={(e) => handleInputChange('nit_empresa', e.target.value)}
                 />
               </div>
+              <div>
+                <Label htmlFor="es_colaborador">¿Es Colaborador?</Label>
+                <Select 
+                  value={formData.es_colaborador ? 'true' : 'false'} 
+                  onValueChange={(value) => handleInputChange('es_colaborador', value === 'true')}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="false">No</SelectItem>
+                    <SelectItem value="true">Sí</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {formData.es_colaborador && (
+                <div className="col-span-2">
+                  <Label htmlFor="camara_colaborador_id">Cámara de Comercio del Colaborador</Label>
+                  <Select 
+                    value={formData.camara_colaborador_id} 
+                    onValueChange={(value) => handleInputChange('camara_colaborador_id', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar cámara" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {camaras.map((camara) => (
+                        <SelectItem key={camara.id} value={camara.id}>
+                          {camara.nombre}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             {formData.estado === 'Rechazada' && (
               <div>
                 <Label htmlFor="razon_rechazo">Razón de Rechazo</Label>
-                <Textarea
-                  id="razon_rechazo"
-                  value={formData.razon_rechazo}
-                  onChange={(e) => handleInputChange('razon_rechazo', e.target.value)}
-                  placeholder="Especifique la razón del rechazo..."
-                />
+                <Select 
+                  value={formData.razon_rechazo} 
+                  onValueChange={(value) => handleInputChange('razon_rechazo', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar razón (opcional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Sin especificar</SelectItem>
+                    <SelectItem value="Fuera de Jurisdicción">Fuera de Jurisdicción</SelectItem>
+                    <SelectItem value="No existe NIT">No existe NIT</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </div>
@@ -1173,6 +1222,7 @@ export default function Solicitudes() {
           setEditingSolicitud(null);
         }}
         onSave={handleSaveEdit}
+        camaras={camaras}
       />
     </div>
   );
