@@ -44,10 +44,16 @@ import {
   BarChart3,
   Send,
   Edit,
+  CalendarIcon,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { useEffect } from 'react';
 import { useSolicitudes, useCamaras, usePlatziGeneral, usePlatziSeguimiento } from '@/hooks/useSupabaseData';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -343,7 +349,7 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave }: {
   const [saving, setSaving] = useState(false);
 
   // Inicializar form data cuando cambia la solicitud
-  useState(() => {
+  useEffect(() => {
     if (solicitud) {
       setFormData({
         nombres_apellidos: solicitud.nombres_apellidos || '',
@@ -362,26 +368,26 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave }: {
         nit_empresa: solicitud.nit_empresa || '',
         sector: solicitud.empresas?.sector || '',
         mercado: solicitud.empresas?.mercado || '',
-        num_colaboradores: solicitud.empresas?.num_colaboradores || '',
-        mujeres_colaboradoras: solicitud.empresas?.mujeres_colaboradoras || '',
-        ventas_2024: solicitud.empresas?.ventas_2024 || '',
-        utilidades_2024: solicitud.empresas?.utilidades_2024 || '',
+        num_colaboradores: solicitud.empresas?.num_colaboradores?.toString() || '',
+        mujeres_colaboradoras: solicitud.empresas?.mujeres_colaboradoras?.toString() || '',
+        ventas_2024: solicitud.empresas?.ventas_2024?.toString() || '',
+        utilidades_2024: solicitud.empresas?.utilidades_2024?.toString() || '',
         productos_servicios: solicitud.empresas?.productos_servicios || '',
         tipo_cliente: solicitud.empresas?.tipo_cliente || '',
         decision_adoptar_ia: solicitud.empresas?.decision_adoptar_ia || '',
         areas_implementacion_ia: solicitud.empresas?.areas_implementacion_ia || '',
         razon_no_adopcion: solicitud.empresas?.razon_no_adopcion || '',
         invirtio_ia_2024: solicitud.empresas?.invirtio_ia_2024 || '',
-        monto_inversion_2024: solicitud.empresas?.monto_inversion_2024 || '',
+        monto_inversion_2024: solicitud.empresas?.monto_inversion_2024?.toString() || '',
         asigno_recursos_ia: solicitud.empresas?.asigno_recursos_ia || '',
-        probabilidad_adopcion_12m: solicitud.empresas?.probabilidad_adopcion_12m || '',
-        probabilidad_inversion_12m: solicitud.empresas?.probabilidad_inversion_12m || '',
-        monto_invertir_12m: solicitud.empresas?.monto_invertir_12m || '',
-        colaboradores_capacitados_ia: solicitud.empresas?.colaboradores_capacitados_ia || '',
+        probabilidad_adopcion_12m: solicitud.empresas?.probabilidad_adopcion_12m?.toString() || '',
+        probabilidad_inversion_12m: solicitud.empresas?.probabilidad_inversion_12m?.toString() || '',
+        monto_invertir_12m: solicitud.empresas?.monto_invertir_12m?.toString() || '',
+        colaboradores_capacitados_ia: solicitud.empresas?.colaboradores_capacitados_ia?.toString() || '',
         plan_capacitacion_ia: solicitud.empresas?.plan_capacitacion_ia || '',
       });
     }
-  });
+  }, [solicitud]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -488,6 +494,21 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave }: {
                 />
               </div>
               <div>
+                <Label htmlFor="tipo_identificacion">Tipo de Identificación</Label>
+                <Select value={formData.tipo_identificacion} onValueChange={(value) => handleInputChange('tipo_identificacion', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Tarjeta de Identidad">Tarjeta de Identidad</SelectItem>
+                    <SelectItem value="Cédula de Ciudadanía">Cédula de Ciudadanía</SelectItem>
+                    <SelectItem value="Cédula de Extranjería">Cédula de Extranjería</SelectItem>
+                    <SelectItem value="Pasaporte">Pasaporte</SelectItem>
+                    <SelectItem value="Permiso de Permanencia Temporal">Permiso de Permanencia Temporal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label htmlFor="celular">Celular</Label>
                 <Input
                   id="celular"
@@ -510,6 +531,55 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave }: {
                   value={formData.nivel_educativo}
                   onChange={(e) => handleInputChange('nivel_educativo', e.target.value)}
                 />
+              </div>
+              <div>
+                <Label htmlFor="genero">Género</Label>
+                <Select value={formData.genero} onValueChange={(value) => handleInputChange('genero', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar género" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Masculino">Masculino</SelectItem>
+                    <SelectItem value="Femenino">Femenino</SelectItem>
+                    <SelectItem value="Otro">Otro</SelectItem>
+                    <SelectItem value="Prefiero no decir">Prefiero no decir</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="grupo_etnico">Grupo Étnico</Label>
+                <Input
+                  id="grupo_etnico"
+                  value={formData.grupo_etnico}
+                  onChange={(e) => handleInputChange('grupo_etnico', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="fecha_nacimiento">Fecha de Nacimiento</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.fecha_nacimiento && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.fecha_nacimiento ? format(new Date(formData.fecha_nacimiento), "dd/MM/yyyy") : "Seleccionar fecha"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={formData.fecha_nacimiento ? new Date(formData.fecha_nacimiento) : undefined}
+                      onSelect={(date) => handleInputChange('fecha_nacimiento', date ? date.toISOString().split('T')[0] : '')}
+                      disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
               <div>
                 <Label htmlFor="estado">Estado</Label>
@@ -565,6 +635,27 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave }: {
                 />
               </div>
               <div>
+                <Label htmlFor="mercado">Mercado</Label>
+                <Select value={formData.mercado} onValueChange={(value) => handleInputChange('mercado', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar mercado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Local">Local</SelectItem>
+                    <SelectItem value="Nacional">Nacional</SelectItem>
+                    <SelectItem value="Internacional">Internacional</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="tipo_cliente">Tipo de Cliente</Label>
+                <Input
+                  id="tipo_cliente"
+                  value={formData.tipo_cliente}
+                  onChange={(e) => handleInputChange('tipo_cliente', e.target.value)}
+                />
+              </div>
+              <div>
                 <Label htmlFor="num_colaboradores">Número de Colaboradores</Label>
                 <Input
                   id="num_colaboradores"
@@ -587,6 +678,7 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave }: {
                 <Input
                   id="ventas_2024"
                   type="number"
+                  step="0.01"
                   value={formData.ventas_2024}
                   onChange={(e) => handleInputChange('ventas_2024', e.target.value)}
                 />
@@ -596,9 +688,109 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave }: {
                 <Input
                   id="utilidades_2024"
                   type="number"
+                  step="0.01"
                   value={formData.utilidades_2024}
                   onChange={(e) => handleInputChange('utilidades_2024', e.target.value)}
                 />
+              </div>
+              <div>
+                <Label htmlFor="decision_adoptar_ia">¿Decidió adoptar IA?</Label>
+                <Select value={formData.decision_adoptar_ia} onValueChange={(value) => handleInputChange('decision_adoptar_ia', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Si">Si</SelectItem>
+                    <SelectItem value="No">No</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="invirtio_ia_2024">¿Invirtió en IA en 2024?</Label>
+                <Select value={formData.invirtio_ia_2024} onValueChange={(value) => handleInputChange('invirtio_ia_2024', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Si">Si</SelectItem>
+                    <SelectItem value="No">No</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="monto_inversion_2024">Monto Inversión 2024</Label>
+                <Input
+                  id="monto_inversion_2024"
+                  type="number"
+                  step="0.01"
+                  value={formData.monto_inversion_2024}
+                  onChange={(e) => handleInputChange('monto_inversion_2024', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="asigno_recursos_ia">¿Asignó recursos para IA?</Label>
+                <Select value={formData.asigno_recursos_ia} onValueChange={(value) => handleInputChange('asigno_recursos_ia', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Si">Si</SelectItem>
+                    <SelectItem value="No">No</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="probabilidad_adopcion_12m">Probabilidad Adopción 12m (1-5)</Label>
+                <Input
+                  id="probabilidad_adopcion_12m"
+                  type="number"
+                  min="1"
+                  max="5"
+                  value={formData.probabilidad_adopcion_12m}
+                  onChange={(e) => handleInputChange('probabilidad_adopcion_12m', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="probabilidad_inversion_12m">Probabilidad Inversión 12m (1-5)</Label>
+                <Input
+                  id="probabilidad_inversion_12m"
+                  type="number"
+                  min="1"
+                  max="5"
+                  value={formData.probabilidad_inversion_12m}
+                  onChange={(e) => handleInputChange('probabilidad_inversion_12m', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="monto_invertir_12m">Monto a Invertir 12m</Label>
+                <Input
+                  id="monto_invertir_12m"
+                  type="number"
+                  step="0.01"
+                  value={formData.monto_invertir_12m}
+                  onChange={(e) => handleInputChange('monto_invertir_12m', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="colaboradores_capacitados_ia">Colaboradores Capacitados en IA</Label>
+                <Input
+                  id="colaboradores_capacitados_ia"
+                  type="number"
+                  value={formData.colaboradores_capacitados_ia}
+                  onChange={(e) => handleInputChange('colaboradores_capacitados_ia', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="plan_capacitacion_ia">¿Tiene plan de capacitación en IA?</Label>
+                <Select value={formData.plan_capacitacion_ia} onValueChange={(value) => handleInputChange('plan_capacitacion_ia', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Si">Si</SelectItem>
+                    <SelectItem value="No">No</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="col-span-2">
                 <Label htmlFor="productos_servicios">Productos o Servicios</Label>
@@ -606,6 +798,22 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave }: {
                   id="productos_servicios"
                   value={formData.productos_servicios}
                   onChange={(e) => handleInputChange('productos_servicios', e.target.value)}
+                />
+              </div>
+              <div className="col-span-2">
+                <Label htmlFor="areas_implementacion_ia">Áreas de Implementación de IA</Label>
+                <Textarea
+                  id="areas_implementacion_ia"
+                  value={formData.areas_implementacion_ia}
+                  onChange={(e) => handleInputChange('areas_implementacion_ia', e.target.value)}
+                />
+              </div>
+              <div className="col-span-2">
+                <Label htmlFor="razon_no_adopcion">Razón para No Adoptar IA</Label>
+                <Textarea
+                  id="razon_no_adopcion"
+                  value={formData.razon_no_adopcion}
+                  onChange={(e) => handleInputChange('razon_no_adopcion', e.target.value)}
                 />
               </div>
             </div>
