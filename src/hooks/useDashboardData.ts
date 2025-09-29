@@ -23,11 +23,7 @@ const getWeekName = (date: Date): string => {
 const formatTimeFromSeconds = (seconds: number): string => {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
-  
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-  return `${minutes}m`;
+  return `${hours}h ${minutes}m`;
 };
 
 export function useDashboardData(filters?: any, dateRange?: { start: string; end: string }) {
@@ -188,9 +184,19 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
     const avgCertifiedCourses = timeFilteredPlatzi.length > 0
       ? timeFilteredPlatzi.reduce((sum, p) => sum + (p.cursos_totales_certificados || 0), 0) / timeFilteredPlatzi.length : 0;
 
-    // Calculate time invested (convert seconds to readable format)
-    const totalTimeInvested = timeFilteredPlatzi.reduce((sum, p) => sum + (p.tiempo_total_dedicado || 0), 0);
-    const avgTimeInSeconds = timeFilteredPlatzi.length > 0 ? totalTimeInvested / timeFilteredPlatzi.length : 0;
+    // Calculate time invested using platzi_seguimiento (seconds), aggregated per user and formatted
+    const userTimeMap = (filteredData.seguimientoData || []).reduce((acc, rec) => {
+      if (!rec?.email) return acc;
+      const sec = rec.tiempo_invertido || 0;
+      acc[rec.email] = (acc[rec.email] || 0) + sec;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const userTotals = Object.values(userTimeMap);
+    const avgTimeInSeconds = userTotals.length > 0
+      ? userTotals.reduce((a, b) => a + b, 0) / userTotals.length
+      : 0;
+
     const avgTimeFormatted = formatTimeFromSeconds(avgTimeInSeconds);
 
     // Top 10 courses and average progress by course data from seguimiento
