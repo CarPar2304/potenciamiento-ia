@@ -43,7 +43,11 @@ import {
   Award,
   BarChart3,
   Send,
+  Edit,
 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useSolicitudes, useCamaras, usePlatziGeneral, usePlatziSeguimiento } from '@/hooks/useSupabaseData';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -97,7 +101,7 @@ const StatCard = ({ title, value, description, icon: Icon, variant }: {
   );
 };
 
-const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, onSendReminder, onApproveRequest, sendingReminder, approvingRequest, isSent, canExecuteActions }: {
+const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, onSendReminder, onApproveRequest, sendingReminder, approvingRequest, isSent, canExecuteActions, onEditRequest, isAdmin }: {
   solicitud: any;
   canViewGlobal: boolean;
   onViewDetails: () => void;
@@ -108,6 +112,8 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
   approvingRequest: boolean;
   isSent: boolean;
   canExecuteActions: boolean;
+  onEditRequest: (solicitud: any) => void;
+  isAdmin: boolean;
 }) => {
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { color: string; bg: string; border: string }> = {
@@ -258,6 +264,21 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
                 )}
                </Button>
             )}
+            
+            {/* Botón de edición solo para administradores */}
+            {isAdmin && (
+              <Button
+                variant="outline" 
+                size="sm" 
+                onClick={() => onEditRequest(solicitud)}
+                className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200 hover:border-amber-400 transition-colors"
+              >
+                <Edit className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Editar</span>
+                <span className="sm:hidden">Editar</span>
+              </Button>
+            )}
+            
             <Button
               variant="ghost" 
               size="sm" 
@@ -272,6 +293,342 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
         </div>
       </CardContent>
     </Card>
+  );
+};
+
+const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave }: {
+  solicitud: any;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (updatedSolicitud: any, updatedEmpresa: any) => void;
+}) => {
+  const [formData, setFormData] = useState({
+    // Datos de solicitud
+    nombres_apellidos: '',
+    email: '',
+    numero_documento: '',
+    celular: '',
+    cargo: '',
+    nivel_educativo: '',
+    tipo_identificacion: '',
+    genero: '',
+    grupo_etnico: '',
+    fecha_nacimiento: '',
+    estado: '',
+    razon_rechazo: '',
+    // Datos de empresa
+    empresa_nombre: '',
+    nit_empresa: '',
+    sector: '',
+    mercado: '',
+    num_colaboradores: '',
+    mujeres_colaboradoras: '',
+    ventas_2024: '',
+    utilidades_2024: '',
+    productos_servicios: '',
+    tipo_cliente: '',
+    decision_adoptar_ia: '',
+    areas_implementacion_ia: '',
+    razon_no_adopcion: '',
+    invirtio_ia_2024: '',
+    monto_inversion_2024: '',
+    asigno_recursos_ia: '',
+    probabilidad_adopcion_12m: '',
+    probabilidad_inversion_12m: '',
+    monto_invertir_12m: '',
+    colaboradores_capacitados_ia: '',
+    plan_capacitacion_ia: '',
+  });
+  
+  const [saving, setSaving] = useState(false);
+
+  // Inicializar form data cuando cambia la solicitud
+  useState(() => {
+    if (solicitud) {
+      setFormData({
+        nombres_apellidos: solicitud.nombres_apellidos || '',
+        email: solicitud.email || '',
+        numero_documento: solicitud.numero_documento || '',
+        celular: solicitud.celular || '',
+        cargo: solicitud.cargo || '',
+        nivel_educativo: solicitud.nivel_educativo || '',
+        tipo_identificacion: solicitud.tipo_identificacion || '',
+        genero: solicitud.genero || '',
+        grupo_etnico: solicitud.grupo_etnico || '',
+        fecha_nacimiento: solicitud.fecha_nacimiento || '',
+        estado: solicitud.estado || '',
+        razon_rechazo: solicitud.razon_rechazo || '',
+        empresa_nombre: solicitud.empresas?.nombre || '',
+        nit_empresa: solicitud.nit_empresa || '',
+        sector: solicitud.empresas?.sector || '',
+        mercado: solicitud.empresas?.mercado || '',
+        num_colaboradores: solicitud.empresas?.num_colaboradores || '',
+        mujeres_colaboradoras: solicitud.empresas?.mujeres_colaboradoras || '',
+        ventas_2024: solicitud.empresas?.ventas_2024 || '',
+        utilidades_2024: solicitud.empresas?.utilidades_2024 || '',
+        productos_servicios: solicitud.empresas?.productos_servicios || '',
+        tipo_cliente: solicitud.empresas?.tipo_cliente || '',
+        decision_adoptar_ia: solicitud.empresas?.decision_adoptar_ia || '',
+        areas_implementacion_ia: solicitud.empresas?.areas_implementacion_ia || '',
+        razon_no_adopcion: solicitud.empresas?.razon_no_adopcion || '',
+        invirtio_ia_2024: solicitud.empresas?.invirtio_ia_2024 || '',
+        monto_inversion_2024: solicitud.empresas?.monto_inversion_2024 || '',
+        asigno_recursos_ia: solicitud.empresas?.asigno_recursos_ia || '',
+        probabilidad_adopcion_12m: solicitud.empresas?.probabilidad_adopcion_12m || '',
+        probabilidad_inversion_12m: solicitud.empresas?.probabilidad_inversion_12m || '',
+        monto_invertir_12m: solicitud.empresas?.monto_invertir_12m || '',
+        colaboradores_capacitados_ia: solicitud.empresas?.colaboradores_capacitados_ia || '',
+        plan_capacitacion_ia: solicitud.empresas?.plan_capacitacion_ia || '',
+      });
+    }
+  });
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmit = async () => {
+    setSaving(true);
+    try {
+      const updatedSolicitud = {
+        nombres_apellidos: formData.nombres_apellidos,
+        email: formData.email,
+        numero_documento: formData.numero_documento,
+        celular: formData.celular,
+        cargo: formData.cargo,
+        nivel_educativo: formData.nivel_educativo,
+        tipo_identificacion: formData.tipo_identificacion,
+        genero: formData.genero,
+        grupo_etnico: formData.grupo_etnico,
+        fecha_nacimiento: formData.fecha_nacimiento,
+        estado: formData.estado,
+        razon_rechazo: formData.razon_rechazo,
+        nit_empresa: formData.nit_empresa,
+      };
+
+      const updatedEmpresa = {
+        nombre: formData.empresa_nombre,
+        nit: formData.nit_empresa,
+        sector: formData.sector,
+        mercado: formData.mercado,
+        num_colaboradores: formData.num_colaboradores ? parseInt(formData.num_colaboradores) : null,
+        mujeres_colaboradoras: formData.mujeres_colaboradoras ? parseInt(formData.mujeres_colaboradoras) : null,
+        ventas_2024: formData.ventas_2024 ? parseFloat(formData.ventas_2024) : null,
+        utilidades_2024: formData.utilidades_2024 ? parseFloat(formData.utilidades_2024) : null,
+        productos_servicios: formData.productos_servicios,
+        tipo_cliente: formData.tipo_cliente,
+        decision_adoptar_ia: formData.decision_adoptar_ia,
+        areas_implementacion_ia: formData.areas_implementacion_ia,
+        razon_no_adopcion: formData.razon_no_adopcion,
+        invirtio_ia_2024: formData.invirtio_ia_2024,
+        monto_inversion_2024: formData.monto_inversion_2024 ? parseFloat(formData.monto_inversion_2024) : null,
+        asigno_recursos_ia: formData.asigno_recursos_ia,
+        probabilidad_adopcion_12m: formData.probabilidad_adopcion_12m ? parseInt(formData.probabilidad_adopcion_12m) : null,
+        probabilidad_inversion_12m: formData.probabilidad_inversion_12m ? parseInt(formData.probabilidad_inversion_12m) : null,
+        monto_invertir_12m: formData.monto_invertir_12m ? parseFloat(formData.monto_invertir_12m) : null,
+        colaboradores_capacitados_ia: formData.colaboradores_capacitados_ia ? parseInt(formData.colaboradores_capacitados_ia) : null,
+        plan_capacitacion_ia: formData.plan_capacitacion_ia,
+      };
+
+      await onSave(updatedSolicitud, updatedEmpresa);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!solicitud) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Edit className="h-5 w-5" />
+            Editar Solicitud
+          </DialogTitle>
+          <DialogDescription>
+            Modifica la información de la solicitud y la empresa
+          </DialogDescription>
+        </DialogHeader>
+
+        <Tabs defaultValue="solicitud" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="solicitud">Información de Solicitud</TabsTrigger>
+            <TabsTrigger value="empresa">Información de Empresa</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="solicitud" className="space-y-4 mt-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="nombres_apellidos">Nombres y Apellidos</Label>
+                <Input
+                  id="nombres_apellidos"
+                  value={formData.nombres_apellidos}
+                  onChange={(e) => handleInputChange('nombres_apellidos', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="numero_documento">Número de Documento</Label>
+                <Input
+                  id="numero_documento"
+                  value={formData.numero_documento}
+                  onChange={(e) => handleInputChange('numero_documento', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="celular">Celular</Label>
+                <Input
+                  id="celular"
+                  value={formData.celular}
+                  onChange={(e) => handleInputChange('celular', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="cargo">Cargo</Label>
+                <Input
+                  id="cargo"
+                  value={formData.cargo}
+                  onChange={(e) => handleInputChange('cargo', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="nivel_educativo">Nivel Educativo</Label>
+                <Input
+                  id="nivel_educativo"
+                  value={formData.nivel_educativo}
+                  onChange={(e) => handleInputChange('nivel_educativo', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="estado">Estado</Label>
+                <Select value={formData.estado} onValueChange={(value) => handleInputChange('estado', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Pendiente">Pendiente</SelectItem>
+                    <SelectItem value="Aprobada">Aprobada</SelectItem>
+                    <SelectItem value="Rechazada">Rechazada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="nit_empresa">NIT de la Empresa</Label>
+                <Input
+                  id="nit_empresa"
+                  value={formData.nit_empresa}
+                  onChange={(e) => handleInputChange('nit_empresa', e.target.value)}
+                />
+              </div>
+            </div>
+            {formData.estado === 'Rechazada' && (
+              <div>
+                <Label htmlFor="razon_rechazo">Razón de Rechazo</Label>
+                <Textarea
+                  id="razon_rechazo"
+                  value={formData.razon_rechazo}
+                  onChange={(e) => handleInputChange('razon_rechazo', e.target.value)}
+                  placeholder="Especifique la razón del rechazo..."
+                />
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="empresa" className="space-y-4 mt-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="empresa_nombre">Nombre de la Empresa</Label>
+                <Input
+                  id="empresa_nombre"
+                  value={formData.empresa_nombre}
+                  onChange={(e) => handleInputChange('empresa_nombre', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="sector">Sector</Label>
+                <Input
+                  id="sector"
+                  value={formData.sector}
+                  onChange={(e) => handleInputChange('sector', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="num_colaboradores">Número de Colaboradores</Label>
+                <Input
+                  id="num_colaboradores"
+                  type="number"
+                  value={formData.num_colaboradores}
+                  onChange={(e) => handleInputChange('num_colaboradores', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="mujeres_colaboradoras">Mujeres Colaboradoras</Label>
+                <Input
+                  id="mujeres_colaboradoras"
+                  type="number"
+                  value={formData.mujeres_colaboradoras}
+                  onChange={(e) => handleInputChange('mujeres_colaboradoras', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="ventas_2024">Ventas 2024</Label>
+                <Input
+                  id="ventas_2024"
+                  type="number"
+                  value={formData.ventas_2024}
+                  onChange={(e) => handleInputChange('ventas_2024', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="utilidades_2024">Utilidades 2024</Label>
+                <Input
+                  id="utilidades_2024"
+                  type="number"
+                  value={formData.utilidades_2024}
+                  onChange={(e) => handleInputChange('utilidades_2024', e.target.value)}
+                />
+              </div>
+              <div className="col-span-2">
+                <Label htmlFor="productos_servicios">Productos o Servicios</Label>
+                <Textarea
+                  id="productos_servicios"
+                  value={formData.productos_servicios}
+                  onChange={(e) => handleInputChange('productos_servicios', e.target.value)}
+                />
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSubmit} disabled={saving}>
+            {saving ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-white" />
+                Guardando...
+              </>
+            ) : (
+              'Guardar Cambios'
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -492,6 +849,8 @@ export default function Solicitudes() {
   const [sendingReminder, setSendingReminder] = useState(false);
   const [sentReminders, setSentReminders] = useState<Set<string>>(new Set());
   const [approvingRequest, setApprovingRequest] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingSolicitud, setEditingSolicitud] = useState(null);
 
   if (!profile) return null;
 
@@ -677,6 +1036,51 @@ export default function Solicitudes() {
     setShowDetails(true);
   };
 
+  const handleEditRequest = (solicitud: any) => {
+    setEditingSolicitud(solicitud);
+    setShowEditDialog(true);
+  };
+
+  const handleSaveEdit = async (updatedSolicitud: any, updatedEmpresa: any) => {
+    try {
+      // Actualizar solicitud
+      const { error: solicitudError } = await supabase
+        .from('solicitudes')
+        .update(updatedSolicitud)
+        .eq('id', editingSolicitud.id);
+
+      if (solicitudError) throw solicitudError;
+
+      // Actualizar empresa si existe
+      if (editingSolicitud.empresas?.id) {
+        const { error: empresaError } = await supabase
+          .from('empresas')
+          .update(updatedEmpresa)
+          .eq('id', editingSolicitud.empresas.id);
+
+        if (empresaError) throw empresaError;
+      }
+
+      toast({
+        title: "Solicitud actualizada",
+        description: "Los cambios se han guardado correctamente.",
+      });
+
+      setShowEditDialog(false);
+      setEditingSolicitud(null);
+      
+      // Recargar datos
+      window.location.reload();
+    } catch (error: any) {
+      console.error('Error updating request:', error);
+      toast({
+        title: "Error al actualizar",
+        description: error.message || "Ocurrió un error inesperado.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -817,6 +1221,8 @@ export default function Solicitudes() {
                 onViewDetails={() => handleViewDetails(solicitud)}
                 onSendReminder={handleSendReminder}
                 onApproveRequest={handleApproveRequest}
+                onEditRequest={handleEditRequest}
+                isAdmin={canExecuteActions}
                 platziData={platziData}
                 sendingReminder={sendingReminder}
                 approvingRequest={approvingRequest}
@@ -833,6 +1239,17 @@ export default function Solicitudes() {
         isOpen={showDetails}
         onClose={() => setShowDetails(false)}
         platziSeguimiento={seguimientoData}
+      />
+
+      {/* Edit Dialog */}
+      <SolicitudEditDialog
+        solicitud={editingSolicitud}
+        isOpen={showEditDialog}
+        onClose={() => {
+          setShowEditDialog(false);
+          setEditingSolicitud(null);
+        }}
+        onSave={handleSaveEdit}
       />
     </div>
   );
