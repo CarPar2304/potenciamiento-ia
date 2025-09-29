@@ -108,16 +108,15 @@ export function useSolicitudes() {
       try {
         setLoading(true);
         
-        // Primero obtener solicitudes empresariales (no colaboradores)
+        // Obtener TODAS las solicitudes (empresariales y colaboradores)
         const { data: solicitudesData, error: solicitudesError } = await supabase
           .from('solicitudes')
           .select('*')
-          .eq('es_colaborador', false)
           .order('fecha_solicitud', { ascending: false });
 
         if (solicitudesError) throw solicitudesError;
 
-        // Luego obtener empresas con sus cámaras
+        // Obtener empresas con sus cámaras
         const { data: empresasData, error: empresasError } = await supabase
           .from('empresas')
           .select(`
@@ -130,10 +129,10 @@ export function useSolicitudes() {
 
         if (empresasError) throw empresasError;
 
-        // Combinar los datos manualmente por NIT
+        // Combinar los datos manualmente por NIT para solicitudes empresariales
         const solicitudesWithEmpresas = solicitudesData?.map(solicitud => ({
           ...solicitud,
-          empresas: empresasData?.find(empresa => empresa.nit === solicitud.nit_empresa)
+          empresas: solicitud.es_colaborador ? undefined : empresasData?.find(empresa => empresa.nit === solicitud.nit_empresa)
         })) || [];
 
         setSolicitudes(solicitudesWithEmpresas);
