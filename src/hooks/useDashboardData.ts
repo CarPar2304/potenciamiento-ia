@@ -97,7 +97,8 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
 
     const requestsStatusData = Object.entries(statusCounts).map(([status, count], index) => ({
       name: status,
-      value: totalRequests > 0 ? (count / totalRequests) * 100 : 0,
+      value: parseFloat((totalRequests > 0 ? (count / totalRequests) * 100 : 0).toFixed(2)),
+      count: count,
       color: generateColors(Object.keys(statusCounts).length)[index]
     }));
 
@@ -105,8 +106,8 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
     const companyCount = filteredSolicitudes.filter(s => !s.es_colaborador).length;
     
     const requestsTypeData = [
-      { name: 'Empresariales', value: totalRequests > 0 ? (companyCount / totalRequests) * 100 : 0, color: 'hsl(262, 83%, 58%)' },
-      { name: 'Colaboradores', value: totalRequests > 0 ? (collaboratorCount / totalRequests) * 100 : 0, color: 'hsl(221, 83%, 53%)' }
+      { name: 'Empresariales', value: parseFloat((totalRequests > 0 ? (companyCount / totalRequests) * 100 : 0).toFixed(2)), count: companyCount, color: 'hsl(262, 83%, 58%)' },
+      { name: 'Colaboradores', value: parseFloat((totalRequests > 0 ? (collaboratorCount / totalRequests) * 100 : 0).toFixed(2)), count: collaboratorCount, color: 'hsl(221, 83%, 53%)' }
     ];
 
     const requestsTimelineData = filteredSolicitudes

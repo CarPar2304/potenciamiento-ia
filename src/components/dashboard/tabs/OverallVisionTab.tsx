@@ -12,8 +12,8 @@ interface OverallVisionTabProps {
     licensesPercentage: number;
     totalRequests: number;
     requestsVariance: number;
-    requestsStatusData: Array<{ name: string; value: number; color: string }>;
-    requestsTypeData: Array<{ name: string; value: number; color: string }>;
+    requestsStatusData: Array<{ name: string; value: number; count: number; color: string }>;
+    requestsTypeData: Array<{ name: string; value: number; count: number; color: string }>;
     totalCompanies: number;
     companiesVariance: number;
     avgRequestsPerCompany: number;
@@ -147,7 +147,7 @@ export function OverallVisionTab({ data }: OverallVisionTabProps) {
                     className="w-3 h-3 rounded-full" 
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="text-sm">{item.name}: {item.value}%</span>
+                  <span className="text-sm">{item.name}: {item.count} ({item.value}%)</span>
                 </div>
               ))}
             </div>
@@ -186,7 +186,7 @@ export function OverallVisionTab({ data }: OverallVisionTabProps) {
                     className="w-3 h-3 rounded-full" 
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="text-sm">{item.name}: {item.value}%</span>
+                  <span className="text-sm">{item.name}: {item.count} ({item.value}%)</span>
                 </div>
               ))}
             </div>
