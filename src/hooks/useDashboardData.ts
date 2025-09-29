@@ -280,19 +280,84 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
     }).filter(c => c.companies > 0) // Only show chambers with companies
       .sort((a, b) => b.companies - a.companies); // Sort by number of companies descending
 
-    // Generate all required data with proper structure
+    // Calculate real metrics from empresas data
+    const totalEmployees = filteredEmpresas.reduce((sum, e) => sum + (e.num_colaboradores || 0), 0);
+    const totalFemaleEmployees = filteredEmpresas.reduce((sum, e) => sum + (e.mujeres_colaboradoras || 0), 0);
+    const avgEmployees = filteredEmpresas.length > 0 ? totalEmployees / filteredEmpresas.length : 0;
+    const femaleEmployeesPercentage = totalEmployees > 0 ? (totalFemaleEmployees / totalEmployees) * 100 : 0;
+
+    // Calculate average profits from utilidades_2024
+    const validProfits = filteredEmpresas.filter(e => e.utilidades_2024 != null && e.utilidades_2024 > 0);
+    const avgProfits = validProfits.length > 0 
+      ? validProfits.reduce((sum, e) => sum + (e.utilidades_2024 || 0), 0) / validProfits.length 
+      : 0;
+
+    // Calculate average sales
+    const validSales = filteredEmpresas.filter(e => e.ventas_2024 != null && e.ventas_2024 > 0);
+    const avgSales = validSales.length > 0 
+      ? validSales.reduce((sum, e) => sum + (e.ventas_2024 || 0), 0) / validSales.length 
+      : 0;
+
+    // Calculate AI adoption rate
+    const companiesWithAIDecision = filteredEmpresas.filter(e => e.decision_adoptar_ia === 'Sí');
+    const aiAdoptionRate = filteredEmpresas.length > 0 
+      ? (companiesWithAIDecision.length / filteredEmpresas.length) * 100 
+      : 0;
+
+    // Calculate AI investment 2024
+    const companiesInvestedIA = filteredEmpresas.filter(e => e.invirtio_ia_2024 === 'Sí' && e.monto_inversion_2024 != null);
+    const totalAIInvestment2024 = companiesInvestedIA.reduce((sum, e) => sum + (e.monto_inversion_2024 || 0), 0);
+    const avgAIInvestment2024 = companiesInvestedIA.length > 0 
+      ? totalAIInvestment2024 / companiesInvestedIA.length 
+      : 0;
+
+    // Calculate future outlook (12 months projection)
+    const companiesWithAdoptionProb = filteredEmpresas.filter(e => (e as any).probabilidad_adopcion_12m != null);
+    const avgAdoptionProbability = companiesWithAdoptionProb.length > 0
+      ? companiesWithAdoptionProb.reduce((sum, e) => sum + ((e as any).probabilidad_adopcion_12m || 0), 0) / companiesWithAdoptionProb.length
+      : 0;
+
+    const companiesWithInvestmentProb = filteredEmpresas.filter(e => (e as any).probabilidad_inversion_12m != null);
+    const avgInvestmentProbability = companiesWithInvestmentProb.length > 0
+      ? companiesWithInvestmentProb.reduce((sum, e) => sum + ((e as any).probabilidad_inversion_12m || 0), 0) / companiesWithInvestmentProb.length
+      : 0;
+
+    const companiesWithProjectedInvestment = filteredEmpresas.filter(e => (e as any).monto_invertir_12m != null && (e as any).monto_invertir_12m > 0);
+    const totalProjectedInvestment = companiesWithProjectedInvestment.reduce((sum, e) => sum + ((e as any).monto_invertir_12m || 0), 0);
+    const avgProjectedInvestment = companiesWithProjectedInvestment.length > 0
+      ? totalProjectedInvestment / companiesWithProjectedInvestment.length
+      : 0;
+
+    // Generate placeholder data for charts (to be calculated from real data later)
     const companiesByType = [{ name: 'SAS', value: 60, color: 'hsl(262, 83%, 58%)' }, { name: 'LTDA', value: 30, color: 'hsl(221, 83%, 53%)' }, { name: 'SA', value: 10, color: 'hsl(142, 76%, 36%)' }];
     const sectorDistribution = [{ name: 'Tecnología', value: 40, color: 'hsl(262, 83%, 58%)' }, { name: 'Comercio', value: 35, color: 'hsl(221, 83%, 53%)' }, { name: 'Servicios', value: 25, color: 'hsl(142, 76%, 36%)' }];
     const clientTypeDistribution = [{ name: 'B2B', value: 60, color: 'hsl(262, 83%, 58%)' }, { name: 'B2C', value: 40, color: 'hsl(221, 83%, 53%)' }];
     const marketReach = [{ market: 'Local', companies: 120 }, { market: 'Nacional', companies: 80 }, { market: 'Internacional', companies: 40 }];
 
     return {
-      totalCompanies, companiesByType, avgEmployees: 45, femaleEmployeesPercentage: 48, chamberRanking, sectorDistribution, clientTypeDistribution, marketReach,
-      avgSales: 2500000, avgProfits: 350000, avgCollaborators: 45, aiAdoptionRate: 35,
+      totalCompanies, 
+      companiesByType, 
+      avgEmployees, 
+      femaleEmployeesPercentage, 
+      chamberRanking, 
+      sectorDistribution, 
+      clientTypeDistribution, 
+      marketReach,
+      avgSales, 
+      avgProfits,
+      aiAdoptionRate,
       aiImplementationAreas: [{ name: 'Atención al Cliente', value: 40, color: 'hsl(262, 83%, 58%)' }, { name: 'Análisis de Datos', value: 35, color: 'hsl(221, 83%, 53%)' }],
       nonAdoptionReasons: [{ name: 'Falta recursos', value: 50, color: 'hsl(346, 87%, 43%)' }, { name: 'No conocimiento', value: 30, color: 'hsl(35, 91%, 62%)' }],
-      aiInvestment2024: { average: 50000, total: 2500000 },
-      futureOutlook: { avgAdoptionProbability: 3.5, avgInvestmentProbability: 3.2, avgProjectedInvestment: 75000, totalProjectedInvestment: 3750000 }
+      aiInvestment2024: { 
+        average: avgAIInvestment2024, 
+        total: totalAIInvestment2024 
+      },
+      futureOutlook: { 
+        avgAdoptionProbability, 
+        avgInvestmentProbability, 
+        avgProjectedInvestment, 
+        totalProjectedInvestment 
+      }
     };
   }, [filteredData]);
 
