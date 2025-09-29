@@ -116,10 +116,13 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
     let timeFilteredPlatzi = filteredPlatzi;
     if (dateRange?.start && dateRange?.end) {
       timeFilteredPlatzi = filteredPlatzi.filter(p => {
-        const createdAt = new Date(p.created_at);
+        // Use fecha_primera_activacion or fecha_inicio_ultima_licencia as fallback
+        const activationDate = p.fecha_primera_activacion || p.fecha_inicio_ultima_licencia;
+        if (!activationDate) return true; // Include records without dates
+        const recordDate = new Date(activationDate);
         const startDate = new Date(dateRange.start);
         const endDate = new Date(dateRange.end);
-        return createdAt >= startDate && createdAt <= endDate;
+        return recordDate >= startDate && recordDate <= endDate;
       });
     }
 
@@ -142,7 +145,10 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       : 0;
 
     const progressByDate = timeFilteredPlatzi.reduce((acc, p) => {
-      const date = new Date(p.updated_at || p.created_at).toISOString().split('T')[0];
+      // Use fecha_primera_activacion or fecha_inicio_ultima_licencia for timeline
+      const activationDate = p.fecha_primera_activacion || p.fecha_inicio_ultima_licencia;
+      if (!activationDate) return acc; // Skip records without dates
+      const date = new Date(activationDate).toISOString().split('T')[0];
       if (!acc[date]) acc[date] = { total: 0, count: 0 };
       acc[date].total += (p.progreso_ruta || 0);
       acc[date].count += 1;
