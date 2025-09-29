@@ -11,11 +11,11 @@ interface OverallVisionTabProps {
     totalLicenses: number;
     licensesPercentage: number;
     totalRequests: number;
-    requestsVariance: number;
+    requestsVariance: number | null;
     requestsStatusData: Array<{ name: string; value: number; count: number; color: string }>;
     requestsTypeData: Array<{ name: string; value: number; count: number; color: string }>;
     totalCompanies: number;
-    companiesVariance: number;
+    companiesVariance: number | null;
     avgRequestsPerCompany: number;
     requestsTimelineData: Array<{ week: string; solicitudes: number }>;
   };
@@ -73,10 +73,18 @@ export function OverallVisionTab({ data }: OverallVisionTabProps) {
           <CardContent>
             <div className="text-2xl font-bold">{data.totalRequests.toLocaleString()}</div>
             <div className="flex items-center space-x-1 text-xs">
-              {getTrendIcon(data.requestsVariance)}
-              <span className={getTrendColor(data.requestsVariance)}>
-                {Math.abs(data.requestsVariance).toFixed(1)}% vs mes anterior
-              </span>
+              {data.requestsVariance !== null ? (
+                <>
+                  {getTrendIcon(data.requestsVariance)}
+                  <span className={getTrendColor(data.requestsVariance)}>
+                    {Math.abs(data.requestsVariance).toFixed(1)}% vs mes anterior
+                  </span>
+                </>
+              ) : (
+                <span className="text-muted-foreground">
+                  Falta de data para comparar
+                </span>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -90,10 +98,18 @@ export function OverallVisionTab({ data }: OverallVisionTabProps) {
           <CardContent>
             <div className="text-2xl font-bold">{data.totalCompanies.toLocaleString()}</div>
             <div className="flex items-center space-x-1 text-xs">
-              {getTrendIcon(data.companiesVariance)}
-              <span className={getTrendColor(data.companiesVariance)}>
-                {Math.abs(data.companiesVariance).toFixed(1)}% vs mes anterior
-              </span>
+              {data.companiesVariance !== null ? (
+                <>
+                  {getTrendIcon(data.companiesVariance)}
+                  <span className={getTrendColor(data.companiesVariance)}>
+                    {Math.abs(data.companiesVariance).toFixed(1)}% vs mes anterior
+                  </span>
+                </>
+              ) : (
+                <span className="text-muted-foreground">
+                  Falta de data para comparar
+                </span>
+              )}
             </div>
           </CardContent>
         </Card>

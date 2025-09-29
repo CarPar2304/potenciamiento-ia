@@ -53,6 +53,7 @@ export interface Empresa {
   colaboradores_capacitados_ia?: number;
   plan_capacitacion_ia?: 'Sí' | 'No';
   camara_id?: string;
+  created_at?: string;
   camaras?: {
     nombre: string;
     nit: string;

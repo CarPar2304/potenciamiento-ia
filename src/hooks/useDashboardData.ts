@@ -83,11 +83,46 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
     const licensesUsed = filteredPlatzi.length;
     const licensesPercentage = totalLicenses > 0 ? (licensesUsed / totalLicenses) * 100 : 0;
 
+    // Calculate variance for requests (current month vs previous month)
+    const now = new Date();
+    const firstDayCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const firstDayPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastDayPreviousMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    const requestsCurrentMonth = filteredSolicitudes.filter(s => {
+      const date = new Date(s.fecha_solicitud);
+      return date >= firstDayCurrentMonth;
+    }).length;
+
+    const requestsPreviousMonth = filteredSolicitudes.filter(s => {
+      const date = new Date(s.fecha_solicitud);
+      return date >= firstDayPreviousMonth && date <= lastDayPreviousMonth;
+    }).length;
+
+    const requestsVariance = requestsPreviousMonth > 0 
+      ? ((requestsCurrentMonth - requestsPreviousMonth) / requestsPreviousMonth) * 100
+      : null; // null indica que no hay datos para comparar
+
     const totalRequests = filteredSolicitudes.length;
-    const requestsVariance = Math.random() * 10 - 5;
     
+    // Calculate variance for companies (current month vs previous month)
+    const companiesCurrentMonth = filteredEmpresas.filter(e => {
+      if (!e.created_at) return false;
+      const date = new Date(e.created_at);
+      return date >= firstDayCurrentMonth;
+    }).length;
+
+    const companiesPreviousMonth = filteredEmpresas.filter(e => {
+      if (!e.created_at) return false;
+      const date = new Date(e.created_at);
+      return date >= firstDayPreviousMonth && date <= lastDayPreviousMonth;
+    }).length;
+
+    const companiesVariance = companiesPreviousMonth > 0
+      ? ((companiesCurrentMonth - companiesPreviousMonth) / companiesPreviousMonth) * 100
+      : null; // null indica que no hay datos para comparar
+
     const totalCompanies = filteredEmpresas.length;
-    const companiesVariance = Math.random() * 8 - 4;
     const avgRequestsPerCompany = totalCompanies > 0 ? totalRequests / totalCompanies : 0;
 
     const statusCounts = filteredSolicitudes.reduce((acc, s) => {
