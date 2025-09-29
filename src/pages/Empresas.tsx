@@ -41,9 +41,23 @@ import {
   Coins,
   Brain,
   UserCheck,
+  Edit,
+  Trash2,
+  CalendarIcon,
 } from 'lucide-react';
 import { useEmpresas, useCamaras, useSolicitudes } from '@/hooks/useSupabaseData';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { useEffect } from 'react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const StatCard = ({ title, value, description, icon: Icon, variant }: {
   title: string;
@@ -93,11 +107,14 @@ const StatCard = ({ title, value, description, icon: Icon, variant }: {
   );
 };
 
-const EmpresaCard = ({ empresa, canViewGlobal, onViewDetails, colaboradores }: {
+const EmpresaCard = ({ empresa, canViewGlobal, onViewDetails, colaboradores, onEditEmpresa, onDeleteEmpresa, isAdmin }: {
   empresa: any;
   canViewGlobal: boolean;
   onViewDetails: () => void;
   colaboradores: any[];
+  onEditEmpresa: (empresa: any) => void;
+  onDeleteEmpresa: (empresa: any) => void;
+  isAdmin: boolean;
 }) => {
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
@@ -196,15 +213,43 @@ const EmpresaCard = ({ empresa, canViewGlobal, onViewDetails, colaboradores }: {
           >
             {empresaColaboradores.length} colaborador{empresaColaboradores.length !== 1 ? 'es' : ''}
           </Badge>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onViewDetails}
-            className="text-primary hover:text-primary/80 hover:bg-primary/10 transition-colors"
-          >
-            <Eye className="h-4 w-4 mr-1" />
-            Ver detalles
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Botón de edición solo para administradores */}
+            {isAdmin && (
+              <Button
+                variant="outline" 
+                size="sm" 
+                onClick={() => onEditEmpresa(empresa)}
+                className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200 hover:border-amber-400 transition-colors"
+              >
+                <Edit className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Editar</span>
+              </Button>
+            )}
+            
+            {/* Botón de eliminación solo para administradores */}
+            {isAdmin && (
+              <Button
+                variant="outline" 
+                size="sm" 
+                onClick={() => onDeleteEmpresa(empresa)}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-400 transition-colors"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Eliminar</span>
+              </Button>
+            )}
+            
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onViewDetails}
+              className="text-primary hover:text-primary/80 hover:bg-primary/10 transition-colors"
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Ver detalles</span>
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -396,21 +441,375 @@ const EmpresaDetailDialog = ({ empresa, isOpen, onClose, colaboradores }: {
   );
 };
 
+const EmpresaEditDialog = ({ empresa, isOpen, onClose, onSave }: {
+  empresa: any;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (updatedEmpresa: any) => void;
+}) => {
+  const [formData, setFormData] = useState({
+    nombre: '',
+    nit: '',
+    sector: '',
+    mercado: '',
+    num_colaboradores: '',
+    mujeres_colaboradoras: '',
+    ventas_2024: '',
+    utilidades_2024: '',
+    productos_servicios: '',
+    tipo_cliente: '',
+    decision_adoptar_ia: '',
+    areas_implementacion_ia: '',
+    razon_no_adopcion: '',
+    invirtio_ia_2024: '',
+    monto_inversion_2024: '',
+    asigno_recursos_ia: '',
+    probabilidad_adopcion_12m: '',
+    probabilidad_inversion_12m: '',
+    monto_invertir_12m: '',
+    colaboradores_capacitados_ia: '',
+    plan_capacitacion_ia: '',
+  });
+  
+  const [saving, setSaving] = useState(false);
+
+  // Inicializar form data cuando cambia la empresa
+  useEffect(() => {
+    if (empresa) {
+      setFormData({
+        nombre: empresa.nombre || '',
+        nit: empresa.nit || '',
+        sector: empresa.sector || '',
+        mercado: empresa.mercado || '',
+        num_colaboradores: empresa.num_colaboradores?.toString() || '',
+        mujeres_colaboradoras: empresa.mujeres_colaboradoras?.toString() || '',
+        ventas_2024: empresa.ventas_2024?.toString() || '',
+        utilidades_2024: empresa.utilidades_2024?.toString() || '',
+        productos_servicios: empresa.productos_servicios || '',
+        tipo_cliente: empresa.tipo_cliente || '',
+        decision_adoptar_ia: empresa.decision_adoptar_ia || '',
+        areas_implementacion_ia: empresa.areas_implementacion_ia || '',
+        razon_no_adopcion: empresa.razon_no_adopcion || '',
+        invirtio_ia_2024: empresa.invirtio_ia_2024 || '',
+        monto_inversion_2024: empresa.monto_inversion_2024?.toString() || '',
+        asigno_recursos_ia: empresa.asigno_recursos_ia || '',
+        probabilidad_adopcion_12m: empresa.probabilidad_adopcion_12m?.toString() || '',
+        probabilidad_inversion_12m: empresa.probabilidad_inversion_12m?.toString() || '',
+        monto_invertir_12m: empresa.monto_invertir_12m?.toString() || '',
+        colaboradores_capacitados_ia: empresa.colaboradores_capacitados_ia?.toString() || '',
+        plan_capacitacion_ia: empresa.plan_capacitacion_ia || '',
+      });
+    }
+  }, [empresa]);
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmit = async () => {
+    setSaving(true);
+    try {
+      const updatedEmpresa = {
+        nombre: formData.nombre,
+        nit: formData.nit,
+        sector: formData.sector,
+        mercado: formData.mercado,
+        num_colaboradores: formData.num_colaboradores ? parseInt(formData.num_colaboradores) : null,
+        mujeres_colaboradoras: formData.mujeres_colaboradoras ? parseInt(formData.mujeres_colaboradoras) : null,
+        ventas_2024: formData.ventas_2024 ? parseFloat(formData.ventas_2024) : null,
+        utilidades_2024: formData.utilidades_2024 ? parseFloat(formData.utilidades_2024) : null,
+        productos_servicios: formData.productos_servicios,
+        tipo_cliente: formData.tipo_cliente,
+        decision_adoptar_ia: formData.decision_adoptar_ia,
+        areas_implementacion_ia: formData.areas_implementacion_ia,
+        razon_no_adopcion: formData.razon_no_adopcion,
+        invirtio_ia_2024: formData.invirtio_ia_2024,
+        monto_inversion_2024: formData.monto_inversion_2024 ? parseFloat(formData.monto_inversion_2024) : null,
+        asigno_recursos_ia: formData.asigno_recursos_ia,
+        probabilidad_adopcion_12m: formData.probabilidad_adopcion_12m ? parseInt(formData.probabilidad_adopcion_12m) : null,
+        probabilidad_inversion_12m: formData.probabilidad_inversion_12m ? parseInt(formData.probabilidad_inversion_12m) : null,
+        monto_invertir_12m: formData.monto_invertir_12m ? parseFloat(formData.monto_invertir_12m) : null,
+        colaboradores_capacitados_ia: formData.colaboradores_capacitados_ia ? parseInt(formData.colaboradores_capacitados_ia) : null,
+        plan_capacitacion_ia: formData.plan_capacitacion_ia,
+      };
+
+      await onSave(updatedEmpresa);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!empresa) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Edit className="h-5 w-5" />
+            Editar Empresa
+          </DialogTitle>
+          <DialogDescription>
+            Modifica la información de la empresa
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 mt-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="nombre">Nombre de la Empresa</Label>
+              <Input
+                id="nombre"
+                value={formData.nombre}
+                onChange={(e) => handleInputChange('nombre', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="nit">NIT</Label>
+              <Input
+                id="nit"
+                value={formData.nit}
+                onChange={(e) => handleInputChange('nit', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="sector">Sector</Label>
+              <Input
+                id="sector"
+                value={formData.sector}
+                onChange={(e) => handleInputChange('sector', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="mercado">Mercado</Label>
+              <Select value={formData.mercado} onValueChange={(value) => handleInputChange('mercado', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar mercado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Local">Local</SelectItem>
+                  <SelectItem value="Nacional">Nacional</SelectItem>
+                  <SelectItem value="Internacional">Internacional</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="tipo_cliente">Tipo de Cliente</Label>
+              <Input
+                id="tipo_cliente"
+                value={formData.tipo_cliente}
+                onChange={(e) => handleInputChange('tipo_cliente', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="num_colaboradores">Número de Colaboradores</Label>
+              <Input
+                id="num_colaboradores"
+                type="number"
+                value={formData.num_colaboradores}
+                onChange={(e) => handleInputChange('num_colaboradores', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="mujeres_colaboradoras">Mujeres Colaboradoras</Label>
+              <Input
+                id="mujeres_colaboradoras"
+                type="number"
+                value={formData.mujeres_colaboradoras}
+                onChange={(e) => handleInputChange('mujeres_colaboradoras', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="ventas_2024">Ventas 2024</Label>
+              <Input
+                id="ventas_2024"
+                type="number"
+                step="0.01"
+                value={formData.ventas_2024}
+                onChange={(e) => handleInputChange('ventas_2024', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="utilidades_2024">Utilidades 2024</Label>
+              <Input
+                id="utilidades_2024"
+                type="number"
+                step="0.01"
+                value={formData.utilidades_2024}
+                onChange={(e) => handleInputChange('utilidades_2024', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="decision_adoptar_ia">¿Decidió adoptar IA?</Label>
+              <Select value={formData.decision_adoptar_ia} onValueChange={(value) => handleInputChange('decision_adoptar_ia', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Si">Si</SelectItem>
+                  <SelectItem value="No">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="invirtio_ia_2024">¿Invirtió en IA en 2024?</Label>
+              <Select value={formData.invirtio_ia_2024} onValueChange={(value) => handleInputChange('invirtio_ia_2024', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Si">Si</SelectItem>
+                  <SelectItem value="No">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="monto_inversion_2024">Monto Inversión 2024</Label>
+              <Input
+                id="monto_inversion_2024"
+                type="number"
+                step="0.01"
+                value={formData.monto_inversion_2024}
+                onChange={(e) => handleInputChange('monto_inversion_2024', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="asigno_recursos_ia">¿Asignó recursos para IA?</Label>
+              <Select value={formData.asigno_recursos_ia} onValueChange={(value) => handleInputChange('asigno_recursos_ia', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Si">Si</SelectItem>
+                  <SelectItem value="No">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="probabilidad_adopcion_12m">Probabilidad Adopción 12m (1-5)</Label>
+              <Input
+                id="probabilidad_adopcion_12m"
+                type="number"
+                min="1"
+                max="5"
+                value={formData.probabilidad_adopcion_12m}
+                onChange={(e) => handleInputChange('probabilidad_adopcion_12m', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="probabilidad_inversion_12m">Probabilidad Inversión 12m (1-5)</Label>
+              <Input
+                id="probabilidad_inversion_12m"
+                type="number"
+                min="1"
+                max="5"
+                value={formData.probabilidad_inversion_12m}
+                onChange={(e) => handleInputChange('probabilidad_inversion_12m', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="monto_invertir_12m">Monto a Invertir 12m</Label>
+              <Input
+                id="monto_invertir_12m"
+                type="number"
+                step="0.01"
+                value={formData.monto_invertir_12m}
+                onChange={(e) => handleInputChange('monto_invertir_12m', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="colaboradores_capacitados_ia">Colaboradores Capacitados en IA</Label>
+              <Input
+                id="colaboradores_capacitados_ia"
+                type="number"
+                value={formData.colaboradores_capacitados_ia}
+                onChange={(e) => handleInputChange('colaboradores_capacitados_ia', e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="plan_capacitacion_ia">¿Tiene plan de capacitación en IA?</Label>
+              <Select value={formData.plan_capacitacion_ia} onValueChange={(value) => handleInputChange('plan_capacitacion_ia', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Si">Si</SelectItem>
+                  <SelectItem value="No">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2">
+              <Label htmlFor="productos_servicios">Productos o Servicios</Label>
+              <Textarea
+                id="productos_servicios"
+                value={formData.productos_servicios}
+                onChange={(e) => handleInputChange('productos_servicios', e.target.value)}
+              />
+            </div>
+            <div className="col-span-2">
+              <Label htmlFor="areas_implementacion_ia">Áreas de Implementación de IA</Label>
+              <Textarea
+                id="areas_implementacion_ia"
+                value={formData.areas_implementacion_ia}
+                onChange={(e) => handleInputChange('areas_implementacion_ia', e.target.value)}
+              />
+            </div>
+            <div className="col-span-2">
+              <Label htmlFor="razon_no_adopcion">Razón para No Adoptar IA</Label>
+              <Textarea
+                id="razon_no_adopcion"
+                value={formData.razon_no_adopcion}
+                onChange={(e) => handleInputChange('razon_no_adopcion', e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button onClick={handleSubmit} disabled={saving}>
+            {saving ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-white" />
+                Guardando...
+              </>
+            ) : (
+              'Guardar Cambios'
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 export default function Empresas() {
   const { profile } = useAuth();
   const { empresas, loading } = useEmpresas();
   const { camaras } = useCamaras();
   const { solicitudes } = useSolicitudes();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [chamberFilter, setChamberFilter] = useState('todas');
   const [sectorFilter, setSectorFilter] = useState('todos');
   const [aiFilter, setAiFilter] = useState('todos');
   const [selectedEmpresa, setSelectedEmpresa] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingEmpresa, setEditingEmpresa] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deletingEmpresa, setDeletingEmpresa] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   if (!profile) return null;
 
   const canViewGlobal = hasPermission(profile.role, 'view_global') || hasPermission(profile.role, 'view_all');
+  const isAdmin = hasPermission(profile.role, 'admin_actions');
 
   // Filter companies based on user permissions
   const baseCompanies = canViewGlobal 
@@ -445,6 +844,77 @@ export default function Empresas() {
   const handleViewDetails = (empresa: any) => {
     setSelectedEmpresa(empresa);
     setShowDetails(true);
+  };
+
+  const handleEditEmpresa = (empresa: any) => {
+    setEditingEmpresa(empresa);
+    setShowEditDialog(true);
+  };
+
+  const handleDeleteEmpresa = (empresa: any) => {
+    setDeletingEmpresa(empresa);
+    setShowDeleteDialog(true);
+  };
+
+  const handleSaveEdit = async (updatedEmpresa: any) => {
+    try {
+      const { error } = await supabase
+        .from('empresas')
+        .update(updatedEmpresa)
+        .eq('id', editingEmpresa.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Empresa actualizada",
+        description: "Los cambios se han guardado correctamente.",
+      });
+
+      setShowEditDialog(false);
+      setEditingEmpresa(null);
+      
+      // Recargar datos
+      window.location.reload();
+    } catch (error: any) {
+      console.error('Error updating company:', error);
+      toast({
+        title: "Error al actualizar",
+        description: error.message || "Ocurrió un error inesperado.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const confirmDelete = async () => {
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('empresas')
+        .delete()
+        .eq('id', deletingEmpresa.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Empresa eliminada",
+        description: "La empresa ha sido eliminada correctamente.",
+      });
+
+      setShowDeleteDialog(false);
+      setDeletingEmpresa(null);
+      
+      // Recargar datos
+      window.location.reload();
+    } catch (error: any) {
+      console.error('Error deleting company:', error);
+      toast({
+        title: "Error al eliminar",
+        description: error.message || "Ocurrió un error inesperado.",
+        variant: "destructive"
+      });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -607,6 +1077,9 @@ export default function Empresas() {
             empresa={empresa}
             canViewGlobal={canViewGlobal}
             onViewDetails={() => handleViewDetails(empresa)}
+            onEditEmpresa={handleEditEmpresa}
+            onDeleteEmpresa={handleDeleteEmpresa}
+            isAdmin={isAdmin}
             colaboradores={solicitudes}
           />
         ))}
@@ -631,6 +1104,47 @@ export default function Empresas() {
         onClose={() => setShowDetails(false)}
         colaboradores={solicitudes}
       />
+
+      {/* Edit Dialog */}
+      <EmpresaEditDialog
+        empresa={editingEmpresa}
+        isOpen={showEditDialog}
+        onClose={() => {
+          setShowEditDialog(false);
+          setEditingEmpresa(null);
+        }}
+        onSave={handleSaveEdit}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar empresa?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará permanentemente la empresa 
+              <strong> {deletingEmpresa?.nombre}</strong> y todos sus datos asociados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-white" />
+                  Eliminando...
+                </>
+              ) : (
+                'Eliminar'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
