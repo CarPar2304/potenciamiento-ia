@@ -578,14 +578,14 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave, camaras }: {
               <div>
                 <Label htmlFor="razon_rechazo">Razón de Rechazo</Label>
                 <Select 
-                  value={formData.razon_rechazo} 
-                  onValueChange={(value) => handleInputChange('razon_rechazo', value)}
+                  value={formData.razon_rechazo || "sin_especificar"} 
+                  onValueChange={(value) => handleInputChange('razon_rechazo', value === "sin_especificar" ? "" : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar razón (opcional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin especificar</SelectItem>
+                    <SelectItem value="sin_especificar">Sin especificar</SelectItem>
                     <SelectItem value="Fuera de Jurisdicción">Fuera de Jurisdicción</SelectItem>
                     <SelectItem value="No existe NIT">No existe NIT</SelectItem>
                   </SelectContent>
