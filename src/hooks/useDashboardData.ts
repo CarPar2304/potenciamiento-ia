@@ -47,6 +47,7 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
     let filteredSolicitudes = solicitudes;
     let filteredEmpresas = empresas;
     let filteredPlatzi = platziData;
+    let filteredSeguimiento = seguimientoData;
     let filteredCamaras = camaras;
 
     // Apply role-based filtering
@@ -66,10 +67,17 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       
       const chamberEmails = filteredSolicitudes.map(s => s.email);
       filteredPlatzi = platziData.filter(p => chamberEmails.includes(p.email));
+      filteredSeguimiento = seguimientoData.filter(s => chamberEmails.includes(s.email));
     }
 
-    return { solicitudes: filteredSolicitudes, empresas: filteredEmpresas, platziGeneral: filteredPlatzi, camaras: filteredCamaras, seguimientoData };
-  }, [solicitudes, empresas, platziData, camaras, profile]);
+    return { 
+      solicitudes: filteredSolicitudes, 
+      empresas: filteredEmpresas, 
+      platziGeneral: filteredPlatzi, 
+      seguimientoData: filteredSeguimiento,
+      camaras: filteredCamaras 
+    };
+  }, [solicitudes, empresas, platziData, seguimientoData, camaras, profile]);
 
   // Overall Vision Tab Data
   const overallVisionData = useMemo(() => {
