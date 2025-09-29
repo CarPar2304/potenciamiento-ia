@@ -19,6 +19,17 @@ const getWeekName = (date: Date): string => {
   return `Semana ${Math.ceil((startOfWeek.getDate()) / 7)} - ${startOfWeek.toLocaleDateString('es-ES', { month: 'short' })}`;
 };
 
+// Helper function to format time from seconds
+const formatTimeFromSeconds = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  return `${minutes}m`;
+};
+
 export function useDashboardData(filters?: any, dateRange?: { start: string; end: string }) {
   const { profile } = useAuth();
   
@@ -57,7 +68,7 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       filteredPlatzi = platziData.filter(p => chamberEmails.includes(p.email));
     }
 
-    return { solicitudes: filteredSolicitudes, empresas: filteredEmpresas, platziGeneral: filteredPlatzi, camaras: filteredCamaras };
+    return { solicitudes: filteredSolicitudes, empresas: filteredEmpresas, platziGeneral: filteredPlatzi, camaras: filteredCamaras, seguimientoData };
   }, [solicitudes, empresas, platziData, camaras, profile]);
 
   // Overall Vision Tab Data
@@ -140,8 +151,9 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       level, companies: count, percentage: totalWithLevel > 0 ? (count / totalWithLevel) * 100 : 0
     })).sort((a, b) => a.level.localeCompare(b.level));
 
+    // Convert progress from decimal to percentage (0.1 = 10%)
     const avgProgress = timeFilteredPlatzi.length > 0 
-      ? timeFilteredPlatzi.reduce((sum, p) => sum + (p.progreso_ruta || 0), 0) / timeFilteredPlatzi.length 
+      ? (timeFilteredPlatzi.reduce((sum, p) => sum + (p.progreso_ruta || 0), 0) / timeFilteredPlatzi.length) * 100
       : 0;
 
     const progressByDate = timeFilteredPlatzi.reduce((acc, p) => {
@@ -156,7 +168,10 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
     }, {} as Record<string, { total: number; count: number }>);
 
     const progressTimeline = Object.entries(progressByDate)
-      .map(([date, data]) => ({ date, progress: data.count > 0 ? data.total / data.count : 0 }))
+      .map(([date, data]) => ({ 
+        date, 
+        progress: data.count > 0 ? (data.total / data.count) * 100 : 0 // Convert to percentage
+      }))
       .sort((a, b) => a.date.localeCompare(b.date));
 
     const avgCoursesInProgress = timeFilteredPlatzi.length > 0
@@ -165,7 +180,53 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
     const avgCertifiedCourses = timeFilteredPlatzi.length > 0
       ? timeFilteredPlatzi.reduce((sum, p) => sum + (p.cursos_totales_certificados || 0), 0) / timeFilteredPlatzi.length : 0;
 
-    return { levelDistribution, averageProgress: avgProgress, progressTimeline, avgCoursesInProgress, avgCertifiedCourses, dateRange: dateRange || { start: '', end: '' } };
+    // Calculate time invested (convert seconds to readable format)
+    const totalTimeInvested = timeFilteredPlatzi.reduce((sum, p) => sum + (p.tiempo_total_dedicado || 0), 0);
+    const avgTimeInSeconds = timeFilteredPlatzi.length > 0 ? totalTimeInvested / timeFilteredPlatzi.length : 0;
+    const avgTimeFormatted = formatTimeFromSeconds(avgTimeInSeconds);
+
+    // Top 10 courses and average progress by course data from seguimiento
+    const { seguimientoData } = filteredData;
+    const courseStats = seguimientoData.reduce((acc, record) => {
+      if (!record.curso || !record.email) return acc;
+      
+      if (!acc[record.curso]) {
+        acc[record.curso] = {
+          name: record.curso,
+          totalViews: 0,
+          totalProgress: 0,
+          progressCount: 0
+        };
+      }
+      
+      acc[record.curso].totalViews += 1;
+      if (record.porcentaje_avance && record.porcentaje_avance > 0) {
+        acc[record.curso].totalProgress += record.porcentaje_avance * 100; // Convert to percentage
+        acc[record.curso].progressCount += 1;
+      }
+      
+      return acc;
+    }, {} as Record<string, { name: string; totalViews: number; totalProgress: number; progressCount: number }>);
+
+    const topCourses = Object.values(courseStats)
+      .sort((a, b) => b.totalViews - a.totalViews)
+      .slice(0, 10)
+      .map(course => ({
+        name: course.name,
+        views: course.totalViews,
+        avgProgress: course.progressCount > 0 ? course.totalProgress / course.progressCount : 0
+      }));
+
+    return { 
+      levelDistribution, 
+      averageProgress: avgProgress, 
+      progressTimeline, 
+      avgCoursesInProgress, 
+      avgCertifiedCourses,
+      avgTimeFormatted,
+      topCourses,
+      dateRange: dateRange || { start: '', end: '' } 
+    };
   }, [filteredData, dateRange]);
 
   // Business Environment Tab Data  
