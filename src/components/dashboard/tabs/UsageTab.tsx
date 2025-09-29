@@ -251,7 +251,7 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
               />
               <Bar 
                 dataKey="avgProgress" 
-                fill="hsl(var(--secondary))" 
+                fill="hsl(262, 83%, 58%)" 
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>
