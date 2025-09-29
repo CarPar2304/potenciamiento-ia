@@ -246,15 +246,45 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
 
   // Business Environment Tab Data  
   const businessEnvironmentData = useMemo(() => {
-    const { empresas: filteredEmpresas } = filteredData;
+    const { empresas: filteredEmpresas, camaras: filteredCamaras, platziGeneral: filteredPlatzi, solicitudes: filteredSolicitudes } = filteredData;
     const totalCompanies = filteredEmpresas.length;
+
+    // Calculate real chamber ranking based on empresa assignments
+    const chamberRanking = filteredCamaras.map(camara => {
+      // Count companies assigned to this chamber
+      const companiesInChamber = filteredEmpresas.filter(e => e.camara_id === camara.id);
+      const companiesCount = companiesInChamber.length;
+      
+      // Get NITs of companies in this chamber
+      const chamberNits = companiesInChamber.map(e => e.nit);
+      
+      // Get emails of solicitudes from these companies
+      const chamberEmails = filteredSolicitudes
+        .filter(s => chamberNits.includes(s.nit_empresa))
+        .map(s => s.email);
+      
+      // Calculate average progress for users from this chamber
+      const chamberPlatziUsers = filteredPlatzi.filter(p => chamberEmails.includes(p.email));
+      const avgProgress = chamberPlatziUsers.length > 0
+        ? chamberPlatziUsers
+            .filter(p => p.progreso_ruta && p.progreso_ruta > 0)
+            .reduce((sum, p) => sum + (p.progreso_ruta || 0), 0) / 
+          chamberPlatziUsers.filter(p => p.progreso_ruta && p.progreso_ruta > 0).length
+        : 0;
+      
+      return {
+        chamber: camara.nombre,
+        companies: companiesCount,
+        avgProgress: Math.round(avgProgress)
+      };
+    }).filter(c => c.companies > 0) // Only show chambers with companies
+      .sort((a, b) => b.companies - a.companies); // Sort by number of companies descending
 
     // Generate all required data with proper structure
     const companiesByType = [{ name: 'SAS', value: 60, color: 'hsl(262, 83%, 58%)' }, { name: 'LTDA', value: 30, color: 'hsl(221, 83%, 53%)' }, { name: 'SA', value: 10, color: 'hsl(142, 76%, 36%)' }];
     const sectorDistribution = [{ name: 'Tecnología', value: 40, color: 'hsl(262, 83%, 58%)' }, { name: 'Comercio', value: 35, color: 'hsl(221, 83%, 53%)' }, { name: 'Servicios', value: 25, color: 'hsl(142, 76%, 36%)' }];
     const clientTypeDistribution = [{ name: 'B2B', value: 60, color: 'hsl(262, 83%, 58%)' }, { name: 'B2C', value: 40, color: 'hsl(221, 83%, 53%)' }];
     const marketReach = [{ market: 'Local', companies: 120 }, { market: 'Nacional', companies: 80 }, { market: 'Internacional', companies: 40 }];
-    const chamberRanking = [{ chamber: 'CCC Bogotá', companies: 150, avgProgress: 75 }];
 
     return {
       totalCompanies, companiesByType, avgEmployees: 45, femaleEmployeesPercentage: 48, chamberRanking, sectorDistribution, clientTypeDistribution, marketReach,
