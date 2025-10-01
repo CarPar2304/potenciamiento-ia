@@ -321,16 +321,16 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
     const avgEmployees = filteredEmpresas.length > 0 ? totalEmployees / filteredEmpresas.length : 0;
     const femaleEmployeesPercentage = totalEmployees > 0 ? (totalFemaleEmployees / totalEmployees) * 100 : 0;
 
-    // Calculate average profits from utilidades_2024
+    // Calculate average profits from utilidades_2024 (dividido por 100)
     const validProfits = filteredEmpresas.filter(e => e.utilidades_2024 != null && e.utilidades_2024 > 0);
     const avgProfits = validProfits.length > 0 
-      ? validProfits.reduce((sum, e) => sum + (e.utilidades_2024 || 0), 0) / validProfits.length 
+      ? validProfits.reduce((sum, e) => sum + ((e.utilidades_2024 || 0) / 100), 0) / validProfits.length 
       : 0;
 
-    // Calculate average sales
+    // Calculate average sales (dividido por 100)
     const validSales = filteredEmpresas.filter(e => e.ventas_2024 != null && e.ventas_2024 > 0);
     const avgSales = validSales.length > 0 
-      ? validSales.reduce((sum, e) => sum + (e.ventas_2024 || 0), 0) / validSales.length 
+      ? validSales.reduce((sum, e) => sum + ((e.ventas_2024 || 0) / 100), 0) / validSales.length 
       : 0;
 
     // Calculate AI adoption rate

@@ -335,11 +335,11 @@ const EmpresaDetailDialog = ({ empresa, isOpen, onClose, colaboradores }: {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <label className="font-medium text-muted-foreground">Ventas 2024</label>
-                <p>{empresa.ventas_2024 ? formatCurrency(empresa.ventas_2024) : 'No reportado'}</p>
+                <p>{empresa.ventas_2024 ? formatCurrency(empresa.ventas_2024 / 100) : 'No reportado'}</p>
               </div>
               <div>
                 <label className="font-medium text-muted-foreground">Utilidades 2024</label>
-                <p>{empresa.utilidades_2024 ? formatCurrency(empresa.utilidades_2024) : 'No reportado'}</p>
+                <p>{empresa.utilidades_2024 ? formatCurrency(empresa.utilidades_2024 / 100) : 'No reportado'}</p>
               </div>
               <div>
                 <label className="font-medium text-muted-foreground">Total Colaboradores</label>
