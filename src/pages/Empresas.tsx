@@ -50,6 +50,7 @@ import { useAuth, hasPermission } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ExportModal } from '@/components/export/ExportModal';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -805,6 +806,7 @@ export default function Empresas() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deletingEmpresa, setDeletingEmpresa] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   if (!profile) return null;
 
@@ -958,7 +960,11 @@ export default function Empresas() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
+          <Button 
+            variant="outline" 
+            className="gap-2"
+            onClick={() => setShowExportModal(true)}
+          >
             <Download className="h-4 w-4" />
             Exportar
           </Button>
@@ -1145,6 +1151,14 @@ export default function Empresas() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        data={filteredCompanies}
+        type="empresas"
+      />
     </div>
   );
 }

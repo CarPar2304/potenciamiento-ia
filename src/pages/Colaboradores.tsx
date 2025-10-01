@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import { useColaboradores, useCamaras, usePlatziGeneral, usePlatziSeguimiento } from '@/hooks/useSupabaseData';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
+import { ExportModal } from '@/components/export/ExportModal';
 
 const StatCard = ({ title, value, description, icon: Icon, variant }: {
   title: string;
@@ -278,6 +279,7 @@ export default function Colaboradores() {
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [camaraFilter, setCamaraFilter] = useState<string>('todas');
   const [selectedColaborador, setSelectedColaborador] = useState<any>(null);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   if (!profile) return null;
 
@@ -352,7 +354,11 @@ export default function Colaboradores() {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowExportModal(true)}
+          >
             <Download className="h-4 w-4 mr-2" />
             Exportar
           </Button>
@@ -704,6 +710,14 @@ export default function Colaboradores() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        data={filteredColaboradores}
+        type="colaboradores"
+      />
     </div>
   );
 }

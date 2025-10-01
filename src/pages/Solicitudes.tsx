@@ -58,6 +58,7 @@ import { useSolicitudes, useCamaras, usePlatziGeneral, usePlatziSeguimiento } fr
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { ExportModal } from '@/components/export/ExportModal';
 
 const StatCard = ({ title, value, description, icon: Icon, variant }: {
   title: string;
@@ -833,6 +834,7 @@ export default function Solicitudes() {
   const [approvingRequest, setApprovingRequest] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingSolicitud, setEditingSolicitud] = useState(null);
+  const [showExportModal, setShowExportModal] = useState(false);
 
   if (!profile) return null;
 
@@ -1056,7 +1058,7 @@ export default function Solicitudes() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight bg-gradient-primary bg-clip-text text-transparent">
             Solicitudes
@@ -1067,6 +1069,17 @@ export default function Solicitudes() {
               : `Solicitudes de ${profile.chamber}`
             }
           </p>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowExportModal(true)}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Exportar
+          </Button>
         </div>
       </div>
 
@@ -1223,6 +1236,14 @@ export default function Solicitudes() {
         }}
         onSave={handleSaveEdit}
         camaras={camaras}
+      />
+
+      {/* Export Modal */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        data={filteredApplications}
+        type="solicitudes"
       />
     </div>
   );
