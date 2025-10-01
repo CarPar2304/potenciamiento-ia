@@ -98,19 +98,6 @@ export function BusinessEnvironmentTab({ data, userRole }: BusinessEnvironmentTa
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">% Mujeres Colaboradoras</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data.femaleEmployeesPercentage.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">
-              Del total de colaboradores
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Adopción de IA</CardTitle>
             <Brain className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
