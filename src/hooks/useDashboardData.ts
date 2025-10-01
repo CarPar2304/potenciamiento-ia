@@ -322,13 +322,13 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
     const femaleEmployeesPercentage = totalEmployees > 0 ? (totalFemaleEmployees / totalEmployees) * 100 : 0;
 
     // Calculate average profits from utilidades_2024 (dividido por 100)
-    const validProfits = filteredEmpresas.filter(e => e.utilidades_2024 != null && e.utilidades_2024 > 0);
+    const validProfits = filteredEmpresas.filter(e => e.utilidades_2024 != null);
     const avgProfits = validProfits.length > 0 
       ? validProfits.reduce((sum, e) => sum + ((e.utilidades_2024 || 0) / 100), 0) / validProfits.length 
       : 0;
 
     // Calculate average sales (dividido por 100)
-    const validSales = filteredEmpresas.filter(e => e.ventas_2024 != null && e.ventas_2024 > 0);
+    const validSales = filteredEmpresas.filter(e => e.ventas_2024 != null);
     const avgSales = validSales.length > 0 
       ? validSales.reduce((sum, e) => sum + ((e.ventas_2024 || 0) / 100), 0) / validSales.length 
       : 0;
