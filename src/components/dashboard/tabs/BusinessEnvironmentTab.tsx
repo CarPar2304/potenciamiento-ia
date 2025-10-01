@@ -35,7 +35,7 @@ interface BusinessEnvironmentTabProps {
 
 export function BusinessEnvironmentTab({ data, userRole }: BusinessEnvironmentTabProps) {
   const formatCurrency = (value: number) => {
-    return `$${(value / 10000).toFixed(1)}M COP`;
+    return `$${(value / 1000000).toFixed(1)}M COP`;
   };
 
   const isAdminOrCCC = userRole === 'admin' || userRole === 'ccc';
