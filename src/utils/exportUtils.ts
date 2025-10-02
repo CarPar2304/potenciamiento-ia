@@ -14,7 +14,8 @@ export const MANDATORY_FIELDS: ExportField[] = [
   { key: 'email', label: 'Correo', category: 'minimo' },
   { key: 'celular', label: 'Celular', category: 'minimo' },
   { key: 'nit_empresa', label: 'NIT', category: 'minimo' },
-  { key: 'empresas.nombre', label: 'Empresa', category: 'minimo' },
+  { key: 'empresa_nombre', label: 'Empresa', category: 'minimo' },
+  { key: 'camara_nombre', label: 'Cámara', category: 'minimo' },
 ];
 
 export const SOLICITUD_FIELDS: ExportField[] = [
@@ -26,7 +27,6 @@ export const SOLICITUD_FIELDS: ExportField[] = [
   { key: 'estado', label: 'Estado', category: 'solicitud' },
   { key: 'fecha_solicitud', label: 'Fecha de solicitud', category: 'solicitud' },
   { key: 'es_colaborador', label: 'Es colaborador', category: 'solicitud' },
-  { key: 'camaras.nombre', label: 'Cámara', category: 'solicitud' },
   { key: 'razon_rechazo', label: 'Razón de rechazo', category: 'solicitud' },
 ];
 
@@ -112,7 +112,18 @@ export const formatDataForExport = (
 
     selectedFields.forEach(field => {
       const label = fieldLabels[field] || field;
-      let value = getNestedValue(item, field);
+      let value;
+      
+      // Campos especiales que necesitan lógica personalizada
+      if (field === 'empresa_nombre') {
+        value = item.empresas?.nombre || item.empresa?.nombre || '-';
+      } else if (field === 'camara_nombre') {
+        // Para colaboradores, usar camaras directamente
+        // Para empresariales, usar empresas.camaras
+        value = item.camaras?.nombre || item.empresas?.camaras?.nombre || '-';
+      } else {
+        value = getNestedValue(item, field);
+      }
 
       // Formatear según el tipo de campo
       if (field.includes('fecha_') || field.includes('_at')) {
@@ -188,6 +199,12 @@ export const createFieldLabelsMap = (): Record<string, string> => {
   [...MANDATORY_FIELDS, ...SOLICITUD_FIELDS, ...EMPRESA_FIELDS].forEach(field => {
     map[field.key] = field.label;
   });
+  
+  // Agregar mapeos adicionales para campos nested
+  map['empresas.nombre'] = 'Empresa';
+  map['empresa.nombre'] = 'Empresa';
+  map['camaras.nombre'] = 'Cámara';
+  map['empresas.camaras.nombre'] = 'Cámara';
   
   return map;
 };

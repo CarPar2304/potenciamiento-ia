@@ -112,7 +112,14 @@ export function useSolicitudes() {
         // Obtener TODAS las solicitudes (empresariales y colaboradores)
         const { data: solicitudesData, error: solicitudesError } = await supabase
           .from('solicitudes')
-          .select('*')
+          .select(`
+            *,
+            camaras:camara_colaborador_id (
+              id,
+              nombre,
+              nit
+            )
+          `)
           .order('fecha_solicitud', { ascending: false });
 
         if (solicitudesError) throw solicitudesError;
@@ -123,6 +130,7 @@ export function useSolicitudes() {
           .select(`
             *,
             camaras (
+              id,
               nombre,
               nit
             )
