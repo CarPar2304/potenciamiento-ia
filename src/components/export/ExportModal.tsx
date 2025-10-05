@@ -27,9 +27,10 @@ interface ExportModalProps {
   onClose: () => void;
   data: any[];
   type: 'solicitudes' | 'empresas' | 'colaboradores';
+  platziEmails?: Set<string>;
 }
 
-export const ExportModal = ({ isOpen, onClose, data, type }: ExportModalProps) => {
+export const ExportModal = ({ isOpen, onClose, data, type, platziEmails }: ExportModalProps) => {
   const { toast } = useToast();
   const [selectedFields, setSelectedFields] = useState<string[]>(
     MANDATORY_FIELDS.map(f => f.key)
@@ -70,7 +71,8 @@ export const ExportModal = ({ isOpen, onClose, data, type }: ExportModalProps) =
         selectedFields,
         fileName,
         fieldLabels,
-        dateRange.from && dateRange.to ? { from: dateRange.from, to: dateRange.to } : undefined
+        dateRange.from && dateRange.to ? { from: dateRange.from, to: dateRange.to } : undefined,
+        platziEmails
       );
 
       toast({

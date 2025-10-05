@@ -717,6 +717,7 @@ export default function Colaboradores() {
         onClose={() => setShowExportModal(false)}
         data={filteredColaboradores}
         type="colaboradores"
+        platziEmails={new Set(platziData?.map(p => p.email?.toLowerCase() || '') || [])}
       />
     </div>
   );

@@ -45,7 +45,7 @@ import {
   Trash2,
   CalendarIcon,
 } from 'lucide-react';
-import { useEmpresas, useCamaras, useSolicitudes } from '@/hooks/useSupabaseData';
+import { useEmpresas, useCamaras, useSolicitudes, usePlatziGeneral } from '@/hooks/useSupabaseData';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -794,6 +794,7 @@ export default function Empresas() {
   const { empresas, loading } = useEmpresas();
   const { camaras } = useCamaras();
   const { solicitudes } = useSolicitudes();
+  const { platziData } = usePlatziGeneral();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [chamberFilter, setChamberFilter] = useState('todas');
@@ -1158,6 +1159,7 @@ export default function Empresas() {
         onClose={() => setShowExportModal(false)}
         data={filteredCompanies}
         type="empresas"
+        platziEmails={new Set(platziData?.map(p => p.email?.toLowerCase() || '') || [])}
       />
     </div>
   );

@@ -16,6 +16,8 @@ export const MANDATORY_FIELDS: ExportField[] = [
   { key: 'nit_empresa', label: 'NIT', category: 'minimo' },
   { key: 'empresa_nombre', label: 'Empresa', category: 'minimo' },
   { key: 'camara_nombre', label: 'Cámara', category: 'minimo' },
+  { key: 'estado', label: 'Estado Solicitud', category: 'minimo' },
+  { key: 'licencia_consumida', label: 'Licencia Consumida', category: 'minimo' },
 ];
 
 export const SOLICITUD_FIELDS: ExportField[] = [
@@ -24,7 +26,6 @@ export const SOLICITUD_FIELDS: ExportField[] = [
   { key: 'genero', label: 'Género', category: 'solicitud' },
   { key: 'grupo_etnico', label: 'Grupo étnico', category: 'solicitud' },
   { key: 'fecha_nacimiento', label: 'Fecha de nacimiento', category: 'solicitud' },
-  { key: 'estado', label: 'Estado', category: 'solicitud' },
   { key: 'fecha_solicitud', label: 'Fecha de solicitud', category: 'solicitud' },
   { key: 'es_colaborador', label: 'Es colaborador', category: 'solicitud' },
   { key: 'razon_rechazo', label: 'Razón de rechazo', category: 'solicitud' },
@@ -94,7 +95,8 @@ export const formatDataForExport = (
   items: any[],
   selectedFields: string[],
   fieldLabels: Record<string, string>,
-  dateRange?: { from: Date; to: Date }
+  dateRange?: { from: Date; to: Date },
+  platziEmails?: Set<string>
 ) => {
   let filteredItems = [...items];
 
@@ -121,6 +123,14 @@ export const formatDataForExport = (
         // Para colaboradores, usar camaras directamente
         // Para empresariales, usar empresas.camaras
         value = item.camaras?.nombre || item.empresas?.camaras?.nombre || '-';
+      } else if (field === 'licencia_consumida') {
+        // Verificar si el email existe en platzi_general
+        const email = item.email;
+        if (platziEmails && email) {
+          value = platziEmails.has(email.toLowerCase()) ? 'Sí' : 'No';
+        } else {
+          value = 'No';
+        }
       } else {
         value = getNestedValue(item, field);
       }
@@ -153,11 +163,12 @@ export const exportToExcel = (
   selectedFields: string[],
   fileName: string,
   fieldLabels: Record<string, string>,
-  dateRange?: { from: Date; to: Date }
+  dateRange?: { from: Date; to: Date },
+  platziEmails?: Set<string>
 ) => {
   try {
     // Formatear datos para exportación
-    const formattedData = formatDataForExport(data, selectedFields, fieldLabels, dateRange);
+    const formattedData = formatDataForExport(data, selectedFields, fieldLabels, dateRange, platziEmails);
 
     if (formattedData.length === 0) {
       throw new Error('No hay datos para exportar con los filtros seleccionados');
@@ -205,6 +216,7 @@ export const createFieldLabelsMap = (): Record<string, string> => {
   map['empresa.nombre'] = 'Empresa';
   map['camaras.nombre'] = 'Cámara';
   map['empresas.camaras.nombre'] = 'Cámara';
+  map['licencia_consumida'] = 'Licencia Consumida';
   
   return map;
 };
