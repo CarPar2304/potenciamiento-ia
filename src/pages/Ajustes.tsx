@@ -14,10 +14,12 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Settings, 
   Upload, 
@@ -75,6 +77,7 @@ export default function Ajustes() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [isPromotingAdmin, setIsPromotingAdmin] = useState(false);
+  const [pendingData, setPendingData] = useState<any[] | null>(null);
   const [uploadResults, setUploadResults] = useState<{
     success: number;
     errors: number;
@@ -634,6 +637,7 @@ export default function Ajustes() {
     setIsUploading(true);
     setUploadProgress(0);
     setUploadResults(null);
+    setPendingData(null);
 
     try {
       console.log('Iniciando procesamiento de archivo:', file.name, 'Tipo:', selectedReport);
@@ -653,86 +657,25 @@ export default function Ajustes() {
         console.log('Ejemplo de primera fila:', jsonData[0]);
       }
 
-      setUploadProgress(25);
+      setUploadProgress(50);
 
       if (jsonData.length === 0) {
         throw new Error('El archivo está vacío o no tiene datos válidos');
       }
 
-      // Procesar datos según el tipo de hoja
+      // Procesar y validar datos según el tipo de hoja (SIN guardar en DB aún)
       let processResult;
 
       if (selectedReport === 'sheet1') {
         processResult = await processSheet1Data(jsonData);
-        setUploadProgress(40);
-
-        // Borrar todos los registros existentes de platzi_general antes de cargar nuevos datos
-        console.log('Borrando registros existentes de platzi_general...');
-        const { error: deleteError } = await supabase
-          .from('platzi_general')
-          .delete()
-          .gte('created_at', '1900-01-01'); // Delete all records using a condition that matches all
-
-        if (deleteError) {
-          console.error('Error borrando datos existentes:', deleteError);
-          throw new Error(`Error al borrar datos existentes: ${deleteError.message}`);
-        }
-
-        console.log('Registros de platzi_general eliminados exitosamente');
-        setUploadProgress(50);
-
-        // Insertar en platzi_general
-        if (processResult.processed.length > 0) {
-          const { data: insertData, error } = await supabase
-            .from('platzi_general')
-            .insert(processResult.processed); // Cambio de upsert a insert ya que borramos todo
-
-          if (error) {
-            console.error('Error insertando datos:', error);
-            throw new Error(`Error al guardar datos: ${error.message}`);
-          }
-          setUploadProgress(75);
-        }
       } else {
         processResult = await processSheet2Data(jsonData);
-        setUploadProgress(40);
-
-        // Borrar todos los registros existentes de platzi_seguimiento antes de cargar nuevos datos
-        console.log('Borrando registros existentes de platzi_seguimiento...');
-        const { error: deleteError } = await supabase
-          .from('platzi_seguimiento')
-          .delete()
-          .gte('created_at', '1900-01-01'); // Delete all records using a condition that matches all
-
-        if (deleteError) {
-          console.error('Error borrando datos existentes:', deleteError);
-          throw new Error(`Error al borrar datos existentes: ${deleteError.message}`);
-        }
-
-        console.log('Registros de platzi_seguimiento eliminados exitosamente');
-        setUploadProgress(50);
-
-        // Insertar en platzi_seguimiento
-        if (processResult.processed.length > 0) {
-          const { data: insertData, error } = await supabase
-            .from('platzi_seguimiento')
-            .insert(processResult.processed); // Cambio de upsert a insert ya que borramos todo
-
-          if (error) {
-            console.error('Error insertando datos:', error);
-            throw new Error(`Error al guardar datos: ${error.message}`);
-          }
-          setUploadProgress(75);
-        }
-      }
-
-      // Ejecutar sincronización
-      const { error: syncError } = await supabase.rpc('sync_platzi_with_solicitudes');
-      if (syncError) {
-        console.error('Error en sincronización:', syncError);
       }
 
       setUploadProgress(100);
+
+      // Guardar datos procesados para confirmación posterior
+      setPendingData(processResult.processed);
 
       const results = {
         success: processResult.processed.length,
@@ -744,19 +687,6 @@ export default function Ajustes() {
       };
 
       setUploadResults(results);
-
-      const successMessage = selectedReport === 'sheet1' ? 
-        `Hoja 1: ${results.success} usuarios cargados` :
-        `Hoja 2: ${results.success} registros de cursos cargados`;
-      
-      const statsMessage = results.duplicatesRemoved > 0 || results.emailsNotFound > 0 ? 
-        ` (${results.duplicatesRemoved} duplicados removidos, ${results.emailsNotFound} emails no aprobados)` : '';
-
-      toast({
-        title: "Archivo procesado exitosamente",
-        description: `${successMessage}${statsMessage}`,
-        variant: results.errors > 0 ? "destructive" : "default"
-      });
 
     } catch (error: any) {
       console.error('Error procesando archivo:', error);
@@ -777,6 +707,101 @@ export default function Ajustes() {
     } finally {
       setIsUploading(false);
       // No cerrar el diálogo para mostrar los resultados
+    }
+  };
+
+  const handleConfirmUpload = async () => {
+    if (!pendingData || !selectedReport) return;
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      if (selectedReport === 'sheet1') {
+        // Borrar todos los registros existentes de platzi_general
+        console.log('Borrando registros existentes de platzi_general...');
+        const { error: deleteError } = await supabase
+          .from('platzi_general')
+          .delete()
+          .gte('created_at', '1900-01-01');
+
+        if (deleteError) {
+          throw new Error(`Error al borrar datos existentes: ${deleteError.message}`);
+        }
+        setUploadProgress(25);
+
+        // Insertar nuevos datos
+        if (pendingData.length > 0) {
+          const { error } = await supabase
+            .from('platzi_general')
+            .insert(pendingData);
+
+          if (error) {
+            throw new Error(`Error al guardar datos: ${error.message}`);
+          }
+        }
+        setUploadProgress(50);
+      } else {
+        // Borrar todos los registros existentes de platzi_seguimiento
+        console.log('Borrando registros existentes de platzi_seguimiento...');
+        const { error: deleteError } = await supabase
+          .from('platzi_seguimiento')
+          .delete()
+          .gte('created_at', '1900-01-01');
+
+        if (deleteError) {
+          throw new Error(`Error al borrar datos existentes: ${deleteError.message}`);
+        }
+        setUploadProgress(25);
+
+        // Insertar nuevos datos
+        if (pendingData.length > 0) {
+          const { error } = await supabase
+            .from('platzi_seguimiento')
+            .insert(pendingData);
+
+          if (error) {
+            throw new Error(`Error al guardar datos: ${error.message}`);
+          }
+        }
+        setUploadProgress(50);
+      }
+
+      // Ejecutar sincronización
+      const { error: syncError } = await supabase.rpc('sync_platzi_with_solicitudes');
+      if (syncError) {
+        console.error('Error en sincronización:', syncError);
+      }
+
+      setUploadProgress(100);
+
+      const successMessage = selectedReport === 'sheet1' ? 
+        `Hoja 1: ${pendingData.length} usuarios cargados exitosamente` :
+        `Hoja 2: ${pendingData.length} registros de cursos cargados exitosamente`;
+
+      toast({
+        title: "Datos cargados",
+        description: successMessage,
+      });
+
+      // Limpiar estados y recargar
+      setPendingData(null);
+      setUploadResults(null);
+      setIsDialogOpen(false);
+      
+      // Recargar página para refrescar datos
+      setTimeout(() => window.location.reload(), 500);
+
+    } catch (error) {
+      console.error('Error cargando datos:', error);
+      toast({
+        title: "Error al cargar datos",
+        description: error instanceof Error ? error.message : "Hubo un error al cargar los datos",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -1240,16 +1265,15 @@ export default function Ajustes() {
                     )}
                   </div>
                   {uploadResults.errorDetails && uploadResults.errorDetails.length > 0 && (
-                    <div className="mt-2 max-h-32 overflow-y-auto">
-                      <p className="text-xs font-medium text-red-700 mb-1">Detalles de errores:</p>
-                      <ul className="text-xs text-red-600 space-y-1">
-                        {uploadResults.errorDetails.slice(0, 5).map((error, index) => (
-                          <li key={index}>• {error}</li>
-                        ))}
-                        {uploadResults.errorDetails.length > 5 && (
-                          <li>• ... y {uploadResults.errorDetails.length - 5} errores más</li>
-                        )}
-                      </ul>
+                    <div className="mt-3">
+                      <p className="text-xs font-medium text-red-700 mb-2">Detalles completos de errores:</p>
+                      <ScrollArea className="h-48 w-full rounded border border-red-200 bg-white p-3">
+                        <ul className="text-xs text-red-600 space-y-1.5">
+                          {uploadResults.errorDetails.map((error, index) => (
+                            <li key={index} className="leading-relaxed">• {error}</li>
+                          ))}
+                        </ul>
+                      </ScrollArea>
                     </div>
                   )}
                 </div>
@@ -1258,11 +1282,11 @@ export default function Ajustes() {
               {/* Summary */}
               {!uploadResults && (
                 <div className="bg-blue-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-sm mb-2">Resumen de Importación:</h4>
+                  <h4 className="font-medium text-sm mb-2">Previsualización:</h4>
                   <div className="text-xs text-muted-foreground space-y-1">
                     <p>• Se validarán automáticamente las columnas requeridas</p>
                     <p>• Los datos se cruzarán con las solicitudes existentes</p>
-                    <p>• Se actualizará el progreso y niveles de los usuarios</p>
+                    <p>• Podrás revisar los errores antes de cargar</p>
                     <p>• Se generará un reporte de inconsistencias si las hay</p>
                   </div>
                 </div>
@@ -1274,23 +1298,29 @@ export default function Ajustes() {
                   onClick={() => {
                     setIsDialogOpen(false);
                     setUploadResults(null);
+                    setPendingData(null);
                     setUploadProgress(0);
                   }} 
                   disabled={isUploading}
                 >
                   {uploadResults ? 'Cerrar' : 'Cancelar'}
                 </Button>
-                {uploadResults && uploadResults.success > 0 && (
+                {uploadResults && pendingData && pendingData.length > 0 && (
                   <Button 
-                    onClick={() => {
-                      setIsDialogOpen(false);
-                      setUploadResults(null);
-                      setUploadProgress(0);
-                      // Opcional: recargar página para refrescar datos
-                      window.location.reload();
-                    }}
+                    onClick={handleConfirmUpload}
+                    disabled={isUploading}
                   >
-                    Actualizar Vista
+                    {isUploading ? (
+                      <>
+                        <Upload className="h-4 w-4 mr-2 animate-spin" />
+                        Cargando...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Actualizar Vista
+                      </>
+                    )}
                   </Button>
                 )}
               </div>
