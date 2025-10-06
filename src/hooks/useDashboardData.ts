@@ -148,14 +148,22 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
     const requestsTimelineData = filteredSolicitudes
       .reduce((acc, s) => {
         const date = new Date(s.fecha_solicitud);
-        const week = getWeekName(date);
-        acc[week] = (acc[week] || 0) + 1;
+        const startOfWeek = new Date(date);
+        startOfWeek.setDate(date.getDate() - date.getDay());
+        const weekKey = startOfWeek.toISOString();
+        const weekName = getWeekName(date);
+        
+        if (!acc[weekKey]) {
+          acc[weekKey] = { week: weekName, count: 0 };
+        }
+        acc[weekKey].count += 1;
         return acc;
-      }, {} as Record<string, number>);
+      }, {} as Record<string, { week: string; count: number }>);
 
     const timelineArray = Object.entries(requestsTimelineData)
-      .map(([week, count]) => ({ week, solicitudes: count }))
-      .sort((a, b) => a.week.localeCompare(b.week));
+      .map(([key, data]) => ({ week: data.week, solicitudes: data.count, weekStart: new Date(key) }))
+      .sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime())
+      .map(({ week, solicitudes }) => ({ week, solicitudes }));
 
     return { licensesUsed, totalLicenses, licensesPercentage, totalRequests, requestsVariance, requestsStatusData, requestsTypeData, totalCompanies, companiesVariance, avgRequestsPerCompany, requestsTimelineData: timelineArray };
   }, [filteredData]);
