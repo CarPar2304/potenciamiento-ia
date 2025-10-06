@@ -16,7 +16,9 @@ const generateColors = (count: number): string[] => {
 const getWeekName = (date: Date): string => {
   const startOfWeek = new Date(date);
   startOfWeek.setDate(date.getDate() - date.getDay());
-  return `Semana ${Math.ceil((startOfWeek.getDate()) / 7)} - ${startOfWeek.toLocaleDateString('es-ES', { month: 'short' })}`;
+  const day = startOfWeek.getDate();
+  const month = startOfWeek.toLocaleDateString('es-ES', { month: 'short' });
+  return `${day} ${month}`;
 };
 
 // Helper function to format time from seconds
