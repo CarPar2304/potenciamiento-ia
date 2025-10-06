@@ -198,16 +198,19 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={data.topCourses} layout="vertical">
+            <BarChart data={data.topCourses} margin={{ bottom: 100 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis 
+              <XAxis 
                 dataKey="name" 
-                type="category" 
-                width={200} 
-                tick={{ fontSize: 12 }}
-                tickFormatter={(value) => value.length > 25 ? `${value.substring(0, 25)}...` : value}
+                type="category"
+                angle={-45}
+                textAnchor="end"
+                height={120}
+                interval={0}
+                tick={{ fontSize: 11 }}
+                tickFormatter={(value) => value.length > 30 ? `${value.substring(0, 30)}...` : value}
               />
+              <YAxis type="number" />
               <Tooltip 
                 formatter={(value, name) => [
                   name === 'views' ? `${value} visualizaciones` : `${Number(value).toFixed(1)}% progreso promedio`,
@@ -218,7 +221,7 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
               <Bar 
                 dataKey="views" 
                 fill="hsl(var(--primary))" 
-                radius={[0, 4, 4, 0]}
+                radius={[4, 4, 0, 0]}
               />
             </BarChart>
           </ResponsiveContainer>
