@@ -7,8 +7,53 @@ interface MessageFormatterProps {
 export function MessageFormatter({ message }: MessageFormatterProps) {
   // Función para formatear texto con markdown básico
   const formatMessage = (text: string) => {
+    let formatted = text;
+
+    // Detectar y formatear tablas markdown
+    const tableRegex = /(\|[^\n]+\|[\r\n]+)((?:\|[-:\s]+\|[\r\n]+)?)((?:\|[^\n]+\|[\r\n]*)+)/g;
+    formatted = formatted.replace(tableRegex, (match) => {
+      const lines = match.trim().split(/[\r\n]+/);
+      if (lines.length < 2) return match;
+
+      // Primera línea = headers
+      const headers = lines[0].split('|').filter(cell => cell.trim() !== '').map(h => h.trim());
+      
+      // Segunda línea puede ser separador (|---|---|)
+      let startDataRow = 1;
+      if (lines[1] && /^\|[\s-:|]+\|$/.test(lines[1].trim())) {
+        startDataRow = 2;
+      }
+
+      // Resto = datos
+      const rows = lines.slice(startDataRow).map(line => 
+        line.split('|').filter(cell => cell.trim() !== '').map(c => c.trim())
+      );
+
+      let tableHTML = '<div class="overflow-x-auto my-3"><table class="min-w-full border-collapse border border-border rounded-lg overflow-hidden">';
+      
+      // Headers
+      tableHTML += '<thead class="bg-muted"><tr>';
+      headers.forEach(header => {
+        tableHTML += `<th class="border border-border px-3 py-2 text-left text-sm font-semibold">${header}</th>`;
+      });
+      tableHTML += '</tr></thead>';
+
+      // Body
+      tableHTML += '<tbody>';
+      rows.forEach((row, idx) => {
+        tableHTML += `<tr class="${idx % 2 === 0 ? 'bg-background' : 'bg-muted/30'}">`;
+        row.forEach(cell => {
+          tableHTML += `<td class="border border-border px-3 py-2 text-sm">${cell}</td>`;
+        });
+        tableHTML += '</tr>';
+      });
+      tableHTML += '</tbody></table></div>';
+
+      return tableHTML;
+    });
+    
     // Convertir saltos de línea
-    let formatted = text.replace(/\n/g, '<br>');
+    formatted = formatted.replace(/\n/g, '<br>');
     
     // Formatear **negrita**
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');

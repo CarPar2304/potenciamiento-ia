@@ -9,7 +9,7 @@ export function ChatBubble() {
   return (
     <div className="fixed bottom-6 right-6 z-50">
       {isOpen && (
-        <div className="mb-4 w-80 h-96 bg-background border border-border rounded-lg shadow-2xl animate-scale-in">
+        <div className="mb-4 w-[480px] h-[600px] bg-background border border-border rounded-lg shadow-2xl animate-scale-in">
           <ChatInterface onClose={() => setIsOpen(false)} />
         </div>
       )}
