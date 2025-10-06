@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import { BookOpen, Award, Calendar, Clock, Eye } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 
@@ -235,30 +236,21 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
           <CardDescription>Porcentaje de avance promedio en cada curso del Top 10</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={data.topCourses}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="name" 
-                angle={-45}
-                textAnchor="end"
-                height={100}
-                interval={0}
-                tick={{ fontSize: 10 }}
-                tickFormatter={(value) => value.length > 20 ? `${value.substring(0, 20)}...` : value}
-              />
-              <YAxis domain={[0, 100]} />
-              <Tooltip 
-                formatter={(value) => [`${Number(value).toFixed(1)}%`, 'Progreso Promedio']}
-                labelFormatter={(label) => `Curso: ${label}`}
-              />
-              <Bar 
-                dataKey="avgProgress" 
-                fill="hsl(262, 83%, 58%)" 
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="space-y-4">
+            {data.topCourses.map((course, index) => (
+              <div key={index} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium truncate pr-4" title={course.name}>
+                    {course.name.length > 60 ? `${course.name.substring(0, 60)}...` : course.name}
+                  </span>
+                  <span className="text-sm font-bold text-primary whitespace-nowrap">
+                    {course.avgProgress.toFixed(1)}%
+                  </span>
+                </div>
+                <Progress value={course.avgProgress} className="h-2" />
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>
