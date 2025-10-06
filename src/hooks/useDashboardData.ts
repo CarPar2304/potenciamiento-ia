@@ -12,12 +12,17 @@ const generateColors = (count: number): string[] => {
   return Array.from({ length: count }, (_, i) => baseColors[i % baseColors.length]);
 };
 
-// Función helper para obtener el nombre de la semana
-const getWeekName = (date: Date): string => {
-  const startOfWeek = new Date(date);
-  startOfWeek.setDate(date.getDate() - date.getDay());
+// Función helper para obtener el nombre de la semana desde el inicio de semana
+const getWeekName = (startOfWeek: Date): string => {
   const day = startOfWeek.getDate();
   const month = startOfWeek.toLocaleDateString('es-ES', { month: 'short' });
+  const year = startOfWeek.getFullYear();
+  const currentYear = new Date().getFullYear();
+  
+  // Include year if it's not the current year
+  if (year !== currentYear) {
+    return `${day} ${month} ${year}`;
+  }
   return `${day} ${month}`;
 };
 
@@ -161,18 +166,18 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
         const date = new Date(s.fecha_solicitud);
         const startOfWeek = new Date(date);
         startOfWeek.setDate(date.getDate() - date.getDay());
+        startOfWeek.setHours(0, 0, 0, 0); // Normalize to start of day
         const weekKey = startOfWeek.toISOString();
-        const weekName = getWeekName(date);
         
         if (!acc[weekKey]) {
-          acc[weekKey] = { week: weekName, count: 0 };
+          acc[weekKey] = { week: getWeekName(startOfWeek), count: 0, weekStart: startOfWeek };
         }
         acc[weekKey].count += 1;
         return acc;
-      }, {} as Record<string, { week: string; count: number }>);
+      }, {} as Record<string, { week: string; count: number; weekStart: Date }>);
 
     const timelineArray = Object.entries(requestsTimelineData)
-      .map(([key, data]) => ({ week: data.week, solicitudes: data.count, weekStart: new Date(key) }))
+      .map(([key, data]) => ({ week: data.week, solicitudes: data.count, weekStart: data.weekStart }))
       .sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime())
       .map(({ week, solicitudes }) => ({ week, solicitudes }));
 

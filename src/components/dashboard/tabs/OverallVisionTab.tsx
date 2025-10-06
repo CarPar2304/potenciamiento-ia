@@ -331,28 +331,44 @@ export function OverallVisionTab({ data, onDateRangeChange, dateRange }: Overall
         </CardHeader>
         <CardContent>
           {data.requestsTimelineData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={data.requestsTimelineData}>
-                <CartesianGrid strokeDasharray="3 3" />
+            <ResponsiveContainer width="100%" height={350}>
+              <LineChart 
+                data={data.requestsTimelineData}
+                margin={{ top: 5, right: 30, left: 20, bottom: 60 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis 
                   dataKey="week"
                   angle={-45}
                   textAnchor="end"
-                  height={80}
+                  height={100}
+                  interval={data.requestsTimelineData.length > 20 ? 'preserveStartEnd' : 0}
+                  tick={{ fontSize: 12 }}
+                  className="text-xs"
                 />
-                <YAxis />
-                <Tooltip />
+                <YAxis 
+                  tick={{ fontSize: 12 }}
+                  className="text-xs"
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--background))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }}
+                />
                 <Line 
                   type="monotone" 
                   dataKey="solicitudes" 
                   stroke="hsl(var(--primary))" 
                   strokeWidth={2}
-                  dot={{ fill: "hsl(var(--primary))" }}
+                  dot={{ fill: "hsl(var(--primary))", r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+            <div className="h-[350px] flex items-center justify-center text-muted-foreground">
               No hay datos disponibles para el período seleccionado
             </div>
           )}
