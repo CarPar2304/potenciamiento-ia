@@ -1,16 +1,56 @@
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Users, GraduationCap, Building, Target, DollarSign, Brain } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, GraduationCap, Building, Target, DollarSign, Brain, CalendarIcon } from 'lucide-react';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { format, subDays, subMonths } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface OverviewTabProps {
   data: any;
-  userRole: string;
+  userRole?: string;
+  onDateRangeChange?: (range: { start: Date | null; end: Date | null }) => void;
+  dateRange?: { start: Date | null; end: Date | null };
 }
 
-export function OverviewTab({ data, userRole }: OverviewTabProps) {
+export function OverviewTab({ data, userRole, onDateRangeChange, dateRange }: OverviewTabProps) {
+  const [timeRangePreset, setTimeRangePreset] = useState<string>("all");
+
+  const handlePresetChange = (preset: string) => {
+    setTimeRangePreset(preset);
+    if (!onDateRangeChange) return;
+    
+    const now = new Date();
+    
+    switch (preset) {
+      case "30d":
+        onDateRangeChange({ start: subDays(now, 30), end: now });
+        break;
+      case "90d":
+        onDateRangeChange({ start: subDays(now, 90), end: now });
+        break;
+      case "6m":
+        onDateRangeChange({ start: subMonths(now, 6), end: now });
+        break;
+      case "1y":
+        onDateRangeChange({ start: subMonths(now, 12), end: now });
+        break;
+      case "custom":
+        // Keep current custom range
+        break;
+      case "all":
+      default:
+        onDateRangeChange({ start: null, end: null });
+        break;
+    }
+  };
   // Ensure data structure exists with defaults
   const safeData = {
     stats: {
@@ -167,10 +207,83 @@ export function OverviewTab({ data, userRole }: OverviewTabProps) {
         {/* Timeline Chart */}
         <Card>
           <CardHeader>
-            <CardTitle>Evolución Mensual</CardTitle>
-            <CardDescription>
-              Progreso del programa a lo largo del año
-            </CardDescription>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <CardTitle>Evolución de Solicitudes</CardTitle>
+                <CardDescription>
+                  Número de solicitudes por período
+                </CardDescription>
+              </div>
+              {onDateRangeChange && (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Select value={timeRangePreset} onValueChange={handlePresetChange}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Seleccionar período" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todo el tiempo</SelectItem>
+                      <SelectItem value="30d">Últimos 30 días</SelectItem>
+                      <SelectItem value="90d">Últimos 90 días</SelectItem>
+                      <SelectItem value="6m">Últimos 6 meses</SelectItem>
+                      <SelectItem value="1y">Último año</SelectItem>
+                      <SelectItem value="custom">Personalizado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {timeRangePreset === "custom" && dateRange && (
+                    <div className="flex gap-2">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full sm:w-[140px] justify-start text-left font-normal",
+                              !dateRange.start && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dateRange.start ? format(dateRange.start, "dd MMM", { locale: es }) : "Inicio"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={dateRange.start || undefined}
+                            onSelect={(date) => onDateRangeChange({ ...dateRange, start: date || null })}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full sm:w-[140px] justify-start text-left font-normal",
+                              !dateRange.end && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {dateRange.end ? format(dateRange.end, "dd MMM", { locale: es }) : "Fin"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={dateRange.end || undefined}
+                            onSelect={(date) => onDateRangeChange({ ...dateRange, end: date || null })}
+                            initialFocus
+                            className="pointer-events-auto"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <ChartContainer config={chartConfig} className="h-[300px]">

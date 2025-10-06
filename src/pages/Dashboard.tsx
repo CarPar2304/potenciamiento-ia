@@ -10,6 +10,10 @@ export default function Dashboard() {
   const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState('vision-general');
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
+  const [overviewDateRange, setOverviewDateRange] = useState<{ start: Date | null; end: Date | null }>({
+    start: null,
+    end: null,
+  });
 
   // Use new comprehensive dashboard data
   const { 
@@ -17,7 +21,7 @@ export default function Dashboard() {
     overallVisionData,
     usageData,
     businessEnvironmentData
-  } = useDashboardData(undefined, dateRange);
+  } = useDashboardData(undefined, dateRange, overviewDateRange);
 
   if (!profile) return null;
 
@@ -50,7 +54,11 @@ export default function Dashboard() {
         </TabsList>
 
         <TabsContent value="vision-general" className="mt-6">
-          <OverallVisionTab data={overallVisionData} />
+          <OverallVisionTab 
+            data={overallVisionData}
+            onDateRangeChange={setOverviewDateRange}
+            dateRange={overviewDateRange}
+          />
         </TabsContent>
 
         <TabsContent value="uso" className="mt-6">

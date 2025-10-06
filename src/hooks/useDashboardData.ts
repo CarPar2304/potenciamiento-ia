@@ -28,7 +28,7 @@ const formatTimeFromSeconds = (seconds: number): string => {
   return `${hours}h ${minutes}m`;
 };
 
-export function useDashboardData(filters?: any, dateRange?: { start: string; end: string }) {
+export function useDashboardData(filters?: any, dateRange?: { start: string; end: string }, overviewDateRange?: { start: Date | null; end: Date | null }) {
   const { profile } = useAuth();
   
   // Fetch all data sources
@@ -79,7 +79,16 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
 
   // Overall Vision Tab Data
   const overallVisionData = useMemo(() => {
-    const { solicitudes: filteredSolicitudes, empresas: filteredEmpresas, platziGeneral: filteredPlatzi, camaras: filteredCamaras } = filteredData;
+    const { solicitudes, empresas: filteredEmpresas, platziGeneral: filteredPlatzi, camaras: filteredCamaras } = filteredData;
+    
+    // Filter by date range if provided
+    let filteredSolicitudes = solicitudes;
+    if (overviewDateRange?.start && overviewDateRange?.end) {
+      filteredSolicitudes = solicitudes.filter(s => {
+        const requestDate = new Date(s.fecha_solicitud);
+        return requestDate >= overviewDateRange.start! && requestDate <= overviewDateRange.end!;
+      });
+    }
     
     const totalLicenses = filteredCamaras.reduce((sum, c) => sum + c.licencias_disponibles, 0);
     const licensesUsed = filteredPlatzi.length;
@@ -168,7 +177,7 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       .map(({ week, solicitudes }) => ({ week, solicitudes }));
 
     return { licensesUsed, totalLicenses, licensesPercentage, totalRequests, requestsVariance, requestsStatusData, requestsTypeData, totalCompanies, companiesVariance, avgRequestsPerCompany, requestsTimelineData: timelineArray };
-  }, [filteredData]);
+  }, [filteredData, overviewDateRange]);
 
   // Usage Tab Data
   const usageData = useMemo(() => {
