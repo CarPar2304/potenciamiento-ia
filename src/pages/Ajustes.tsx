@@ -32,6 +32,7 @@ import {
   Shield,
   XCircle,
   MessageCircle,
+  Download,
 } from 'lucide-react';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -86,6 +87,7 @@ export default function Ajustes() {
     duplicatesRemoved?: number;
     emailsNotFound?: number;
   } | null>(null);
+  const [notFoundRecords, setNotFoundRecords] = useState<any[]>([]);
   
   // Webhook configuration states
   const [webhookConfig, setWebhookConfig] = useState<any>(null);
@@ -422,6 +424,7 @@ export default function Ajustes() {
   const processSheet1Data = async (data: any[]) => {
     const processed = [];
     const errors = [];
+    const notFoundData = [];
 
     console.log('Procesando sheet1 con', data.length, 'filas');
     console.log('Primera fila de ejemplo:', data[0]);
@@ -487,6 +490,7 @@ export default function Ajustes() {
         // Verificar si el email está en solicitudes aprobadas
         if (!canonicalEmail) {
           errors.push(`Fila ${i + 2}: Email "${processedRow.email}" no tiene solicitud aprobada`);
+          notFoundData.push(row); // Guardar el registro original completo
           continue;
         }
 
@@ -526,6 +530,7 @@ export default function Ajustes() {
     return { 
       processed: deduplicatedProcessed, 
       errors, 
+      notFoundData,
       stats: {
         duplicatesRemoved,
         emailsNotFound: errors.filter(e => e.includes('no tiene solicitud aprobada')).length
@@ -536,6 +541,7 @@ export default function Ajustes() {
   const processSheet2Data = async (data: any[]) => {
     const processed = [];
     const errors = [];
+    const notFoundData = [];
 
     console.log('Procesando sheet2 con', data.length, 'filas');
     console.log('Primera fila de ejemplo:', data[0]);
@@ -587,6 +593,7 @@ export default function Ajustes() {
         // Verificar si el email está en solicitudes aprobadas
         if (!approvedEmailsSet.has(processedRow.email)) {
           errors.push(`Fila ${i + 2}: Email "${processedRow.email}" no tiene solicitud aprobada`);
+          notFoundData.push(row); // Guardar el registro original completo
           continue;
         }
 
@@ -623,6 +630,7 @@ export default function Ajustes() {
     return { 
       processed: deduplicatedProcessed, 
       errors, 
+      notFoundData,
       stats: {
         duplicatesRemoved,
         emailsNotFound: errors.filter(e => e.includes('no tiene solicitud aprobada')).length
@@ -676,6 +684,7 @@ export default function Ajustes() {
 
       // Guardar datos procesados para confirmación posterior
       setPendingData(processResult.processed);
+      setNotFoundRecords(processResult.notFoundData || []);
 
       const results = {
         success: processResult.processed.length,
@@ -802,6 +811,43 @@ export default function Ajustes() {
     } finally {
       setIsUploading(false);
       setUploadProgress(0);
+    }
+  };
+
+  const handleDownloadNotFound = () => {
+    if (notFoundRecords.length === 0) {
+      toast({
+        title: "No hay registros",
+        description: "No hay registros que no hayan cruzado para descargar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Crear workbook y worksheet con los datos originales
+      const worksheet = XLSX.utils.json_to_sheet(notFoundRecords);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Registros No Encontrados");
+
+      // Generar nombre de archivo
+      const sheetName = selectedReport === 'sheet1' ? 'Hoja1' : 'Hoja2';
+      const fileName = `Registros_No_Encontrados_${sheetName}_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+      // Descargar archivo
+      XLSX.writeFile(workbook, fileName);
+
+      toast({
+        title: "Descarga exitosa",
+        description: `Se descargaron ${notFoundRecords.length} registros que no cruzaron`,
+      });
+    } catch (error) {
+      console.error('Error al descargar:', error);
+      toast({
+        title: "Error al descargar",
+        description: "Hubo un error al generar el archivo Excel",
+        variant: "destructive"
+      });
     }
   };
 
@@ -1257,8 +1303,19 @@ export default function Ajustes() {
                     {uploadResults.duplicatesRemoved > 0 && (
                       <p className="text-blue-700"><strong>Duplicados removidos:</strong> {uploadResults.duplicatesRemoved}</p>
                     )}
-                    {uploadResults.emailsNotFound > 0 && (
-                      <p className="text-orange-700"><strong>Emails no aprobados:</strong> {uploadResults.emailsNotFound}</p>
+                     {uploadResults.emailsNotFound > 0 && (
+                      <>
+                        <p className="text-orange-700"><strong>Emails no aprobados:</strong> {uploadResults.emailsNotFound}</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleDownloadNotFound}
+                          className="mt-2 gap-2"
+                        >
+                          <Download className="h-3 w-3" />
+                          Descargar registros no encontrados ({uploadResults.emailsNotFound})
+                        </Button>
+                      </>
                     )}
                     {uploadResults.errors > 0 && (
                       <p className="text-red-700"><strong>Errores:</strong> {uploadResults.errors}</p>
@@ -1299,6 +1356,7 @@ export default function Ajustes() {
                     setIsDialogOpen(false);
                     setUploadResults(null);
                     setPendingData(null);
+                    setNotFoundRecords([]);
                     setUploadProgress(0);
                   }} 
                   disabled={isUploading}
