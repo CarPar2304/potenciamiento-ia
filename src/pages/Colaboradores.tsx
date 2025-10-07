@@ -42,10 +42,13 @@ import {
   Award,
   BarChart3,
   Building2,
+  Send,
 } from 'lucide-react';
 import { useColaboradores, useCamaras, usePlatziGeneral, usePlatziSeguimiento } from '@/hooks/useSupabaseData';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
 import { ExportModal } from '@/components/export/ExportModal';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const StatCard = ({ title, value, description, icon: Icon, variant }: {
   title: string;
@@ -95,10 +98,14 @@ const StatCard = ({ title, value, description, icon: Icon, variant }: {
   );
 };
 
-const ColaboradorCard = ({ colaborador, onViewDetails, platziData }: {
+const ColaboradorCard = ({ colaborador, onViewDetails, platziData, onSendReminder, sendingReminder, isSent, canExecuteActions }: {
   colaborador: any;
   onViewDetails: () => void;
   platziData: any[];
+  onSendReminder: (colaborador: any) => void;
+  sendingReminder: boolean;
+  isSent: boolean;
+  canExecuteActions: boolean;
 }) => {
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { color: string; bg: string; border: string }> = {
@@ -249,19 +256,57 @@ const ColaboradorCard = ({ colaborador, onViewDetails, platziData }: {
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-4 border-t">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 border-t">
           <div className="text-sm text-muted-foreground">
             Colaborador de <span className="font-medium text-foreground">{colaborador.camaras?.nombre || 'Cámara no especificada'}</span>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={onViewDetails}
-            className="hover:bg-primary hover:text-primary-foreground px-4 py-2"
-          >
-            <Eye className="h-4 w-4 mr-2" />
-            Ver detalles
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Botón para enviar recordatorio (solo para aprobadas sin licencia consumida) */}
+            {canExecuteActions && colaborador.estado === 'Aprobada' && !hasConsumedLicense && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onSendReminder(colaborador)}
+                disabled={sendingReminder || isSent}
+                className={`transition-all duration-500 font-medium shadow-sm hover:shadow-md ${
+                  isSent 
+                    ? 'text-success bg-success/10 border-success/30 animate-pulse-subtle' 
+                    : 'text-primary hover:text-primary hover:bg-primary/10 border-primary/30 hover:border-primary'
+                } ${sendingReminder ? 'animate-pulse' : ''}`}
+              >
+                {sendingReminder ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-primary" />
+                    <span className="hidden sm:inline">Enviando...</span>
+                    <span className="sm:hidden">Enviando</span>
+                  </>
+                ) : isSent ? (
+                  <>
+                    <div className="animate-bounce mr-2">✓</div>
+                    <span className="hidden sm:inline">Recordatorio enviado</span>
+                    <span className="sm:hidden">Enviado</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-1" />
+                    <span className="hidden sm:inline">Enviar recordatorio</span>
+                    <span className="sm:hidden">Recordatorio</span>
+                  </>
+                )}
+              </Button>
+            )}
+            
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={onViewDetails}
+              className="hover:bg-primary hover:text-primary-foreground px-4 py-2"
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Ver detalles</span>
+              <span className="sm:hidden">Detalles</span>
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -274,16 +319,88 @@ export default function Colaboradores() {
   const { camaras } = useCamaras();
   const { platziData } = usePlatziGeneral();
   const { seguimientoData } = usePlatziSeguimiento();
+  const { toast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('todos');
   const [camaraFilter, setCamaraFilter] = useState<string>('todas');
   const [selectedColaborador, setSelectedColaborador] = useState<any>(null);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [sendingReminderId, setSendingReminderId] = useState<string | null>(null);
+  const [sentReminders, setSentReminders] = useState<Set<string>>(new Set());
 
   if (!profile) return null;
 
   const canViewGlobal = hasPermission(profile.role, 'view_global') || hasPermission(profile.role, 'view_all');
+  const canExecuteActions = hasPermission(profile.role, 'admin_actions');
+
+  const handleSendReminder = async (colaborador: any) => {
+    if (!colaborador.celular) {
+      toast({
+        title: "Error",
+        description: "Este colaborador no tiene número de celular registrado.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSendingReminderId(colaborador.id);
+    try {
+      // Obtener configuración de webhook
+      const { data: webhookConfig, error: webhookError } = await supabase
+        .from('webhook_config')
+        .select('*')
+        .eq('name', 'Recordatorio Licencia')
+        .eq('is_active', true)
+        .single();
+
+      if (webhookError || !webhookConfig) {
+        toast({
+          title: "Error de configuración",
+          description: "No se encontró configuración de webhook activa para recordatorios.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Enviar webhook
+      const response = await fetch(webhookConfig.url, {
+        method: webhookConfig.method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          celular: colaborador.celular,
+          nombre: colaborador.nombres_apellidos,
+          email: colaborador.email,
+          camara: colaborador.camaras?.nombre,
+          timestamp: new Date().toISOString(),
+          tipo: 'recordatorio_licencia'
+        }),
+      });
+
+      if (response.ok) {
+        // Marcar como enviado
+        setSentReminders(prev => new Set(prev).add(colaborador.id));
+        
+        toast({
+          title: "Recordatorio enviado",
+          description: `Se envió el recordatorio a ${colaborador.nombres_apellidos} (${colaborador.celular}).`,
+        });
+      } else {
+        throw new Error('Error en la respuesta del webhook');
+      }
+    } catch (error: any) {
+      console.error('Error enviando recordatorio:', error);
+      toast({
+        title: "Error al enviar recordatorio",
+        description: error.message || "Ocurrió un error inesperado.",
+        variant: "destructive"
+      });
+    } finally {
+      setSendingReminderId(null);
+    }
+  };
 
   // Filtrar colaboradores
   const filteredColaboradores = colaboradores.filter(colaborador => {
@@ -485,6 +602,10 @@ export default function Colaboradores() {
                 colaborador={colaborador}
                 onViewDetails={() => setSelectedColaborador(colaborador)}
                 platziData={platziData}
+                onSendReminder={handleSendReminder}
+                sendingReminder={sendingReminderId === colaborador.id}
+                isSent={sentReminders.has(colaborador.id)}
+                canExecuteActions={canExecuteActions}
               />
             ))}
           </div>

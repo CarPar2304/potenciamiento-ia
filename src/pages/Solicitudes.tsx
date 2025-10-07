@@ -675,40 +675,46 @@ const SolicitudDetailDialog = ({ solicitud, isOpen, onClose, platziSeguimiento }
           </div>
 
           {/* Información de Empresa */}
-          {solicitud.empresas && (
-            <div className="bg-muted/20 rounded-lg p-4">
-              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <Building className="h-4 w-4" />
-                Información de Empresa
-              </h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <label className="font-medium text-muted-foreground">Empresa</label>
-                  <p>{solicitud.empresas.nombre}</p>
-                </div>
-                <div>
-                  <label className="font-medium text-muted-foreground">NIT</label>
-                  <p>{solicitud.empresas.nit}</p>
-                </div>
-                <div>
-                  <label className="font-medium text-muted-foreground">Sector</label>
-                  <p>{solicitud.empresas.sector || 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="font-medium text-muted-foreground">Mercado</label>
-                  <p>{solicitud.empresas.mercado || 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="font-medium text-muted-foreground">Colaboradores</label>
-                  <p>{solicitud.empresas.num_colaboradores || 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="font-medium text-muted-foreground">Cámara</label>
-                  <p>{solicitud.empresas.camaras?.nombre || 'N/A'}</p>
-                </div>
+          <div className="bg-muted/20 rounded-lg p-4">
+            <h3 className="font-semibold mb-3 flex items-center gap-2">
+              <Building className="h-4 w-4" />
+              Información de Empresa
+            </h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <label className="font-medium text-muted-foreground">NIT</label>
+                <p>{solicitud.nit_empresa || 'N/A'}</p>
               </div>
+              {solicitud.empresas ? (
+                <>
+                  <div>
+                    <label className="font-medium text-muted-foreground">Empresa</label>
+                    <p>{solicitud.empresas.nombre}</p>
+                  </div>
+                  <div>
+                    <label className="font-medium text-muted-foreground">Sector</label>
+                    <p>{solicitud.empresas.sector || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="font-medium text-muted-foreground">Mercado</label>
+                    <p>{solicitud.empresas.mercado || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="font-medium text-muted-foreground">Colaboradores</label>
+                    <p>{solicitud.empresas.num_colaboradores || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <label className="font-medium text-muted-foreground">Cámara</label>
+                    <p>{solicitud.empresas.camaras?.nombre || 'N/A'}</p>
+                  </div>
+                </>
+              ) : (
+                <div className="col-span-2">
+                  <p className="text-sm text-muted-foreground italic">No hay información adicional de la empresa disponible</p>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Estado y Fechas */}
           <div className="bg-muted/20 rounded-lg p-4">
@@ -829,9 +835,9 @@ export default function Solicitudes() {
   const [licenseFilter, setLicenseFilter] = useState('todas');
   const [selectedSolicitud, setSelectedSolicitud] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
-  const [sendingReminder, setSendingReminder] = useState(false);
+  const [sendingReminderId, setSendingReminderId] = useState<string | null>(null);
   const [sentReminders, setSentReminders] = useState<Set<string>>(new Set());
-  const [approvingRequest, setApprovingRequest] = useState(false);
+  const [approvingRequestId, setApprovingRequestId] = useState<string | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingSolicitud, setEditingSolicitud] = useState(null);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -851,7 +857,7 @@ export default function Solicitudes() {
       return;
     }
 
-    setSendingReminder(true);
+    setSendingReminderId(solicitud.id);
     try {
       // Obtener configuración de webhook
       const { data: webhookConfig, error: webhookError } = await supabase
@@ -905,7 +911,7 @@ export default function Solicitudes() {
         variant: "destructive"
       });
     } finally {
-      setSendingReminder(false);
+      setSendingReminderId(null);
     }
   };
 
@@ -919,7 +925,7 @@ export default function Solicitudes() {
       return;
     }
 
-    setApprovingRequest(true);
+    setApprovingRequestId(solicitud.id);
     try {
       // Obtener configuración de webhook
       const { data: webhookConfig, error: webhookError } = await supabase
@@ -972,7 +978,7 @@ export default function Solicitudes() {
         variant: "destructive"
       });
     } finally {
-      setApprovingRequest(false);
+      setApprovingRequestId(null);
     }
   };
 
@@ -1209,8 +1215,8 @@ export default function Solicitudes() {
                 onEditRequest={handleEditRequest}
                 isAdmin={canExecuteActions}
                 platziData={platziData}
-                sendingReminder={sendingReminder}
-                approvingRequest={approvingRequest}
+                sendingReminder={sendingReminderId === solicitud.id}
+                approvingRequest={approvingRequestId === solicitud.id}
                 isSent={sentReminders.has(solicitud.id)}
               />
             ))}
