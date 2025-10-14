@@ -439,6 +439,7 @@ export default function CRM() {
   const utilizacionPromedio = Math.round(
     chamberMetrics.reduce((sum, c) => sum + c.utilizacionPorcentaje, 0) / Math.max(1, chamberMetrics.length)
   );
+  const camarasConConsumo = chamberMetrics.filter(c => c.licenciasAsignadas > 0).length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -491,8 +492,8 @@ export default function CRM() {
             <Building2 className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{camaras.length}</div>
-            <p className="text-xs text-muted-foreground">Alianzas estratégicas</p>
+            <div className="text-2xl font-bold text-purple-600">{camarasConConsumo}/{camaras.length}</div>
+            <p className="text-xs text-muted-foreground">Con consumo de licencias</p>
           </CardContent>
         </Card>
 
