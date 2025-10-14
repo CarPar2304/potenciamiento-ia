@@ -334,7 +334,7 @@ export default function CRM() {
   // Calculate chamber metrics
   const chamberMetrics = camaras.map(camara => {
     const camaraActividades = actividades.filter(a => a.camara_id === camara.id);
-    const camaraSolicitudes = solicitudes.filter(s => s.empresas?.camara_id === camara.id && !s.es_colaborador);
+    const camaraSolicitudes = solicitudes.filter(s => s.empresas?.camara_id === camara.id && !s.es_colaborador && s.estado === 'Aprobada');
     const camaraColaboradores = solicitudes.filter(s => s.camara_colaborador_id === camara.id && s.es_colaborador);
     const camaraPlatziUsers = platziData.filter(p => {
       const solicitud = solicitudes.find(s => s.email === p.email);
@@ -524,20 +524,16 @@ export default function CRM() {
                     <h4 className="font-semibold">{camara.nombre}</h4>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="text-muted-foreground">Licencias:</span>
-                        <p className="font-medium">{camara.licenciasAsignadas}/{camara.licencias_disponibles}</p>
+                        <span className="text-muted-foreground">Consumo:</span>
+                        <p className="font-medium">{camara.licenciasAsignadas} licencias</p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Solicitudes Aprobadas:</span>
+                        <p className="font-medium">{camara.solicitudes}</p>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Utilización:</span>
                         <p className="font-medium">{camara.utilizacionPorcentaje}%</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Solicitudes:</span>
-                        <p className="font-medium">{camara.solicitudes}</p>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Colaboradores:</span>
-                        <p className="font-medium">{camara.colaboradores}</p>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Actividades:</span>
