@@ -366,7 +366,7 @@ export type Database = {
             foreignKeyName: "platzi_seguimiento_email_fkey"
             columns: ["email"]
             isOneToOne: false
-            referencedRelation: "platzi_general"
+            referencedRelation: "solicitudes"
             referencedColumns: ["email"]
           },
         ]
