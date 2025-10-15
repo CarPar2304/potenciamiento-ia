@@ -1160,6 +1160,7 @@ export default function Empresas() {
         data={filteredCompanies}
         type="empresas"
         platziEmails={new Set(platziData?.map(p => p.email?.toLowerCase() || '') || [])}
+        platziData={platziData}
       />
     </div>
   );

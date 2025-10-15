@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Label } from '@/components/ui/label';
 import { 
   Select,
   SelectContent,
@@ -43,6 +44,7 @@ import {
   BarChart3,
   Building2,
   Send,
+  Edit,
 } from 'lucide-react';
 import { useColaboradores, useCamaras, usePlatziGeneral, usePlatziSeguimiento } from '@/hooks/useSupabaseData';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
@@ -98,7 +100,7 @@ const StatCard = ({ title, value, description, icon: Icon, variant }: {
   );
 };
 
-const ColaboradorCard = ({ colaborador, onViewDetails, platziData, onSendReminder, sendingReminder, isSent, canExecuteActions }: {
+const ColaboradorCard = ({ colaborador, onViewDetails, platziData, onSendReminder, sendingReminder, isSent, canExecuteActions, onEditColaborador, isAdmin }: {
   colaborador: any;
   onViewDetails: () => void;
   platziData: any[];
@@ -106,6 +108,8 @@ const ColaboradorCard = ({ colaborador, onViewDetails, platziData, onSendReminde
   sendingReminder: boolean;
   isSent: boolean;
   canExecuteActions: boolean;
+  onEditColaborador: (colaborador: any) => void;
+  isAdmin: boolean;
 }) => {
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { color: string; bg: string; border: string }> = {
@@ -296,6 +300,20 @@ const ColaboradorCard = ({ colaborador, onViewDetails, platziData, onSendReminde
               </Button>
             )}
             
+            {/* Botón de edición solo para administradores */}
+            {isAdmin && (
+              <Button
+                variant="outline" 
+                size="sm" 
+                onClick={() => onEditColaborador(colaborador)}
+                className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200 hover:border-amber-400 transition-colors"
+              >
+                <Edit className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">Editar</span>
+                <span className="sm:hidden">Editar</span>
+              </Button>
+            )}
+            
             <Button 
               variant="outline" 
               size="sm"
@@ -328,11 +346,13 @@ export default function Colaboradores() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [sendingReminderId, setSendingReminderId] = useState<string | null>(null);
   const [sentReminders, setSentReminders] = useState<Set<string>>(new Set());
+  const [editingColaborador, setEditingColaborador] = useState<any>(null);
 
   if (!profile) return null;
 
   const canViewGlobal = hasPermission(profile.role, 'view_global') || hasPermission(profile.role, 'view_all');
   const canExecuteActions = hasPermission(profile.role, 'admin_actions');
+  const isAdmin = profile.role === 'admin';
 
   const handleSendReminder = async (colaborador: any) => {
     if (!colaborador.celular) {
@@ -399,6 +419,32 @@ export default function Colaboradores() {
       });
     } finally {
       setSendingReminderId(null);
+    }
+  };
+
+  const handleEditColaborador = async (updatedData: any) => {
+    try {
+      const { error } = await supabase
+        .from('solicitudes')
+        .update(updatedData)
+        .eq('id', editingColaborador.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Colaborador actualizado",
+        description: "Los cambios se guardaron correctamente.",
+      });
+
+      setEditingColaborador(null);
+      // No necesitamos recargar porque el hook useSolicitudes ya se actualizará automáticamente
+    } catch (error: any) {
+      console.error('Error actualizando colaborador:', error);
+      toast({
+        title: "Error al actualizar",
+        description: error.message || "Ocurrió un error inesperado.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -606,6 +652,8 @@ export default function Colaboradores() {
                 sendingReminder={sendingReminderId === colaborador.id}
                 isSent={sentReminders.has(colaborador.id)}
                 canExecuteActions={canExecuteActions}
+                onEditColaborador={setEditingColaborador}
+                isAdmin={isAdmin}
               />
             ))}
           </div>
@@ -832,6 +880,130 @@ export default function Colaboradores() {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Dialog */}
+      {editingColaborador && (
+        <Dialog open={!!editingColaborador} onOpenChange={() => setEditingColaborador(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Edit className="h-5 w-5" />
+                Editar Colaborador
+              </DialogTitle>
+              <DialogDescription>
+                Actualiza la información de {editingColaborador.nombres_apellidos}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-nombre">Nombre completo</Label>
+                  <Input
+                    id="edit-nombre"
+                    defaultValue={editingColaborador.nombres_apellidos}
+                    onChange={(e) => {
+                      setEditingColaborador({
+                        ...editingColaborador,
+                        nombres_apellidos: e.target.value
+                      });
+                    }}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-email">Email</Label>
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    defaultValue={editingColaborador.email}
+                    onChange={(e) => {
+                      setEditingColaborador({
+                        ...editingColaborador,
+                        email: e.target.value
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-documento">Número de documento</Label>
+                  <Input
+                    id="edit-documento"
+                    defaultValue={editingColaborador.numero_documento}
+                    onChange={(e) => {
+                      setEditingColaborador({
+                        ...editingColaborador,
+                        numero_documento: e.target.value
+                      });
+                    }}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-celular">Celular</Label>
+                  <Input
+                    id="edit-celular"
+                    defaultValue={editingColaborador.celular}
+                    onChange={(e) => {
+                      setEditingColaborador({
+                        ...editingColaborador,
+                        celular: e.target.value
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-cargo">Cargo</Label>
+                  <Input
+                    id="edit-cargo"
+                    defaultValue={editingColaborador.cargo}
+                    onChange={(e) => {
+                      setEditingColaborador({
+                        ...editingColaborador,
+                        cargo: e.target.value
+                      });
+                    }}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-nivel">Nivel educativo</Label>
+                  <Input
+                    id="edit-nivel"
+                    defaultValue={editingColaborador.nivel_educativo}
+                    onChange={(e) => {
+                      setEditingColaborador({
+                        ...editingColaborador,
+                        nivel_educativo: e.target.value
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setEditingColaborador(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => handleEditColaborador(editingColaborador)}
+              >
+                Guardar cambios
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* Export Modal */}
       <ExportModal
         isOpen={showExportModal}
@@ -839,6 +1011,7 @@ export default function Colaboradores() {
         data={filteredColaboradores}
         type="colaboradores"
         platziEmails={new Set(platziData?.map(p => p.email?.toLowerCase() || '') || [])}
+        platziData={platziData}
       />
     </div>
   );

@@ -53,6 +53,16 @@ export const EMPRESA_FIELDS: ExportField[] = [
   { key: 'empresas.asigno_recursos_ia', label: 'Asignó recursos IA', category: 'empresa' },
 ];
 
+export const PLATZI_FIELDS: ExportField[] = [
+  { key: 'platzi.ruta', label: 'Ruta Platzi', category: 'solicitud' },
+  { key: 'platzi.estado_acceso', label: 'Estado acceso', category: 'solicitud' },
+  { key: 'platzi.progreso_ruta', label: 'Progreso ruta (%)', category: 'solicitud' },
+  { key: 'platzi.cursos_totales_certificados', label: 'Cursos certificados', category: 'solicitud' },
+  { key: 'platzi.cursos_totales_progreso', label: 'Cursos en progreso', category: 'solicitud' },
+  { key: 'platzi.tiempo_total_dedicado', label: 'Tiempo dedicado (horas)', category: 'solicitud' },
+  { key: 'platzi.dias_sin_progreso', label: 'Días sin progreso', category: 'solicitud' },
+];
+
 export const getNestedValue = (obj: any, path: string): any => {
   const keys = path.split('.');
   let value = obj;
@@ -96,7 +106,8 @@ export const formatDataForExport = (
   selectedFields: string[],
   fieldLabels: Record<string, string>,
   dateRange?: { from: Date; to: Date },
-  platziEmails?: Set<string>
+  platziEmails?: Set<string>,
+  platziData?: any[]
 ) => {
   let filteredItems = [...items];
 
@@ -131,6 +142,20 @@ export const formatDataForExport = (
         } else {
           value = 'No';
         }
+      } else if (field.startsWith('platzi.')) {
+        // Obtener datos de Platzi para este usuario
+        const email = item.email;
+        if (platziData && email) {
+          const userPlatziData = platziData.find(p => p.email.toLowerCase() === email.toLowerCase());
+          if (userPlatziData) {
+            const platziField = field.replace('platzi.', '');
+            value = userPlatziData[platziField];
+          } else {
+            value = null;
+          }
+        } else {
+          value = null;
+        }
       } else {
         value = getNestedValue(item, field);
       }
@@ -147,6 +172,12 @@ export const formatDataForExport = (
         value = formatNumberForExport(value);
       } else if (field === 'es_colaborador') {
         value = value ? 'Sí' : 'No';
+      } else if (field === 'platzi.progreso_ruta') {
+        // Convertir progreso a porcentaje
+        value = value ? `${Math.round(value * 100)}%` : '-';
+      } else if (field === 'platzi.tiempo_total_dedicado') {
+        // Convertir segundos a horas
+        value = value ? Math.round(value / 3600) : '-';
       } else if (value === null || value === undefined) {
         value = '-';
       }
@@ -164,11 +195,12 @@ export const exportToExcel = (
   fileName: string,
   fieldLabels: Record<string, string>,
   dateRange?: { from: Date; to: Date },
-  platziEmails?: Set<string>
+  platziEmails?: Set<string>,
+  platziData?: any[]
 ) => {
   try {
     // Formatear datos para exportación
-    const formattedData = formatDataForExport(data, selectedFields, fieldLabels, dateRange, platziEmails);
+    const formattedData = formatDataForExport(data, selectedFields, fieldLabels, dateRange, platziEmails, platziData);
 
     if (formattedData.length === 0) {
       throw new Error('No hay datos para exportar con los filtros seleccionados');
@@ -207,7 +239,7 @@ export const exportToExcel = (
 export const createFieldLabelsMap = (): Record<string, string> => {
   const map: Record<string, string> = {};
   
-  [...MANDATORY_FIELDS, ...SOLICITUD_FIELDS, ...EMPRESA_FIELDS].forEach(field => {
+  [...MANDATORY_FIELDS, ...SOLICITUD_FIELDS, ...EMPRESA_FIELDS, ...PLATZI_FIELDS].forEach(field => {
     map[field.key] = field.label;
   });
   

@@ -1251,6 +1251,7 @@ export default function Solicitudes() {
         data={filteredApplications}
         type="solicitudes"
         platziEmails={new Set(platziData?.map(p => p.email?.toLowerCase() || '') || [])}
+        platziData={platziData}
       />
     </div>
   );

@@ -18,6 +18,7 @@ import {
   MANDATORY_FIELDS,
   SOLICITUD_FIELDS,
   EMPRESA_FIELDS,
+  PLATZI_FIELDS,
   exportToExcel,
   createFieldLabelsMap,
 } from '@/utils/exportUtils';
@@ -28,9 +29,10 @@ interface ExportModalProps {
   data: any[];
   type: 'solicitudes' | 'empresas' | 'colaboradores';
   platziEmails?: Set<string>;
+  platziData?: any[];
 }
 
-export const ExportModal = ({ isOpen, onClose, data, type, platziEmails }: ExportModalProps) => {
+export const ExportModal = ({ isOpen, onClose, data, type, platziEmails, platziData }: ExportModalProps) => {
   const { toast } = useToast();
   const [selectedFields, setSelectedFields] = useState<string[]>(
     MANDATORY_FIELDS.map(f => f.key)
@@ -72,7 +74,8 @@ export const ExportModal = ({ isOpen, onClose, data, type, platziEmails }: Expor
         fileName,
         fieldLabels,
         dateRange.from && dateRange.to ? { from: dateRange.from, to: dateRange.to } : undefined,
-        platziEmails
+        platziEmails,
+        platziData
       );
 
       toast({
@@ -152,6 +155,15 @@ export const ExportModal = ({ isOpen, onClose, data, type, platziEmails }: Expor
                 onFieldToggle={handleFieldToggle}
                 title="Campos adicionales - Empresas"
                 description="Selecciona campos adicionales de información de empresas"
+              />
+
+              {/* Campos de Platzi */}
+              <FieldSelector
+                fields={PLATZI_FIELDS}
+                selectedFields={selectedFields}
+                onFieldToggle={handleFieldToggle}
+                title="Campos adicionales - Platzi"
+                description="Selecciona campos de progreso y cursos en Platzi"
               />
 
               <div className="bg-muted/30 rounded-lg p-3 text-sm">
