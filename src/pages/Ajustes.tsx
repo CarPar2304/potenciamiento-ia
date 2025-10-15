@@ -557,8 +557,12 @@ export default function Ajustes() {
       throw new Error(`Error al obtener emails aprobados: ${emailError.message}`);
     }
 
-    const approvedEmailsSet = new Set(approvedEmails?.map(s => s.email.toLowerCase()) || []);
-    console.log('Emails aprobados encontrados:', approvedEmailsSet.size);
+    // Crear mapa de emails aprobados: key = email en minúsculas, value = email canónico en BD
+    const approvedEmailsMap = new Map<string, string>();
+    (approvedEmails || []).forEach((s: any) => {
+      if (s.email) approvedEmailsMap.set(s.email.toLowerCase(), s.email);
+    });
+    console.log('Emails aprobados encontrados:', approvedEmailsMap.size);
 
     for (let i = 0; i < data.length; i++) {
       const row = data[i];
@@ -579,7 +583,7 @@ export default function Ajustes() {
           fecha_certificacion: row['Fecha de certificación'] || row['fecha_certificacion'] ? 
             new Date(row['Fecha de certificación'] || row['fecha_certificacion']) : null,
           ruta: row['Ruta'] || row['ruta'] || row['RUTA'],
-        };
+        } as any;
 
         // Validar campos esenciales
         if (!processedRow.nombre || !processedRow.email || !processedRow.id_curso) {
@@ -587,15 +591,22 @@ export default function Ajustes() {
           continue;
         }
 
-        // Limpiar email
-        processedRow.email = processedRow.email.toString().trim().toLowerCase();
+        // Asegurar tipo para id_curso (la tabla espera texto)
+        processedRow.id_curso = String(processedRow.id_curso);
+
+        // Normalizar y usar email canónico desde BD para respetar FK
+        const emailLower = processedRow.email.toString().trim().toLowerCase();
+        const canonicalEmail = approvedEmailsMap.get(emailLower);
 
         // Verificar si el email está en solicitudes aprobadas
-        if (!approvedEmailsSet.has(processedRow.email)) {
+        if (!canonicalEmail) {
           errors.push(`Fila ${i + 2}: Email "${processedRow.email}" no tiene solicitud aprobada`);
           notFoundData.push(row); // Guardar el registro original completo
           continue;
         }
+
+        // Usar el email con la capitalización exacta que existe en solicitudes
+        processedRow.email = canonicalEmail;
 
         processed.push(processedRow);
       } catch (error) {
