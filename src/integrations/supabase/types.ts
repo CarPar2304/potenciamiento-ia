@@ -366,7 +366,7 @@ export type Database = {
             foreignKeyName: "platzi_seguimiento_email_fkey"
             columns: ["email"]
             isOneToOne: false
-            referencedRelation: "solicitudes"
+            referencedRelation: "platzi_general"
             referencedColumns: ["email"]
           },
         ]
@@ -596,7 +596,7 @@ export type Database = {
       }
       l2_normalize: {
         Args: { "": string } | { "": unknown } | { "": unknown }
-        Returns: string
+        Returns: unknown
       }
       match_documents: {
         Args: { filter?: Json; match_count?: number; query_embedding: string }
