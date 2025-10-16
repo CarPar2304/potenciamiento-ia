@@ -323,42 +323,42 @@ export function useColaboradores() {
   const [error, setError] = useState<string | null>(null);
   const { profile } = useAuth();
 
+  const fetchColaboradores = async () => {
+    try {
+      setLoading(true);
+      
+      // Obtener colaboradores con información de su cámara
+      const { data: colaboradoresData, error: colaboradoresError } = await supabase
+        .from('solicitudes')
+        .select(`
+          *,
+          camaras!solicitudes_camara_colaborador_id_fkey (
+            id,
+            nombre,
+            nit
+          )
+        `)
+        .eq('es_colaborador', true)
+        .order('fecha_solicitud', { ascending: false });
+
+      if (colaboradoresError) throw colaboradoresError;
+
+      setColaboradores(colaboradoresData || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error cargando colaboradores');
+      console.error('Error fetching colaboradores:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchColaboradores = async () => {
-      try {
-        setLoading(true);
-        
-        // Obtener colaboradores con información de su cámara
-        const { data: colaboradoresData, error: colaboradoresError } = await supabase
-          .from('solicitudes')
-          .select(`
-            *,
-            camaras!solicitudes_camara_colaborador_id_fkey (
-              id,
-              nombre,
-              nit
-            )
-          `)
-          .eq('es_colaborador', true)
-          .order('fecha_solicitud', { ascending: false });
-
-        if (colaboradoresError) throw colaboradoresError;
-
-        setColaboradores(colaboradoresData || []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error cargando colaboradores');
-        console.error('Error fetching colaboradores:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (profile) {
       fetchColaboradores();
     }
   }, [profile]);
 
-  return { colaboradores, loading, error, refetch: () => setColaboradores([]) };
+  return { colaboradores, loading, error, refetch: fetchColaboradores };
 }
 
 // Insights types and hooks

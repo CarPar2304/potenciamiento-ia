@@ -333,7 +333,7 @@ const ColaboradorCard = ({ colaborador, onViewDetails, platziData, onSendReminde
 
 export default function Colaboradores() {
   const { profile } = useAuth();
-  const { colaboradores, loading } = useColaboradores();
+  const { colaboradores, loading, refetch } = useColaboradores();
   const { camaras } = useCamaras();
   const { platziData } = usePlatziGeneral();
   const { seguimientoData } = usePlatziSeguimiento();
@@ -438,7 +438,7 @@ export default function Colaboradores() {
         .from('solicitudes')
         .update(updatePayload)
         .eq('id', editingColaborador.id)
-        .select(); // Esto evita el error del schema cache
+        .select();
 
       if (error) throw error;
 
@@ -448,7 +448,9 @@ export default function Colaboradores() {
       });
 
       setEditingColaborador(null);
-      // No necesitamos recargar porque el hook useSolicitudes ya se actualizará automáticamente
+      
+      // Recargar datos para mostrar cambios inmediatamente
+      await refetch();
     } catch (error: any) {
       console.error('Error actualizando colaborador:', error);
       toast({
