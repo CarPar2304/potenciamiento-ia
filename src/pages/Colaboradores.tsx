@@ -424,10 +424,21 @@ export default function Colaboradores() {
 
   const handleEditColaborador = async (updatedData: any) => {
     try {
+      // Extraer solo los campos que se pueden actualizar en solicitudes
+      const updatePayload = {
+        nombres_apellidos: updatedData.nombres_apellidos,
+        email: updatedData.email,
+        numero_documento: updatedData.numero_documento,
+        celular: updatedData.celular,
+        cargo: updatedData.cargo,
+        nivel_educativo: updatedData.nivel_educativo,
+      };
+
       const { error } = await supabase
         .from('solicitudes')
-        .update(updatedData)
-        .eq('id', editingColaborador.id);
+        .update(updatePayload)
+        .eq('id', editingColaborador.id)
+        .select(); // Esto evita el error del schema cache
 
       if (error) throw error;
 
