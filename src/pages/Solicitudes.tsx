@@ -327,6 +327,7 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave, camaras }: {
     nit_empresa: '',
     es_colaborador: false,
     camara_colaborador_id: '',
+    camara_empresa_id: '',
   });
   
   const [saving, setSaving] = useState(false);
@@ -350,6 +351,7 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave, camaras }: {
         nit_empresa: solicitud.nit_empresa || '',
         es_colaborador: solicitud.es_colaborador || false,
         camara_colaborador_id: solicitud.camara_colaborador_id || '',
+        camara_empresa_id: solicitud.empresas?.camara_id || '',
       });
     }
   }, [solicitud]);
@@ -380,6 +382,7 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave, camaras }: {
         nit_empresa: formData.nit_empresa,
         es_colaborador: formData.es_colaborador,
         camara_colaborador_id: formData.es_colaborador ? formData.camara_colaborador_id : null,
+        camara_empresa_id: formData.camara_empresa_id,
       };
 
       await onSave(updatedSolicitud);
@@ -537,7 +540,26 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave, camaras }: {
                   id="nit_empresa"
                   value={formData.nit_empresa}
                   onChange={(e) => handleInputChange('nit_empresa', e.target.value)}
+                  placeholder="Número de identificación tributaria"
                 />
+              </div>
+              <div>
+                <Label htmlFor="camara_empresa_id">Cámara de Comercio de la Empresa</Label>
+                <Select 
+                  value={formData.camara_empresa_id} 
+                  onValueChange={(value) => handleInputChange('camara_empresa_id', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar cámara" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {camaras.map((camara) => (
+                      <SelectItem key={camara.id} value={camara.id}>
+                        {camara.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="es_colaborador">¿Es Colaborador?</Label>
@@ -1033,17 +1055,46 @@ export default function Solicitudes() {
 
   const handleSaveEdit = async (updatedSolicitud: any) => {
     try {
-      // Solo actualizar solicitud
+      // Actualizar solicitud
       const { error: solicitudError } = await supabase
         .from('solicitudes')
-        .update(updatedSolicitud)
+        .update({
+          nombres_apellidos: updatedSolicitud.nombres_apellidos,
+          email: updatedSolicitud.email,
+          numero_documento: updatedSolicitud.numero_documento,
+          celular: updatedSolicitud.celular,
+          cargo: updatedSolicitud.cargo,
+          nivel_educativo: updatedSolicitud.nivel_educativo,
+          tipo_identificacion: updatedSolicitud.tipo_identificacion,
+          genero: updatedSolicitud.genero,
+          grupo_etnico: updatedSolicitud.grupo_etnico,
+          fecha_nacimiento: updatedSolicitud.fecha_nacimiento,
+          estado: updatedSolicitud.estado,
+          razon_rechazo: updatedSolicitud.razon_rechazo,
+          nit_empresa: updatedSolicitud.nit_empresa,
+          es_colaborador: updatedSolicitud.es_colaborador,
+          camara_colaborador_id: updatedSolicitud.camara_colaborador_id,
+        })
         .eq('id', editingSolicitud.id);
 
       if (solicitudError) throw solicitudError;
 
+      // Actualizar empresa si cambió el NIT o la cámara
+      if (editingSolicitud.empresas?.id) {
+        const { error: empresaError } = await supabase
+          .from('empresas')
+          .update({
+            nit: updatedSolicitud.nit_empresa,
+            camara_id: updatedSolicitud.camara_empresa_id || null,
+          })
+          .eq('id', editingSolicitud.empresas.id);
+
+        if (empresaError) throw empresaError;
+      }
+
       toast({
         title: "Solicitud actualizada",
-        description: "Los cambios se han guardado correctamente.",
+        description: "Los cambios se han guardado correctamente en solicitud y empresa.",
       });
 
       setShowEditDialog(false);
