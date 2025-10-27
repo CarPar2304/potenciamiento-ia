@@ -104,61 +104,65 @@ export function useSolicitudes() {
   const [error, setError] = useState<string | null>(null);
   const { profile } = useAuth();
 
+  const fetchSolicitudes = async () => {
+    try {
+      setLoading(true);
+      
+      // Obtener TODAS las solicitudes (empresariales y colaboradores)
+      const { data: solicitudesData, error: solicitudesError } = await supabase
+        .from('solicitudes')
+        .select(`
+          *,
+          camaras:camara_colaborador_id (
+            id,
+            nombre,
+            nit
+          )
+        `)
+        .order('fecha_solicitud', { ascending: false });
+
+      if (solicitudesError) throw solicitudesError;
+
+      // Obtener empresas con sus cámaras
+      const { data: empresasData, error: empresasError } = await supabase
+        .from('empresas')
+        .select(`
+          *,
+          camaras (
+            id,
+            nombre,
+            nit
+          )
+        `);
+
+      if (empresasError) throw empresasError;
+
+      // Combinar los datos manualmente por NIT para solicitudes empresariales
+      const solicitudesWithEmpresas = solicitudesData?.map(solicitud => ({
+        ...solicitud,
+        empresas: solicitud.es_colaborador ? undefined : empresasData?.find(empresa => empresa.nit === solicitud.nit_empresa)
+      })) || [];
+
+      setSolicitudes(solicitudesWithEmpresas);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error cargando solicitudes');
+      console.error('Error fetching solicitudes:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchSolicitudes = async () => {
-      try {
-        setLoading(true);
-        
-        // Obtener TODAS las solicitudes (empresariales y colaboradores)
-        const { data: solicitudesData, error: solicitudesError } = await supabase
-          .from('solicitudes')
-          .select(`
-            *,
-            camaras:camara_colaborador_id (
-              id,
-              nombre,
-              nit
-            )
-          `)
-          .order('fecha_solicitud', { ascending: false });
-
-        if (solicitudesError) throw solicitudesError;
-
-        // Obtener empresas con sus cámaras
-        const { data: empresasData, error: empresasError } = await supabase
-          .from('empresas')
-          .select(`
-            *,
-            camaras (
-              id,
-              nombre,
-              nit
-            )
-          `);
-
-        if (empresasError) throw empresasError;
-
-        // Combinar los datos manualmente por NIT para solicitudes empresariales
-        const solicitudesWithEmpresas = solicitudesData?.map(solicitud => ({
-          ...solicitud,
-          empresas: solicitud.es_colaborador ? undefined : empresasData?.find(empresa => empresa.nit === solicitud.nit_empresa)
-        })) || [];
-
-        setSolicitudes(solicitudesWithEmpresas);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error cargando solicitudes');
-        console.error('Error fetching solicitudes:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (profile) {
       fetchSolicitudes();
     }
   }, [profile]);
 
-  return { solicitudes, loading, error, refetch: () => setSolicitudes([]) };
+  const refetch = async () => {
+    await fetchSolicitudes();
+  };
+
+  return { solicitudes, loading, error, refetch };
 }
 
 export function useEmpresas() {

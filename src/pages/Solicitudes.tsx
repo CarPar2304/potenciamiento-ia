@@ -845,7 +845,7 @@ const SolicitudDetailDialog = ({ solicitud, isOpen, onClose, platziSeguimiento }
 
 export default function Solicitudes() {
   const { profile } = useAuth();
-  const { solicitudes, loading } = useSolicitudes();
+  const { solicitudes, loading, refetch } = useSolicitudes();
   const { camaras } = useCamaras();
   const { platziData } = usePlatziGeneral();
   const { seguimientoData } = usePlatziSeguimiento();
@@ -1055,7 +1055,7 @@ export default function Solicitudes() {
 
   const handleSaveEdit = async (updatedSolicitud: any) => {
     try {
-      // Actualizar solicitud
+      // Actualizar solicitud - el NIT se actualiza aquí
       const { error: solicitudError } = await supabase
         .from('solicitudes')
         .update({
@@ -1071,7 +1071,7 @@ export default function Solicitudes() {
           fecha_nacimiento: updatedSolicitud.fecha_nacimiento,
           estado: updatedSolicitud.estado,
           razon_rechazo: updatedSolicitud.razon_rechazo,
-          nit_empresa: updatedSolicitud.nit_empresa,
+          nit_empresa: updatedSolicitud.nit_empresa, // NIT actualizado en solicitudes
           es_colaborador: updatedSolicitud.es_colaborador,
           camara_colaborador_id: updatedSolicitud.camara_colaborador_id,
         })
@@ -1079,12 +1079,12 @@ export default function Solicitudes() {
 
       if (solicitudError) throw solicitudError;
 
-      // Actualizar empresa si cambió el NIT o la cámara
+      // Actualizar también el NIT en la tabla empresas
       if (editingSolicitud.empresas?.id) {
         const { error: empresaError } = await supabase
           .from('empresas')
           .update({
-            nit: updatedSolicitud.nit_empresa,
+            nit: updatedSolicitud.nit_empresa, // Mismo NIT actualizado en empresas
             camara_id: updatedSolicitud.camara_empresa_id || null,
           })
           .eq('id', editingSolicitud.empresas.id);
@@ -1092,16 +1092,16 @@ export default function Solicitudes() {
         if (empresaError) throw empresaError;
       }
 
+      // Refrescar datos para ver cambios inmediatamente
+      await refetch();
+
       toast({
-        title: "Solicitud actualizada",
-        description: "Los cambios se han guardado correctamente en solicitud y empresa.",
+        title: "Cambios guardados",
+        description: "El NIT se actualizó en ambas tablas: solicitudes y empresas.",
       });
 
       setShowEditDialog(false);
       setEditingSolicitud(null);
-      
-      // Recargar datos
-      window.location.reload();
     } catch (error: any) {
       console.error('Error updating request:', error);
       toast({
