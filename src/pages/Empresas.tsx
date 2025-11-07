@@ -812,6 +812,395 @@ const EmpresaEditDialog = ({ empresa, isOpen, onClose, onSave }: {
   );
 };
 
+const EmpresaCreateDialog = ({ isOpen, onClose, onSave }: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (newEmpresa: any) => void;
+}) => {
+  const { camaras } = useCamaras();
+  const [formData, setFormData] = useState({
+    nombre: '',
+    nit: '',
+    sector: '',
+    mercado: '',
+    num_colaboradores: '',
+    mujeres_colaboradoras: '',
+    ventas_2024: '',
+    utilidades_2024: '',
+    productos_servicios: '',
+    tipo_cliente: '',
+    decision_adoptar_ia: '',
+    areas_implementacion_ia: '',
+    razon_no_adopcion: '',
+    invirtio_ia_2024: '',
+    monto_inversion_2024: '',
+    asigno_recursos_ia: '',
+    probabilidad_adopcion_12m: '',
+    probabilidad_inversion_12m: '',
+    monto_invertir_12m: '',
+    colaboradores_capacitados_ia: '',
+    plan_capacitacion_ia: '',
+    camara_id: '',
+  });
+  
+  const [saving, setSaving] = useState(false);
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmit = async () => {
+    // Validar campos requeridos
+    if (!formData.nombre || !formData.nit) {
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const newEmpresa = {
+        nombre: formData.nombre,
+        nit: formData.nit,
+        sector: formData.sector || null,
+        mercado: formData.mercado || null,
+        num_colaboradores: formData.num_colaboradores ? parseInt(formData.num_colaboradores) : null,
+        mujeres_colaboradoras: formData.mujeres_colaboradoras ? parseInt(formData.mujeres_colaboradoras) : null,
+        ventas_2024: formData.ventas_2024 ? parseFloat(formData.ventas_2024) : null,
+        utilidades_2024: formData.utilidades_2024 ? parseFloat(formData.utilidades_2024) : null,
+        productos_servicios: formData.productos_servicios || null,
+        tipo_cliente: formData.tipo_cliente || null,
+        decision_adoptar_ia: formData.decision_adoptar_ia || null,
+        areas_implementacion_ia: formData.areas_implementacion_ia || null,
+        razon_no_adopcion: formData.razon_no_adopcion || null,
+        invirtio_ia_2024: formData.invirtio_ia_2024 || null,
+        monto_inversion_2024: formData.monto_inversion_2024 ? parseFloat(formData.monto_inversion_2024) : null,
+        asigno_recursos_ia: formData.asigno_recursos_ia || null,
+        probabilidad_adopcion_12m: formData.probabilidad_adopcion_12m ? parseInt(formData.probabilidad_adopcion_12m) : null,
+        probabilidad_inversion_12m: formData.probabilidad_inversion_12m ? parseInt(formData.probabilidad_inversion_12m) : null,
+        monto_invertir_12m: formData.monto_invertir_12m ? parseFloat(formData.monto_invertir_12m) : null,
+        colaboradores_capacitados_ia: formData.colaboradores_capacitados_ia ? parseInt(formData.colaboradores_capacitados_ia) : null,
+        plan_capacitacion_ia: formData.plan_capacitacion_ia || null,
+        camara_id: formData.camara_id || null,
+      };
+
+      await onSave(newEmpresa);
+      
+      // Reset form
+      setFormData({
+        nombre: '',
+        nit: '',
+        sector: '',
+        mercado: '',
+        num_colaboradores: '',
+        mujeres_colaboradoras: '',
+        ventas_2024: '',
+        utilidades_2024: '',
+        productos_servicios: '',
+        tipo_cliente: '',
+        decision_adoptar_ia: '',
+        areas_implementacion_ia: '',
+        razon_no_adopcion: '',
+        invirtio_ia_2024: '',
+        monto_inversion_2024: '',
+        asigno_recursos_ia: '',
+        probabilidad_adopcion_12m: '',
+        probabilidad_inversion_12m: '',
+        monto_invertir_12m: '',
+        colaboradores_capacitados_ia: '',
+        plan_capacitacion_ia: '',
+        camara_id: '',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5" />
+            Crear Nueva Empresa
+          </DialogTitle>
+          <DialogDescription>
+            Completa la información para crear una nueva empresa
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 mt-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="nombre">Nombre de la Empresa <span className="text-destructive">*</span></Label>
+              <Input
+                id="nombre"
+                value={formData.nombre}
+                onChange={(e) => handleInputChange('nombre', e.target.value)}
+                placeholder="Nombre completo de la empresa"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="nit">NIT <span className="text-destructive">*</span></Label>
+              <Input
+                id="nit"
+                value={formData.nit}
+                onChange={(e) => handleInputChange('nit', e.target.value)}
+                placeholder="Número de identificación tributaria"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="camara_id">Cámara de Comercio</Label>
+              <Select 
+                value={formData.camara_id || "sin_camara"} 
+                onValueChange={(value) => handleInputChange('camara_id', value === "sin_camara" ? "" : value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar cámara" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sin_camara">Sin cámara vinculada</SelectItem>
+                  {camaras.map((camara) => (
+                    <SelectItem key={camara.id} value={camara.id}>
+                      {camara.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="sector">Sector</Label>
+              <Input
+                id="sector"
+                value={formData.sector}
+                onChange={(e) => handleInputChange('sector', e.target.value)}
+                placeholder="Sector empresarial"
+              />
+            </div>
+            <div>
+              <Label htmlFor="mercado">Mercado</Label>
+              <Select value={formData.mercado} onValueChange={(value) => handleInputChange('mercado', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar mercado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Local">Local</SelectItem>
+                  <SelectItem value="Nacional">Nacional</SelectItem>
+                  <SelectItem value="Internacional">Internacional</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="tipo_cliente">Tipo de Cliente</Label>
+              <Input
+                id="tipo_cliente"
+                value={formData.tipo_cliente}
+                onChange={(e) => handleInputChange('tipo_cliente', e.target.value)}
+                placeholder="Tipo de cliente objetivo"
+              />
+            </div>
+            <div>
+              <Label htmlFor="num_colaboradores">Número de Colaboradores</Label>
+              <Input
+                id="num_colaboradores"
+                type="number"
+                value={formData.num_colaboradores}
+                onChange={(e) => handleInputChange('num_colaboradores', e.target.value)}
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <Label htmlFor="mujeres_colaboradoras">Mujeres Colaboradoras</Label>
+              <Input
+                id="mujeres_colaboradoras"
+                type="number"
+                value={formData.mujeres_colaboradoras}
+                onChange={(e) => handleInputChange('mujeres_colaboradoras', e.target.value)}
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <Label htmlFor="ventas_2024">Ventas 2024</Label>
+              <Input
+                id="ventas_2024"
+                type="number"
+                step="0.01"
+                value={formData.ventas_2024}
+                onChange={(e) => handleInputChange('ventas_2024', e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <Label htmlFor="utilidades_2024">Utilidades 2024</Label>
+              <Input
+                id="utilidades_2024"
+                type="number"
+                step="0.01"
+                value={formData.utilidades_2024}
+                onChange={(e) => handleInputChange('utilidades_2024', e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <Label htmlFor="decision_adoptar_ia">¿Decidió adoptar IA?</Label>
+              <Select value={formData.decision_adoptar_ia} onValueChange={(value) => handleInputChange('decision_adoptar_ia', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Si">Si</SelectItem>
+                  <SelectItem value="No">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="invirtio_ia_2024">¿Invirtió en IA en 2024?</Label>
+              <Select value={formData.invirtio_ia_2024} onValueChange={(value) => handleInputChange('invirtio_ia_2024', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Si">Si</SelectItem>
+                  <SelectItem value="No">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="monto_inversion_2024">Monto Inversión 2024</Label>
+              <Input
+                id="monto_inversion_2024"
+                type="number"
+                step="0.01"
+                value={formData.monto_inversion_2024}
+                onChange={(e) => handleInputChange('monto_inversion_2024', e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <Label htmlFor="asigno_recursos_ia">¿Asignó recursos para IA?</Label>
+              <Select value={formData.asigno_recursos_ia} onValueChange={(value) => handleInputChange('asigno_recursos_ia', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Si">Si</SelectItem>
+                  <SelectItem value="No">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="probabilidad_adopcion_12m">Probabilidad Adopción 12m (1-5)</Label>
+              <Input
+                id="probabilidad_adopcion_12m"
+                type="number"
+                min="1"
+                max="5"
+                value={formData.probabilidad_adopcion_12m}
+                onChange={(e) => handleInputChange('probabilidad_adopcion_12m', e.target.value)}
+                placeholder="1-5"
+              />
+            </div>
+            <div>
+              <Label htmlFor="probabilidad_inversion_12m">Probabilidad Inversión 12m (1-5)</Label>
+              <Input
+                id="probabilidad_inversion_12m"
+                type="number"
+                min="1"
+                max="5"
+                value={formData.probabilidad_inversion_12m}
+                onChange={(e) => handleInputChange('probabilidad_inversion_12m', e.target.value)}
+                placeholder="1-5"
+              />
+            </div>
+            <div>
+              <Label htmlFor="monto_invertir_12m">Monto a Invertir 12m</Label>
+              <Input
+                id="monto_invertir_12m"
+                type="number"
+                step="0.01"
+                value={formData.monto_invertir_12m}
+                onChange={(e) => handleInputChange('monto_invertir_12m', e.target.value)}
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <Label htmlFor="colaboradores_capacitados_ia">Colaboradores Capacitados en IA</Label>
+              <Input
+                id="colaboradores_capacitados_ia"
+                type="number"
+                value={formData.colaboradores_capacitados_ia}
+                onChange={(e) => handleInputChange('colaboradores_capacitados_ia', e.target.value)}
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <Label htmlFor="plan_capacitacion_ia">¿Tiene plan de capacitación en IA?</Label>
+              <Select value={formData.plan_capacitacion_ia} onValueChange={(value) => handleInputChange('plan_capacitacion_ia', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Si">Si</SelectItem>
+                  <SelectItem value="No">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2">
+              <Label htmlFor="productos_servicios">Productos o Servicios</Label>
+              <Textarea
+                id="productos_servicios"
+                value={formData.productos_servicios}
+                onChange={(e) => handleInputChange('productos_servicios', e.target.value)}
+                placeholder="Describe los productos o servicios que ofrece la empresa"
+              />
+            </div>
+            <div className="col-span-2">
+              <Label htmlFor="areas_implementacion_ia">Áreas de Implementación de IA</Label>
+              <Textarea
+                id="areas_implementacion_ia"
+                value={formData.areas_implementacion_ia}
+                onChange={(e) => handleInputChange('areas_implementacion_ia', e.target.value)}
+                placeholder="Áreas donde se ha implementado IA"
+              />
+            </div>
+            <div className="col-span-2">
+              <Label htmlFor="razon_no_adopcion">Razón para No Adoptar IA</Label>
+              <Textarea
+                id="razon_no_adopcion"
+                value={formData.razon_no_adopcion}
+                onChange={(e) => handleInputChange('razon_no_adopcion', e.target.value)}
+                placeholder="Razones por las cuales no se ha adoptado IA"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 pt-4 border-t">
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button 
+            onClick={handleSubmit} 
+            disabled={saving || !formData.nombre || !formData.nit}
+          >
+            {saving ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-white" />
+                Creando...
+              </>
+            ) : (
+              'Crear Empresa'
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 export default function Empresas() {
   const { profile } = useAuth();
   const { empresas, loading, refetch } = useEmpresas();
@@ -831,6 +1220,7 @@ export default function Empresas() {
   const [deletingEmpresa, setDeletingEmpresa] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   if (!profile) return null;
 
@@ -911,6 +1301,34 @@ export default function Empresas() {
     }
   };
 
+  const handleCreateEmpresa = async (newEmpresa: any) => {
+    try {
+      const { error } = await supabase
+        .from('empresas')
+        .insert([newEmpresa]);
+
+      if (error) throw error;
+
+      // Refrescar datos para ver cambios inmediatamente
+      await refetch();
+
+      toast({
+        title: "Empresa creada",
+        description: "La nueva empresa se ha creado correctamente.",
+      });
+
+      setShowCreateDialog(false);
+    } catch (error: any) {
+      console.error('Error creating company:', error);
+      toast({
+        title: "Error al crear empresa",
+        description: error.message || "Ocurrió un error inesperado.",
+        variant: "destructive"
+      });
+      throw error;
+    }
+  };
+
   const confirmDelete = async () => {
     setDeleting(true);
     try {
@@ -984,6 +1402,15 @@ export default function Empresas() {
           </p>
         </div>
         <div className="flex gap-2">
+          {isAdmin && (
+            <Button 
+              className="gap-2 bg-gradient-primary text-primary-foreground hover:opacity-90"
+              onClick={() => setShowCreateDialog(true)}
+            >
+              <Building2 className="h-4 w-4" />
+              Crear Nueva Empresa
+            </Button>
+          )}
           <Button 
             variant="outline" 
             className="gap-2"
@@ -1151,6 +1578,13 @@ export default function Empresas() {
           setEditingEmpresa(null);
         }}
         onSave={handleSaveEdit}
+      />
+
+      {/* Create Dialog */}
+      <EmpresaCreateDialog
+        isOpen={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+        onSave={handleCreateEmpresa}
       />
 
       {/* Delete Confirmation Dialog */}
