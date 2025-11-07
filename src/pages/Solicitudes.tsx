@@ -544,25 +544,6 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave, camaras }: {
                 />
               </div>
               <div>
-                <Label htmlFor="camara_empresa_id">Cámara de Comercio de la Empresa</Label>
-                <Select 
-                  value={formData.camara_empresa_id || "sin_camara"} 
-                  onValueChange={(value) => handleInputChange('camara_empresa_id', value === "sin_camara" ? "" : value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar cámara" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sin_camara">Sin cámara vinculada</SelectItem>
-                    {camaras.map((camara) => (
-                      <SelectItem key={camara.id} value={camara.id}>
-                        {camara.nombre}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
                 <Label htmlFor="es_colaborador">¿Es Colaborador?</Label>
                 <Select 
                   value={formData.es_colaborador ? 'true' : 'false'} 
@@ -1234,6 +1215,13 @@ export default function Solicitudes() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Results Counter */}
+      <div className="flex items-center justify-between py-2">
+        <p className="text-sm text-muted-foreground">
+          Mostrando <span className="font-semibold text-foreground">{filteredApplications.length}</span> de <span className="font-semibold text-foreground">{baseApplications.length}</span> solicitudes
+        </p>
+      </div>
 
       {/* Modern Cards Grid */}
       <div className="space-y-4">

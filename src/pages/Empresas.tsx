@@ -1099,6 +1099,13 @@ export default function Empresas() {
         </CardContent>
       </Card>
 
+      {/* Results Counter */}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-muted-foreground">
+          Mostrando <span className="font-semibold text-foreground">{filteredCompanies.length}</span> de <span className="font-semibold text-foreground">{baseCompanies.length}</span> empresas
+        </p>
+      </div>
+
       {/* Enhanced Companies Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {filteredCompanies.slice(0, 24).map((empresa) => (
