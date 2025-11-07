@@ -673,7 +673,7 @@ const EmpresaEditDialog = ({ empresa, isOpen, onClose, onSave }: {
                   <SelectValue placeholder="Seleccionar" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Si">Si</SelectItem>
+                  <SelectItem value="Sí">Sí</SelectItem>
                   <SelectItem value="No">No</SelectItem>
                 </SelectContent>
               </Select>
@@ -685,7 +685,7 @@ const EmpresaEditDialog = ({ empresa, isOpen, onClose, onSave }: {
                   <SelectValue placeholder="Seleccionar" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Si">Si</SelectItem>
+                  <SelectItem value="Sí">Sí</SelectItem>
                   <SelectItem value="No">No</SelectItem>
                 </SelectContent>
               </Select>
@@ -707,7 +707,7 @@ const EmpresaEditDialog = ({ empresa, isOpen, onClose, onSave }: {
                   <SelectValue placeholder="Seleccionar" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Si">Si</SelectItem>
+                  <SelectItem value="Sí">Sí</SelectItem>
                   <SelectItem value="No">No</SelectItem>
                 </SelectContent>
               </Select>
@@ -760,7 +760,7 @@ const EmpresaEditDialog = ({ empresa, isOpen, onClose, onSave }: {
                   <SelectValue placeholder="Seleccionar" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Si">Si</SelectItem>
+                  <SelectItem value="Sí">Sí</SelectItem>
                   <SelectItem value="No">No</SelectItem>
                 </SelectContent>
               </Select>
@@ -1051,7 +1051,7 @@ const EmpresaCreateDialog = ({ isOpen, onClose, onSave }: {
                   <SelectValue placeholder="Seleccionar" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Si">Si</SelectItem>
+                  <SelectItem value="Sí">Sí</SelectItem>
                   <SelectItem value="No">No</SelectItem>
                 </SelectContent>
               </Select>
@@ -1063,7 +1063,7 @@ const EmpresaCreateDialog = ({ isOpen, onClose, onSave }: {
                   <SelectValue placeholder="Seleccionar" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Si">Si</SelectItem>
+                  <SelectItem value="Sí">Sí</SelectItem>
                   <SelectItem value="No">No</SelectItem>
                 </SelectContent>
               </Select>
@@ -1086,7 +1086,7 @@ const EmpresaCreateDialog = ({ isOpen, onClose, onSave }: {
                   <SelectValue placeholder="Seleccionar" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Si">Si</SelectItem>
+                  <SelectItem value="Sí">Sí</SelectItem>
                   <SelectItem value="No">No</SelectItem>
                 </SelectContent>
               </Select>
@@ -1143,7 +1143,7 @@ const EmpresaCreateDialog = ({ isOpen, onClose, onSave }: {
                   <SelectValue placeholder="Seleccionar" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Si">Si</SelectItem>
+                  <SelectItem value="Sí">Sí</SelectItem>
                   <SelectItem value="No">No</SelectItem>
                 </SelectContent>
               </Select>
