@@ -448,6 +448,7 @@ const EmpresaEditDialog = ({ empresa, isOpen, onClose, onSave }: {
   onClose: () => void;
   onSave: (updatedEmpresa: any) => void;
 }) => {
+  const { camaras } = useCamaras();
   const [formData, setFormData] = useState({
     nombre: '',
     nit: '',
@@ -470,6 +471,7 @@ const EmpresaEditDialog = ({ empresa, isOpen, onClose, onSave }: {
     monto_invertir_12m: '',
     colaboradores_capacitados_ia: '',
     plan_capacitacion_ia: '',
+    camara_id: '',
   });
   
   const [saving, setSaving] = useState(false);
@@ -499,6 +501,7 @@ const EmpresaEditDialog = ({ empresa, isOpen, onClose, onSave }: {
         monto_invertir_12m: empresa.monto_invertir_12m?.toString() || '',
         colaboradores_capacitados_ia: empresa.colaboradores_capacitados_ia?.toString() || '',
         plan_capacitacion_ia: empresa.plan_capacitacion_ia || '',
+        camara_id: empresa.camara_id || '',
       });
     }
   }, [empresa]);
@@ -535,6 +538,7 @@ const EmpresaEditDialog = ({ empresa, isOpen, onClose, onSave }: {
         monto_invertir_12m: formData.monto_invertir_12m ? parseFloat(formData.monto_invertir_12m) : null,
         colaboradores_capacitados_ia: formData.colaboradores_capacitados_ia ? parseInt(formData.colaboradores_capacitados_ia) : null,
         plan_capacitacion_ia: formData.plan_capacitacion_ia,
+        camara_id: formData.camara_id || null,
       };
 
       await onSave(updatedEmpresa);
@@ -575,6 +579,25 @@ const EmpresaEditDialog = ({ empresa, isOpen, onClose, onSave }: {
                 value={formData.nit}
                 onChange={(e) => handleInputChange('nit', e.target.value)}
               />
+            </div>
+            <div>
+              <Label htmlFor="camara_id">Cámara de Comercio</Label>
+              <Select 
+                value={formData.camara_id || "sin_camara"} 
+                onValueChange={(value) => handleInputChange('camara_id', value === "sin_camara" ? "" : value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar cámara" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sin_camara">Sin cámara vinculada</SelectItem>
+                  {camaras.map((camara) => (
+                    <SelectItem key={camara.id} value={camara.id}>
+                      {camara.nombre}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="sector">Sector</Label>
@@ -791,7 +814,7 @@ const EmpresaEditDialog = ({ empresa, isOpen, onClose, onSave }: {
 
 export default function Empresas() {
   const { profile } = useAuth();
-  const { empresas, loading } = useEmpresas();
+  const { empresas, loading, refetch } = useEmpresas();
   const { camaras } = useCamaras();
   const { solicitudes } = useSolicitudes();
   const { platziData } = usePlatziGeneral();
@@ -868,6 +891,9 @@ export default function Empresas() {
 
       if (error) throw error;
 
+      // Refrescar datos para ver cambios inmediatamente
+      await refetch();
+
       toast({
         title: "Empresa actualizada",
         description: "Los cambios se han guardado correctamente.",
@@ -875,9 +901,6 @@ export default function Empresas() {
 
       setShowEditDialog(false);
       setEditingEmpresa(null);
-      
-      // Recargar datos
-      window.location.reload();
     } catch (error: any) {
       console.error('Error updating company:', error);
       toast({

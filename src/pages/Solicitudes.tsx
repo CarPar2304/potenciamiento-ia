@@ -546,13 +546,14 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave, camaras }: {
               <div>
                 <Label htmlFor="camara_empresa_id">Cámara de Comercio de la Empresa</Label>
                 <Select 
-                  value={formData.camara_empresa_id} 
-                  onValueChange={(value) => handleInputChange('camara_empresa_id', value)}
+                  value={formData.camara_empresa_id || "sin_camara"} 
+                  onValueChange={(value) => handleInputChange('camara_empresa_id', value === "sin_camara" ? "" : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar cámara" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="sin_camara">Sin cámara vinculada</SelectItem>
                     {camaras.map((camara) => (
                       <SelectItem key={camara.id} value={camara.id}>
                         {camara.nombre}
@@ -1018,7 +1019,9 @@ export default function Solicitudes() {
       sol.numero_documento.includes(searchTerm);
     
     const matchesStatus = statusFilter === 'todos' || sol.estado === statusFilter;
-    const matchesChamber = chamberFilter === 'todas' || sol.empresas?.camaras?.nombre === chamberFilter;
+    const matchesChamber = chamberFilter === 'todas' || 
+      (chamberFilter === 'sin_camara' && !sol.empresas?.camaras?.nombre) ||
+      sol.empresas?.camaras?.nombre === chamberFilter;
     const matchesSector = sectorFilter === 'todos' || sol.empresas?.sector === sectorFilter;
     
     // Nuevo filtro para licencias consumidas/no consumidas
@@ -1218,6 +1221,7 @@ export default function Solicitudes() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todas">Todas las cámaras</SelectItem>
+                    <SelectItem value="sin_camara">Sin cámara vinculada</SelectItem>
                     {camaras.map(camara => (
                       <SelectItem key={camara.id} value={camara.nombre}>
                         {camara.nombre}

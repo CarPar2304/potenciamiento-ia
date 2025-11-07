@@ -171,57 +171,61 @@ export function useEmpresas() {
   const [error, setError] = useState<string | null>(null);
   const { profile } = useAuth();
 
+  const fetchEmpresas = async () => {
+    try {
+      setLoading(true);
+      
+      // Obtener todas las empresas
+      const { data: empresasData, error: empresasError } = await supabase
+        .from('empresas')
+        .select(`
+          *,
+          camaras (
+            nombre,
+            nit
+          )
+        `)
+        .order('nombre');
+
+      if (empresasError) throw empresasError;
+
+      // Obtener solicitudes empresariales (no colaboradores) para filtrar empresas
+      const { data: solicitudesEmpresariales, error: solicitudesError } = await supabase
+        .from('solicitudes')
+        .select('nit_empresa')
+        .eq('es_colaborador', false);
+
+      if (solicitudesError) throw solicitudesError;
+
+      // Filtrar empresas que tienen solicitudes empresariales reales
+      const nitsConSolicitudesEmpresariales = new Set(
+        solicitudesEmpresariales?.map(s => s.nit_empresa) || []
+      );
+
+      const empresasFiltradas = empresasData?.filter(empresa => 
+        nitsConSolicitudesEmpresariales.has(empresa.nit)
+      ) || [];
+
+      setEmpresas(empresasFiltradas);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error cargando empresas');
+      console.error('Error fetching empresas:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refetch = async () => {
+    await fetchEmpresas();
+  };
+
   useEffect(() => {
-    const fetchEmpresas = async () => {
-      try {
-        setLoading(true);
-        
-        // Obtener todas las empresas
-        const { data: empresasData, error: empresasError } = await supabase
-          .from('empresas')
-          .select(`
-            *,
-            camaras (
-              nombre,
-              nit
-            )
-          `)
-          .order('nombre');
-
-        if (empresasError) throw empresasError;
-
-        // Obtener solicitudes empresariales (no colaboradores) para filtrar empresas
-        const { data: solicitudesEmpresariales, error: solicitudesError } = await supabase
-          .from('solicitudes')
-          .select('nit_empresa')
-          .eq('es_colaborador', false);
-
-        if (solicitudesError) throw solicitudesError;
-
-        // Filtrar empresas que tienen solicitudes empresariales reales
-        const nitsConSolicitudesEmpresariales = new Set(
-          solicitudesEmpresariales?.map(s => s.nit_empresa) || []
-        );
-
-        const empresasFiltradas = empresasData?.filter(empresa => 
-          nitsConSolicitudesEmpresariales.has(empresa.nit)
-        ) || [];
-
-        setEmpresas(empresasFiltradas);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error cargando empresas');
-        console.error('Error fetching empresas:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (profile) {
       fetchEmpresas();
     }
   }, [profile]);
 
-  return { empresas, loading, error };
+  return { empresas, loading, error, refetch };
 }
 
 export function usePlatziGeneral() {
