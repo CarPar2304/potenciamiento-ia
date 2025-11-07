@@ -837,6 +837,7 @@ export default function Solicitudes() {
   const [chamberFilter, setChamberFilter] = useState('todas');
   const [sectorFilter, setSectorFilter] = useState('todos');
   const [licenseFilter, setLicenseFilter] = useState('todas');
+  const [colaboradorFilter, setColaboradorFilter] = useState('todos');
   const [selectedSolicitud, setSelectedSolicitud] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [sendingReminderId, setSendingReminderId] = useState<string | null>(null);
@@ -1010,8 +1011,13 @@ export default function Solicitudes() {
     const matchesLicense = licenseFilter === 'todas' ||
       (licenseFilter === 'consumidas' && hasConsummed) ||
       (licenseFilter === 'no_consumidas' && !hasConsummed);
+    
+    // Filtro de colaborador
+    const matchesColaborador = colaboradorFilter === 'todos' ||
+      (colaboradorFilter === 'si' && sol.es_colaborador === true) ||
+      (colaboradorFilter === 'no' && sol.es_colaborador === false);
 
-    return matchesSearch && matchesStatus && matchesChamber && matchesSector && matchesLicense;
+    return matchesSearch && matchesStatus && matchesChamber && matchesSector && matchesLicense && matchesColaborador;
   });
 
   // Calculate stats
@@ -1208,6 +1214,19 @@ export default function Solicitudes() {
                         {camara.nombre}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              )}
+              
+              {canExecuteActions && (
+                <Select value={colaboradorFilter} onValueChange={setColaboradorFilter}>
+                  <SelectTrigger className="w-[180px] bg-background/50 border-muted-foreground/20">
+                    <SelectValue placeholder="Colaborador" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="si">Es colaborador</SelectItem>
+                    <SelectItem value="no">No es colaborador</SelectItem>
                   </SelectContent>
                 </Select>
               )}
