@@ -30,16 +30,19 @@ interface ExcelRow {
   es_colaborador?: string | boolean;
 }
 
+interface AnalysisResult {
+  total: number;
+  duplicates: number;
+  toInsert: number;
+  duplicateEmails: string[];
+  previewData: ExcelRow[];
+}
+
 export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialogProps) {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [analysis, setAnalysis] = useState<{
-    total: number;
-    duplicates: number;
-    toInsert: number;
-    duplicateEmails: string[];
-  } | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,11 +85,15 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
         email && existingEmailSet.has(email)
       );
 
+      // Obtener los primeros 5 registros para preview
+      const previewData = jsonData.slice(0, 5);
+
       setAnalysis({
         total: jsonData.length,
         duplicates: duplicateEmails.length,
         toInsert: jsonData.length - duplicateEmails.length,
-        duplicateEmails: [...new Set(duplicateEmails)]
+        duplicateEmails: [...new Set(duplicateEmails)],
+        previewData
       });
 
       toast({
@@ -352,6 +359,67 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
                   </AlertDescription>
                 </Alert>
               )}
+
+              {/* Preview de datos */}
+              <div className="border border-border rounded-lg overflow-hidden">
+                <div className="bg-muted px-4 py-2 border-b border-border">
+                  <h4 className="font-medium text-sm flex items-center gap-2">
+                    <FileSpreadsheet className="h-4 w-4 text-primary" />
+                    Vista previa (primeros 5 registros)
+                  </h4>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Fecha</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Nombre</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Email</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Estado</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">NIT</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Colaborador</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {analysis.previewData.map((row, index) => (
+                        <tr key={index} className="hover:bg-muted/30">
+                          <td className="px-3 py-2 whitespace-nowrap">{row.fecha_solicitud || '-'}</td>
+                          <td className="px-3 py-2">{row.nombre_apellidos || '-'}</td>
+                          <td className="px-3 py-2">{row.email || '-'}</td>
+                          <td className="px-3 py-2">
+                            <span className={`inline-flex px-2 py-1 rounded text-xs font-medium ${
+                              row.estado === 'Aprobada' ? 'bg-green-100 text-green-700' :
+                              row.estado === 'Rechazada' ? 'bg-red-100 text-red-700' :
+                              'bg-amber-100 text-amber-700'
+                            }`}>
+                              {row.estado || 'Pendiente'}
+                            </span>
+                          </td>
+                          <td className="px-3 py-2">{row.nit_empresa || '-'}</td>
+                          <td className="px-3 py-2">
+                            <span className={`inline-flex px-2 py-1 rounded text-xs font-medium ${
+                              (typeof row.es_colaborador === 'string' 
+                                ? row.es_colaborador.toLowerCase() === 'true' || row.es_colaborador.toLowerCase() === 'sí'
+                                : row.es_colaborador)
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {(typeof row.es_colaborador === 'string' 
+                                ? row.es_colaborador.toLowerCase() === 'true' || row.es_colaborador.toLowerCase() === 'sí'
+                                : row.es_colaborador) ? 'Sí' : 'No'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {analysis.total > 5 && (
+                  <div className="bg-muted/30 px-4 py-2 text-xs text-muted-foreground text-center border-t border-border">
+                    Mostrando 5 de {analysis.total} registros totales
+                  </div>
+                )}
+              </div>
 
               <div className="flex gap-2 pt-4">
                 <Button
