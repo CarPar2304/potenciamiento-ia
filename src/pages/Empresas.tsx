@@ -44,6 +44,7 @@ import {
   Edit,
   Trash2,
   CalendarIcon,
+  Upload,
 } from 'lucide-react';
 import { useEmpresas, useCamaras, useSolicitudes, usePlatziGeneral } from '@/hooks/useSupabaseData';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
@@ -51,6 +52,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExportModal } from '@/components/export/ExportModal';
+import { BulkUploadEmpresasDialog } from '@/components/BulkUploadEmpresasDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -1221,6 +1223,7 @@ export default function Empresas() {
   const [deleting, setDeleting] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
 
   if (!profile) return null;
 
@@ -1403,13 +1406,23 @@ export default function Empresas() {
         </div>
         <div className="flex gap-2">
           {isAdmin && (
-            <Button 
-              className="gap-2 bg-gradient-primary text-primary-foreground hover:opacity-90"
-              onClick={() => setShowCreateDialog(true)}
-            >
-              <Building2 className="h-4 w-4" />
-              Crear Nueva Empresa
-            </Button>
+            <>
+              <Button 
+                variant="outline"
+                onClick={() => setShowBulkUpload(true)}
+                className="gap-2 bg-primary/10 hover:bg-primary/20 text-primary border-primary/30"
+              >
+                <Upload className="h-4 w-4" />
+                Carga masiva
+              </Button>
+              <Button 
+                className="gap-2 bg-gradient-primary text-primary-foreground hover:opacity-90"
+                onClick={() => setShowCreateDialog(true)}
+              >
+                <Building2 className="h-4 w-4" />
+                Crear Nueva Empresa
+              </Button>
+            </>
           )}
           <Button 
             variant="outline" 
@@ -1625,6 +1638,14 @@ export default function Empresas() {
         type="empresas"
         platziEmails={new Set(platziData?.map(p => p.email?.toLowerCase() || '') || [])}
         platziData={platziData}
+      />
+
+      {/* Bulk Upload Dialog */}
+      <BulkUploadEmpresasDialog
+        isOpen={showBulkUpload}
+        onClose={() => setShowBulkUpload(false)}
+        onSuccess={refetch}
+        camaras={camaras}
       />
     </div>
   );
