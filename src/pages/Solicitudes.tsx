@@ -45,6 +45,7 @@ import {
   Send,
   Edit,
   CalendarIcon,
+  Upload,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
@@ -59,6 +60,7 @@ import { useAuth, hasPermission } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ExportModal } from '@/components/export/ExportModal';
+import { BulkUploadDialog } from '@/components/BulkUploadDialog';
 
 const StatCard = ({ title, value, description, icon: Icon, variant }: {
   title: string;
@@ -846,6 +848,7 @@ export default function Solicitudes() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingSolicitud, setEditingSolicitud] = useState(null);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
 
   if (!profile) return null;
 
@@ -1119,6 +1122,17 @@ export default function Solicitudes() {
         </div>
         
         <div className="flex items-center gap-2">
+          {canExecuteActions && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowBulkUpload(true)}
+              className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/30"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Carga masiva
+            </Button>
+          )}
           <Button 
             variant="outline" 
             size="sm"
@@ -1314,6 +1328,13 @@ export default function Solicitudes() {
         type="solicitudes"
         platziEmails={new Set(platziData?.map(p => p.email?.toLowerCase() || '') || [])}
         platziData={platziData}
+      />
+
+      {/* Bulk Upload Dialog */}
+      <BulkUploadDialog
+        isOpen={showBulkUpload}
+        onClose={() => setShowBulkUpload(false)}
+        onSuccess={refetch}
       />
     </div>
   );
