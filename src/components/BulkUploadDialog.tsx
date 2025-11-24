@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle2, Loader2, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -202,6 +202,52 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
     onClose();
   };
 
+  const handleDownloadTemplate = () => {
+    // Crear datos de ejemplo para la plantilla
+    const templateData = [
+      {
+        fecha_solicitud: '2024-01-15',
+        nombre_apellidos: 'Juan Pérez García',
+        email: 'juan.perez@ejemplo.com',
+        estado: 'Pendiente',
+        nit_empresa: '900123456',
+        es_colaborador: 'false'
+      },
+      {
+        fecha_solicitud: '2024-01-16',
+        nombre_apellidos: 'María López Rodríguez',
+        email: 'maria.lopez@ejemplo.com',
+        estado: 'Aprobada',
+        nit_empresa: '900654321',
+        es_colaborador: 'true'
+      }
+    ];
+
+    // Crear libro de trabajo
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Solicitudes');
+
+    // Ajustar ancho de columnas
+    const columnWidths = [
+      { wch: 15 }, // fecha_solicitud
+      { wch: 30 }, // nombre_apellidos
+      { wch: 30 }, // email
+      { wch: 12 }, // estado
+      { wch: 15 }, // nit_empresa
+      { wch: 15 }  // es_colaborador
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    // Descargar archivo
+    XLSX.writeFile(workbook, 'plantilla_solicitudes.xlsx');
+
+    toast({
+      title: "Plantilla descargada",
+      description: "Usa este archivo como referencia para cargar tus datos",
+    });
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl">
@@ -214,6 +260,29 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
             Sube un archivo Excel (.xlsx) con las columnas: fecha_solicitud, nombre_apellidos, email, estado, nit_empresa, es_colaborador
           </DialogDescription>
         </DialogHeader>
+
+        <div className="bg-muted/50 border border-border rounded-lg p-4 mt-4">
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0">
+              <Download className="h-5 w-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-medium text-sm mb-1">¿Primera vez cargando datos?</h4>
+              <p className="text-sm text-muted-foreground mb-3">
+                Descarga nuestra plantilla con ejemplos y las columnas correctas
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadTemplate}
+                disabled={loading || analyzing}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Descargar plantilla Excel
+              </Button>
+            </div>
+          </div>
+        </div>
 
         <div className="space-y-4 mt-4">
           <div>
