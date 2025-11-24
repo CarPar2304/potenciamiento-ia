@@ -257,8 +257,8 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5 text-primary" />
             Carga Masiva de Solicitudes
@@ -268,30 +268,30 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
           </DialogDescription>
         </DialogHeader>
 
-        <div className="bg-muted/50 border border-border rounded-lg p-4 mt-4">
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0">
-              <Download className="h-5 w-5 text-primary" />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-medium text-sm mb-1">¿Primera vez cargando datos?</h4>
-              <p className="text-sm text-muted-foreground mb-3">
-                Descarga nuestra plantilla con ejemplos y las columnas correctas
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownloadTemplate}
-                disabled={loading || analyzing}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Descargar plantilla Excel
-              </Button>
+        <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+          <div className="bg-muted/50 border border-border rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <Download className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-medium text-sm mb-1">¿Primera vez cargando datos?</h4>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Descarga nuestra plantilla con ejemplos y las columnas correctas
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadTemplate}
+                  disabled={loading || analyzing}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Descargar plantilla Excel
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="space-y-4 mt-4">
           <div>
             <Label htmlFor="file-upload">Archivo Excel</Label>
             <div className="mt-2">
@@ -368,25 +368,25 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
                     Vista previa (primeros 5 registros)
                   </h4>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto max-w-full">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50">
                       <tr>
-                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Fecha</th>
-                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Nombre</th>
-                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Email</th>
-                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Estado</th>
-                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">NIT</th>
-                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Colaborador</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">Fecha</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">Nombre</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">Email</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">Estado</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">NIT</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground whitespace-nowrap">Colaborador</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
                       {analysis.previewData.map((row, index) => (
                         <tr key={index} className="hover:bg-muted/30">
-                          <td className="px-3 py-2 whitespace-nowrap">{row.fecha_solicitud || '-'}</td>
-                          <td className="px-3 py-2">{row.nombre_apellidos || '-'}</td>
-                          <td className="px-3 py-2">{row.email || '-'}</td>
-                          <td className="px-3 py-2">
+                          <td className="px-3 py-2 whitespace-nowrap text-xs">{row.fecha_solicitud || '-'}</td>
+                          <td className="px-3 py-2 text-xs max-w-[150px] truncate">{row.nombre_apellidos || '-'}</td>
+                          <td className="px-3 py-2 text-xs max-w-[180px] truncate">{row.email || '-'}</td>
+                          <td className="px-3 py-2 whitespace-nowrap">
                             <span className={`inline-flex px-2 py-1 rounded text-xs font-medium ${
                               row.estado === 'Aprobada' ? 'bg-green-100 text-green-700' :
                               row.estado === 'Rechazada' ? 'bg-red-100 text-red-700' :
@@ -395,8 +395,8 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
                               {row.estado || 'Pendiente'}
                             </span>
                           </td>
-                          <td className="px-3 py-2">{row.nit_empresa || '-'}</td>
-                          <td className="px-3 py-2">
+                          <td className="px-3 py-2 whitespace-nowrap text-xs">{row.nit_empresa || '-'}</td>
+                          <td className="px-3 py-2 whitespace-nowrap">
                             <span className={`inline-flex px-2 py-1 rounded text-xs font-medium ${
                               (typeof row.es_colaborador === 'string' 
                                 ? row.es_colaborador.toLowerCase() === 'true' || row.es_colaborador.toLowerCase() === 'sí'
@@ -420,32 +420,34 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
                   </div>
                 )}
               </div>
-
-              <div className="flex gap-2 pt-4">
-                <Button
-                  onClick={handleUpload}
-                  disabled={loading || analysis.toInsert === 0}
-                  className="flex-1"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Cargando...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Cargar {analysis.toInsert} solicitudes
-                    </>
-                  )}
-                </Button>
-                <Button variant="outline" onClick={handleClose} disabled={loading}>
-                  Cancelar
-                </Button>
-              </div>
             </>
           )}
         </div>
+
+        {analysis && (
+          <div className="flex gap-2 pt-4 border-t border-border flex-shrink-0">
+            <Button
+              onClick={handleUpload}
+              disabled={loading || analysis.toInsert === 0}
+              className="flex-1"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Cargando...
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Cargar {analysis.toInsert} solicitudes
+                </>
+              )}
+            </Button>
+            <Button variant="outline" onClick={handleClose} disabled={loading}>
+              Cancelar
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
