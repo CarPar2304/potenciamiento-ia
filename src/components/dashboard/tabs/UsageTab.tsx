@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -29,11 +29,21 @@ interface UsageTabProps {
 
 export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
   const [selectedTimeframe, setSelectedTimeframe] = useState('all');
-  const [maxYAxis, setMaxYAxis] = useState(() => {
-    // Calculate initial max based on data
+  
+  // Calculate initial and dynamic max for Y axis
+  const calculateMaxYAxis = () => {
+    if (data.userScatterData.length === 0) return 20;
     const maxCertified = Math.max(...data.userScatterData.map(u => u.certifiedCourses), 10);
     return Math.ceil(maxCertified * 1.2); // 20% more than max value
-  });
+  };
+  
+  const [maxYAxis, setMaxYAxis] = useState(calculateMaxYAxis());
+
+  // Update max Y axis when data changes
+  useEffect(() => {
+    const newMax = calculateMaxYAxis();
+    setMaxYAxis(newMax);
+  }, [data.userScatterData]);
 
   const handleTimeframeChange = (value: string) => {
     setSelectedTimeframe(value);
