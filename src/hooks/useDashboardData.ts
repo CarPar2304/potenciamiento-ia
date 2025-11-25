@@ -291,6 +291,53 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
         avgProgress: course.progressCount > 0 ? course.totalProgress / course.progressCount : 0
       }));
 
+    // Gráfico 1: Adherencia a la Ruta (En Ruta vs Exploración Libre)
+    const coursesInRoute = seguimientoData.filter(s =>
+      s.ruta && s.ruta.trim() !== '' && s.ruta.toLowerCase() !== 'not title'
+    ).length;
+    const coursesOutOfRoute = seguimientoData.filter(s => 
+      !s.ruta || s.ruta.trim() === '' || s.ruta.toLowerCase() === 'not title'
+    ).length;
+    
+    const routeAdherenceData = [
+      { name: 'En Ruta Recomendada', value: coursesInRoute, percentage: (coursesInRoute / (coursesInRoute + coursesOutOfRoute)) * 100 || 0 },
+      { name: 'Exploración Libre', value: coursesOutOfRoute, percentage: (coursesOutOfRoute / (coursesInRoute + coursesOutOfRoute)) * 100 || 0 }
+    ];
+
+    // Gráfico 2: Evangelizadores vs Exploradores (Scatter Plot)
+    const userScatterData = timeFilteredPlatzi.map(user => ({
+      name: user.nombre || user.email,
+      progressInRoute: (user.progreso_ruta || 0) * 100, // Convert to percentage
+      certifiedCourses: user.cursos_totales_certificados || 0
+    })).filter(u => u.progressInRoute > 0 || u.certifiedCourses > 0); // Only users with some activity
+
+    // Gráfico 3: Avance promedio por Nivel de IA
+    const progressByLevel = timeFilteredPlatzi.reduce((acc, p) => {
+      if (p.ruta && p.ruta.trim() !== '' && p.ruta.toLowerCase() !== 'not title') {
+        if (!acc[p.ruta]) {
+          acc[p.ruta] = { totalProgress: 0, count: 0 };
+        }
+        acc[p.ruta].totalProgress += (p.progreso_ruta || 0) * 100; // Convert to percentage
+        acc[p.ruta].count += 1;
+      }
+      return acc;
+    }, {} as Record<string, { totalProgress: number; count: number }>);
+
+    const avgProgressByLevel = Object.entries(progressByLevel)
+      .map(([level, data]) => ({
+        level,
+        avgProgress: data.count > 0 ? data.totalProgress / data.count : 0
+      }))
+      .sort((a, b) => {
+        // Sort by level number if possible
+        const aMatch = a.level.match(/nivel\s*(\d+)/i);
+        const bMatch = b.level.match(/nivel\s*(\d+)/i);
+        if (aMatch && bMatch) {
+          return parseInt(aMatch[1]) - parseInt(bMatch[1]);
+        }
+        return a.level.localeCompare(b.level);
+      });
+
     return { 
       levelDistribution, 
       averageProgress: avgProgress, 
@@ -299,6 +346,9 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       avgCertifiedCourses,
       avgTimeFormatted,
       topCourses,
+      routeAdherenceData,
+      userScatterData,
+      avgProgressByLevel,
       dateRange: dateRange || { start: '', end: '' } 
     };
   }, [filteredData, dateRange]);
