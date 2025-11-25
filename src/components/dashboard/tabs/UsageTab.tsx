@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
+import { Slider } from '@/components/ui/slider';
 import { BookOpen, Award, Calendar, Clock, Eye } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis, Legend } from 'recharts';
 
@@ -28,6 +29,11 @@ interface UsageTabProps {
 
 export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
   const [selectedTimeframe, setSelectedTimeframe] = useState('all');
+  const [maxYAxis, setMaxYAxis] = useState(() => {
+    // Calculate initial max based on data
+    const maxCertified = Math.max(...data.userScatterData.map(u => u.certifiedCourses), 10);
+    return Math.ceil(maxCertified * 1.2); // 20% more than max value
+  });
 
   const handleTimeframeChange = (value: string) => {
     setSelectedTimeframe(value);
@@ -302,6 +308,20 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
           <CardDescription>
             Usuarios que siguen la ruta y certifican mucho vs usuarios que exploran libremente
           </CardDescription>
+          <div className="flex items-center gap-4 mt-4">
+            <Label htmlFor="max-y-axis" className="whitespace-nowrap">
+              Máximo Eje Y: <span className="font-bold text-primary">{maxYAxis}</span> cursos
+            </Label>
+            <Slider
+              id="max-y-axis"
+              min={5}
+              max={50}
+              step={1}
+              value={[maxYAxis]}
+              onValueChange={(value) => setMaxYAxis(value[0])}
+              className="flex-1 max-w-xs"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={500}>
@@ -318,6 +338,7 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
                 type="number" 
                 dataKey="certifiedCourses" 
                 name="Cursos Certificados"
+                domain={[0, maxYAxis]}
                 label={{ value: 'Cursos Certificados Totales', angle: -90, position: 'left' }}
               />
               <ZAxis range={[60, 400]} />
