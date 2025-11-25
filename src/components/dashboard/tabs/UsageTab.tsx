@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
 import { BookOpen, Award, Calendar, Clock, Eye } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis, Legend } from 'recharts';
 
@@ -320,16 +320,21 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
           </CardDescription>
           <div className="flex items-center gap-4 mt-4">
             <Label htmlFor="max-y-axis" className="whitespace-nowrap">
-              Máximo Eje Y: <span className="font-bold text-primary">{maxYAxis}</span> cursos
+              Máximo Eje Y (cursos):
             </Label>
-            <Slider
+            <Input
               id="max-y-axis"
+              type="number"
               min={5}
-              max={50}
-              step={1}
-              value={[maxYAxis]}
-              onValueChange={(value) => setMaxYAxis(value[0])}
-              className="flex-1 max-w-xs"
+              max={100}
+              value={maxYAxis}
+              onChange={(e) => {
+                const value = parseInt(e.target.value);
+                if (!isNaN(value) && value >= 5) {
+                  setMaxYAxis(value);
+                }
+              }}
+              className="w-24"
             />
           </div>
         </CardHeader>
