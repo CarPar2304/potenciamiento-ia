@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { BookOpen, Award, Calendar, Clock, Eye } from 'lucide-react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line, PieChart, Pie, Cell, ScatterChart, Scatter, ZAxis, Legend } from 'recharts';
 
 interface UsageTabProps {
   data: {
@@ -15,6 +15,9 @@ interface UsageTabProps {
     avgCertifiedCourses: number;
     avgTimeFormatted: string;
     topCourses: Array<{ name: string; views: number; avgProgress: number }>;
+    routeAdherenceData: Array<{ name: string; value: number; percentage: number }>;
+    userScatterData: Array<{ name: string; progressInRoute: number; certifiedCourses: number }>;
+    avgProgressByLevel: Array<{ level: string; avgProgress: number }>;
     dateRange: {
       start: string;
       end: string;
@@ -251,6 +254,166 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
               </div>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Sección: Adherencia a la Ruta de IA */}
+      <div className="col-span-full">
+        <h3 className="text-xl font-bold mb-4">Adherencia a la Ruta de IA</h3>
+      </div>
+
+      {/* Gráfico 1: Adherencia a la Ruta (Donut Chart) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Distribución de Estudio: Ruta vs Exploración Libre</CardTitle>
+          <CardDescription>Porcentaje del estudio en la ruta recomendada vs cursos fuera de ruta</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={400}>
+            <PieChart>
+              <Pie
+                data={data.routeAdherenceData}
+                cx="50%"
+                cy="50%"
+                innerRadius={80}
+                outerRadius={140}
+                paddingAngle={5}
+                dataKey="value"
+                label={({ name, percentage }) => `${name}: ${percentage.toFixed(1)}%`}
+              >
+                <Cell fill="hsl(142, 76%, 36%)" />
+                <Cell fill="hsl(35, 91%, 62%)" />
+              </Pie>
+              <Tooltip 
+                formatter={(value, name, props) => [
+                  `${value} cursos (${props.payload.percentage.toFixed(1)}%)`,
+                  props.payload.name
+                ]}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Gráfico 2: Evangelizadores vs Exploradores (Scatter Plot) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Evangelizadores de la Ruta vs Exploradores</CardTitle>
+          <CardDescription>
+            Usuarios que siguen la ruta y certifican mucho vs usuarios que exploran libremente
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={500}>
+            <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                type="number" 
+                dataKey="progressInRoute" 
+                name="Progreso en Ruta" 
+                unit="%" 
+                label={{ value: 'Progreso en Ruta Asignada (%)', position: 'bottom', offset: 0 }}
+              />
+              <YAxis 
+                type="number" 
+                dataKey="certifiedCourses" 
+                name="Cursos Certificados"
+                label={{ value: 'Cursos Certificados Totales', angle: -90, position: 'left' }}
+              />
+              <ZAxis range={[60, 400]} />
+              <Tooltip 
+                cursor={{ strokeDasharray: '3 3' }}
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload;
+                    return (
+                      <div className="bg-background border border-border rounded-lg p-3 shadow-lg">
+                        <p className="font-semibold text-sm mb-1">{data.name}</p>
+                        <p className="text-xs">Progreso en Ruta: {data.progressInRoute.toFixed(1)}%</p>
+                        <p className="text-xs">Cursos Certificados: {data.certifiedCourses}</p>
+                        <p className="text-xs mt-2 text-muted-foreground">
+                          {data.progressInRoute > 50 && data.certifiedCourses > 3 
+                            ? '✨ Evangelizador de la Ruta' 
+                            : data.certifiedCourses > 3 
+                            ? '🔍 Explorador Activo' 
+                            : '🌱 En Desarrollo'}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Scatter 
+                data={data.userScatterData} 
+                fill="hsl(262, 83%, 58%)" 
+                fillOpacity={0.6}
+                shape="circle"
+              />
+              {/* Reference lines for quadrants */}
+              <CartesianGrid 
+                strokeDasharray="3 3" 
+                stroke="hsl(var(--border))"
+                vertical={false}
+              />
+            </ScatterChart>
+          </ResponsiveContainer>
+          <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[hsl(142,76%,36%)]" />
+              <span>✨ Evangelizadores: Alto progreso en ruta + Muchos certificados</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[hsl(35,91%,62%)]" />
+              <span>🔍 Exploradores: Muchos certificados + Bajo progreso en ruta</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Gráfico 3: Avance Promedio por Nivel de IA (Horizontal Bar Chart) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Avance Promedio por Nivel de IA</CardTitle>
+          <CardDescription>
+            Progreso promedio de usuarios en cada nivel de la ruta de aprendizaje
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={Math.max(300, data.avgProgressByLevel.length * 60)}>
+            <BarChart 
+              data={data.avgProgressByLevel} 
+              layout="vertical"
+              margin={{ top: 5, right: 30, left: 150, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                type="number" 
+                domain={[0, 100]}
+                label={{ value: 'Progreso Promedio (%)', position: 'bottom', offset: 0 }}
+              />
+              <YAxis 
+                type="category" 
+                dataKey="level" 
+                width={140}
+                tick={{ fontSize: 12 }}
+              />
+              <Tooltip 
+                formatter={(value) => [`${Number(value).toFixed(1)}%`, 'Progreso Promedio']}
+                labelFormatter={(label) => `Nivel: ${label}`}
+              />
+              <Bar 
+                dataKey="avgProgress" 
+                fill="hsl(262, 83%, 58%)" 
+                radius={[0, 4, 4, 0]}
+                label={{ 
+                  position: 'right', 
+                  formatter: (value: number) => `${value.toFixed(1)}%`,
+                  fontSize: 11 
+                }}
+              />
+            </BarChart>
+          </ResponsiveContainer>
         </CardContent>
       </Card>
     </div>
