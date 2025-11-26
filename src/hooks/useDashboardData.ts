@@ -340,21 +340,24 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       .sort((a, b) => b.value - a.value); // Ordenar por cantidad descendente
 
     // Top 5 cursos por categoría
+    // Normalizar espacios extras en las rutas para comparación
+    const normalizeRoute = (route: string) => route.replace(/\s+/g, ' ').toLowerCase().trim();
+    
     const iaRouteLevels = [
-      'Nivel 1 adopción IA Explorador de IA',
-      'Nivel 2 adopción IA Observador Crítico de IA',
-      'Nivel 3 adopción IA Usuario Competente Herramientas IA',
-      'Nivel 4 adopción IA Promotor de innovación usando IA',
-      'Nivel 5 adopción IA Estratega de IA para el Negocio',
-      'Nivel 6 adopción IA Especialista Técnico en IA'
+      'nivel 1 adopción ia explorador de ia',
+      'nivel 2 adopción ia observador crítico de ia',
+      'nivel 3 adopción ia usuario competente herramientas ia',
+      'nivel 4 adopción ia promotor de innovación usando ia',
+      'nivel 5 adopción ia estratega de ia para el negocio',
+      'nivel 6 adopción ia especialista técnico en ia'
     ];
 
     // 1. Top 5 cursos de rutas de IA
-    const iaRouteCourses = seguimientoData.filter(s => 
-      s.ruta && iaRouteLevels.some(level => 
-        s.ruta.toLowerCase().includes(level.toLowerCase())
-      )
-    );
+    const iaRouteCourses = seguimientoData.filter(s => {
+      if (!s.ruta) return false;
+      const normalizedRoute = normalizeRoute(s.ruta);
+      return iaRouteLevels.some(level => normalizedRoute.includes(level));
+    });
 
     const iaCourseCounts = iaRouteCourses.reduce((acc, s) => {
       if (!s.curso) return acc;
@@ -375,12 +378,11 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       .slice(0, 5);
 
     // 2. Top 5 cursos de otras rutas (no IA, no sin ruta)
-    const otherRouteCourses = seguimientoData.filter(s => 
-      s.ruta && 
-      s.ruta.trim() !== '' && 
-      s.ruta.toLowerCase() !== 'not title' &&
-      !iaRouteLevels.some(level => s.ruta.toLowerCase().includes(level.toLowerCase()))
-    );
+    const otherRouteCourses = seguimientoData.filter(s => {
+      if (!s.ruta || s.ruta.trim() === '' || s.ruta.toLowerCase() === 'not title') return false;
+      const normalizedRoute = normalizeRoute(s.ruta);
+      return !iaRouteLevels.some(level => normalizedRoute.includes(level));
+    });
 
     const otherCourseCounts = otherRouteCourses.reduce((acc, s) => {
       if (!s.curso) return acc;
