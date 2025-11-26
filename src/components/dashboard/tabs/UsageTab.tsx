@@ -38,6 +38,16 @@ interface UsageTabProps {
 export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
   const [selectedTimeframe, setSelectedTimeframe] = useState('all');
   
+  // Estados para controlar visibilidad de detalles
+  const [showIACoursesDetails, setShowIACoursesDetails] = useState(false);
+  const [showOtherCoursesDetails, setShowOtherCoursesDetails] = useState(false);
+  const [showNoRouteCoursesDetails, setShowNoRouteCoursesDetails] = useState(false);
+  const [showCompaniesUsersDetails, setShowCompaniesUsersDetails] = useState(false);
+  const [showCompaniesIADetails, setShowCompaniesIADetails] = useState(false);
+  const [showCompaniesOutsideDetails, setShowCompaniesOutsideDetails] = useState(false);
+  const [showChamberCoursesDetails, setShowChamberCoursesDetails] = useState(false);
+  const [showChamberRoutesDetails, setShowChamberRoutesDetails] = useState(false);
+  
   // Calculate initial and dynamic max for Y axis
   const calculateMaxYAxis = () => {
     if (data.userScatterData.length === 0) return 20;
@@ -445,21 +455,33 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
                 No hay datos disponibles
               </div>
             )}
-            <div className="mt-4 space-y-2">
-              {data.topIACourses.map((course, index) => (
-                <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
-                  <div className="font-medium truncate" title={course.name}>
-                    {index + 1}. {course.name}
-                  </div>
-                  <div className="text-muted-foreground truncate" title={course.route}>
-                    {course.route}
-                  </div>
-                  <div className="font-semibold text-primary">
-                    {course.count} consumos
-                  </div>
-                </div>
-              ))}
+            
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={() => setShowIACoursesDetails(!showIACoursesDetails)}
+                className="text-xs text-primary hover:underline font-medium"
+              >
+                {showIACoursesDetails ? 'Ocultar detalles' : 'Ver detalles'}
+              </button>
             </div>
+            
+            {showIACoursesDetails && (
+              <div className="mt-4 space-y-2">
+                {data.topIACourses.map((course, index) => (
+                  <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
+                    <div className="font-medium truncate" title={course.name}>
+                      {index + 1}. {course.name}
+                    </div>
+                    <div className="text-muted-foreground truncate" title={course.route}>
+                      {course.route}
+                    </div>
+                    <div className="font-semibold text-primary">
+                      {course.count} consumos
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -508,21 +530,33 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
                 No hay datos disponibles
               </div>
             )}
-            <div className="mt-4 space-y-2">
-              {data.topOtherCourses.map((course, index) => (
-                <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
-                  <div className="font-medium truncate" title={course.name}>
-                    {index + 1}. {course.name}
-                  </div>
-                  <div className="text-muted-foreground truncate" title={course.route}>
-                    {course.route}
-                  </div>
-                  <div className="font-semibold text-primary">
-                    {course.count} consumos
-                  </div>
-                </div>
-              ))}
+            
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={() => setShowOtherCoursesDetails(!showOtherCoursesDetails)}
+                className="text-xs text-primary hover:underline font-medium"
+              >
+                {showOtherCoursesDetails ? 'Ocultar detalles' : 'Ver detalles'}
+              </button>
             </div>
+            
+            {showOtherCoursesDetails && (
+              <div className="mt-4 space-y-2">
+                {data.topOtherCourses.map((course, index) => (
+                  <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
+                    <div className="font-medium truncate" title={course.name}>
+                      {index + 1}. {course.name}
+                    </div>
+                    <div className="text-muted-foreground truncate" title={course.route}>
+                      {course.route}
+                    </div>
+                    <div className="font-semibold text-primary">
+                      {course.count} consumos
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -570,18 +604,30 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
                 No hay datos disponibles
               </div>
             )}
-            <div className="mt-4 space-y-2">
-              {data.topNoRouteCourses.map((course, index) => (
-                <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
-                  <div className="font-medium truncate" title={course.name}>
-                    {index + 1}. {course.name}
-                  </div>
-                  <div className="font-semibold text-primary">
-                    {course.count} consumos
-                  </div>
-                </div>
-              ))}
+            
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={() => setShowNoRouteCoursesDetails(!showNoRouteCoursesDetails)}
+                className="text-xs text-primary hover:underline font-medium"
+              >
+                {showNoRouteCoursesDetails ? 'Ocultar detalles' : 'Ver detalles'}
+              </button>
             </div>
+            
+            {showNoRouteCoursesDetails && (
+              <div className="mt-4 space-y-2">
+                {data.topNoRouteCourses.map((course, index) => (
+                  <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
+                    <div className="font-medium truncate" title={course.name}>
+                      {index + 1}. {course.name}
+                    </div>
+                    <div className="font-semibold text-primary">
+                      {course.count} consumos
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -637,18 +683,30 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
                 No hay datos disponibles
               </div>
             )}
-            <div className="mt-4 space-y-2">
-              {data.companiesWithUsers.map((company, index) => (
-                <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
-                  <div className="font-medium truncate" title={company.name}>
-                    {index + 1}. {company.name}
-                  </div>
-                  <div className="font-semibold text-primary">
-                    {company.users} usuarios
-                  </div>
-                </div>
-              ))}
+            
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={() => setShowCompaniesUsersDetails(!showCompaniesUsersDetails)}
+                className="text-xs text-primary hover:underline font-medium"
+              >
+                {showCompaniesUsersDetails ? 'Ocultar detalles' : 'Ver detalles'}
+              </button>
             </div>
+            
+            {showCompaniesUsersDetails && (
+              <div className="mt-4 space-y-2">
+                {data.companiesWithUsers.map((company, index) => (
+                  <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
+                    <div className="font-medium truncate" title={company.name}>
+                      {index + 1}. {company.name}
+                    </div>
+                    <div className="font-semibold text-primary">
+                      {company.users} usuarios
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -698,24 +756,36 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
                 No hay datos disponibles
               </div>
             )}
-            <div className="mt-4 space-y-2">
-              {data.companiesIACourseConsumption.map((company, index) => (
-                <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
-                  <div className="font-medium truncate" title={company.name}>
-                    {index + 1}. {company.name}
-                  </div>
-                  <div className="text-muted-foreground truncate" title={company.topRoute}>
-                    Ruta: {company.topRoute}
-                  </div>
-                  <div className="text-muted-foreground truncate text-[10px]" title={company.topCourse}>
-                    Top: {company.topCourse}
-                  </div>
-                  <div className="font-semibold text-primary">
-                    {company.totalCourses} cursos
-                  </div>
-                </div>
-              ))}
+            
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={() => setShowCompaniesIADetails(!showCompaniesIADetails)}
+                className="text-xs text-primary hover:underline font-medium"
+              >
+                {showCompaniesIADetails ? 'Ocultar detalles' : 'Ver detalles'}
+              </button>
             </div>
+            
+            {showCompaniesIADetails && (
+              <div className="mt-4 space-y-2">
+                {data.companiesIACourseConsumption.map((company, index) => (
+                  <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
+                    <div className="font-medium truncate" title={company.name}>
+                      {index + 1}. {company.name}
+                    </div>
+                    <div className="text-muted-foreground truncate" title={company.topRoute}>
+                      Ruta: {company.topRoute}
+                    </div>
+                    <div className="text-muted-foreground truncate text-[10px]" title={company.topCourse}>
+                      Top: {company.topCourse}
+                    </div>
+                    <div className="font-semibold text-primary">
+                      {company.totalCourses} cursos
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -764,21 +834,33 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
                 No hay datos disponibles
               </div>
             )}
-            <div className="mt-4 space-y-2">
-              {data.companiesOutsideRouteConsumption.map((company, index) => (
-                <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
-                  <div className="font-medium truncate" title={company.name}>
-                    {index + 1}. {company.name}
-                  </div>
-                  <div className="text-muted-foreground truncate text-[10px]" title={company.topCourse}>
-                    Top: {company.topCourse}
-                  </div>
-                  <div className="font-semibold text-primary">
-                    {company.totalCourses} cursos
-                  </div>
-                </div>
-              ))}
+            
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={() => setShowCompaniesOutsideDetails(!showCompaniesOutsideDetails)}
+                className="text-xs text-primary hover:underline font-medium"
+              >
+                {showCompaniesOutsideDetails ? 'Ocultar detalles' : 'Ver detalles'}
+              </button>
             </div>
+            
+            {showCompaniesOutsideDetails && (
+              <div className="mt-4 space-y-2">
+                {data.companiesOutsideRouteConsumption.map((company, index) => (
+                  <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
+                    <div className="font-medium truncate" title={company.name}>
+                      {index + 1}. {company.name}
+                    </div>
+                    <div className="text-muted-foreground truncate text-[10px]" title={company.topCourse}>
+                      Top: {company.topCourse}
+                    </div>
+                    <div className="font-semibold text-primary">
+                      {company.totalCourses} cursos
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -844,26 +926,37 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
                     </BarChart>
                   </ResponsiveContainer>
                   
-                  <div className="mt-4 space-y-2">
-                    {data.chamberCourseConsumption.map((chamber, index) => (
-                      <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
-                        <div className="font-medium">{chamber.chamber}</div>
-                        <div className="text-muted-foreground">
-                          {chamber.totalCourses} cursos consumidos
-                        </div>
-                        {chamber.topCourses && chamber.topCourses.length > 0 && (
-                          <div className="text-[10px] text-muted-foreground space-y-0.5 mt-1">
-                            <div className="font-semibold">Top cursos:</div>
-                            {chamber.topCourses.slice(0, 3).map((course, idx) => (
-                              <div key={idx} className="truncate" title={course.curso}>
-                                {idx + 1}. {course.curso} ({course.count})
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      onClick={() => setShowChamberCoursesDetails(!showChamberCoursesDetails)}
+                      className="text-xs text-primary hover:underline font-medium"
+                    >
+                      {showChamberCoursesDetails ? 'Ocultar detalles' : 'Ver detalles'}
+                    </button>
                   </div>
+                  
+                  {showChamberCoursesDetails && (
+                    <div className="mt-4 space-y-2">
+                      {data.chamberCourseConsumption.map((chamber, index) => (
+                        <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
+                          <div className="font-medium">{chamber.chamber}</div>
+                          <div className="text-muted-foreground">
+                            {chamber.totalCourses} cursos consumidos
+                          </div>
+                          {chamber.topCourses && chamber.topCourses.length > 0 && (
+                            <div className="text-[10px] text-muted-foreground space-y-0.5 mt-1">
+                              <div className="font-semibold">Top cursos:</div>
+                              {chamber.topCourses.slice(0, 3).map((course, idx) => (
+                                <div key={idx} className="truncate" title={course.curso}>
+                                  {idx + 1}. {course.curso} ({course.count})
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="flex items-center justify-center h-[400px] text-muted-foreground text-sm">
@@ -928,26 +1021,37 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
                     </BarChart>
                   </ResponsiveContainer>
                   
-                  <div className="mt-4 space-y-2">
-                    {data.chamberRouteConsumption.map((chamber, index) => (
-                      <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
-                        <div className="font-medium">{chamber.chamber}</div>
-                        <div className="text-muted-foreground">
-                          {chamber.totalCourses} cursos en rutas
-                        </div>
-                        {chamber.topRoutes && chamber.topRoutes.length > 0 && (
-                          <div className="text-[10px] text-muted-foreground space-y-0.5 mt-1">
-                            <div className="font-semibold">Top rutas:</div>
-                            {chamber.topRoutes.slice(0, 3).map((route, idx) => (
-                              <div key={idx} className="truncate" title={route.ruta}>
-                                {idx + 1}. {route.ruta.substring(0, 45)}... ({route.count})
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      onClick={() => setShowChamberRoutesDetails(!showChamberRoutesDetails)}
+                      className="text-xs text-primary hover:underline font-medium"
+                    >
+                      {showChamberRoutesDetails ? 'Ocultar detalles' : 'Ver detalles'}
+                    </button>
                   </div>
+                  
+                  {showChamberRoutesDetails && (
+                    <div className="mt-4 space-y-2">
+                      {data.chamberRouteConsumption.map((chamber, index) => (
+                        <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
+                          <div className="font-medium">{chamber.chamber}</div>
+                          <div className="text-muted-foreground">
+                            {chamber.totalCourses} cursos en rutas
+                          </div>
+                          {chamber.topRoutes && chamber.topRoutes.length > 0 && (
+                            <div className="text-[10px] text-muted-foreground space-y-0.5 mt-1">
+                              <div className="font-semibold">Top rutas:</div>
+                              {chamber.topRoutes.slice(0, 3).map((route, idx) => (
+                                <div key={idx} className="truncate" title={route.ruta}>
+                                  {idx + 1}. {route.ruta.substring(0, 45)}... ({route.count})
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="flex items-center justify-center h-[400px] text-muted-foreground text-sm">
