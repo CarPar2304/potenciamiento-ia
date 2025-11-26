@@ -138,33 +138,32 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
         </Card>
       </div>
 
-      {/* Gráfico de Anillo por Niveles */}
+      {/* Distribución de Estudio: Ruta vs Exploración Libre */}
       <Card>
         <CardHeader>
-          <CardTitle>Distribución por Niveles de IA</CardTitle>
-          <CardDescription>Empresas por nivel de competencia en IA</CardDescription>
+          <CardTitle>Distribución de Estudio: Ruta vs Exploración Libre</CardTitle>
+          <CardDescription>Porcentaje del estudio en la ruta recomendada vs cursos fuera de ruta</CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={400}>
             <PieChart>
               <Pie
-                data={data.levelDistribution}
+                data={data.routeAdherenceData}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={120}
+                innerRadius={80}
+                outerRadius={140}
                 paddingAngle={5}
-                dataKey="companies"
-                label={({ level, percentage }) => `${level}: ${percentage.toFixed(1)}%`}
+                dataKey="value"
+                label={({ name, percentage }) => `${name}: ${percentage.toFixed(1)}%`}
               >
-                {data.levelDistribution.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
+                <Cell fill="hsl(142, 76%, 36%)" />
+                <Cell fill="hsl(35, 91%, 62%)" />
               </Pie>
               <Tooltip 
                 formatter={(value, name, props) => [
-                  `${value} empresas (${props.payload.percentage.toFixed(1)}%)`,
-                  'Empresas'
+                  `${value} cursos (${props.payload.percentage.toFixed(1)}%)`,
+                  props.payload.name
                 ]}
               />
             </PieChart>
@@ -216,108 +215,7 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
         </CardContent>
       </Card>
 
-      {/* Top 10 Cursos Más Vistos */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Top 10 Cursos Más Vistos</CardTitle>
-          <CardDescription>Cursos con mayor número de visualizaciones</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={data.topCourses} margin={{ bottom: 100 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="name" 
-                type="category"
-                angle={-45}
-                textAnchor="end"
-                height={120}
-                interval={0}
-                tick={{ fontSize: 11 }}
-                tickFormatter={(value) => value.length > 30 ? `${value.substring(0, 30)}...` : value}
-              />
-              <YAxis type="number" />
-              <Tooltip 
-                formatter={(value, name) => [
-                  name === 'views' ? `${value} visualizaciones` : `${Number(value).toFixed(1)}% progreso promedio`,
-                  name === 'views' ? 'Visualizaciones' : 'Progreso Promedio'
-                ]}
-                labelFormatter={(label) => `Curso: ${label}`}
-              />
-              <Bar 
-                dataKey="views" 
-                fill="hsl(var(--primary))" 
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      {/* Progreso Promedio por Curso */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Progreso Promedio por Curso</CardTitle>
-          <CardDescription>Porcentaje de avance promedio en cada curso del Top 10</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {data.topCourses.map((course, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium truncate pr-4" title={course.name}>
-                    {course.name.length > 60 ? `${course.name.substring(0, 60)}...` : course.name}
-                  </span>
-                  <span className="text-sm font-bold text-primary whitespace-nowrap">
-                    {course.avgProgress.toFixed(1)}%
-                  </span>
-                </div>
-                <Progress value={course.avgProgress} className="h-2" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Sección: Adherencia a la Ruta de IA */}
-      <div className="col-span-full">
-        <h3 className="text-xl font-bold mb-4">Adherencia a la Ruta de IA</h3>
-      </div>
-
-      {/* Gráfico 1: Adherencia a la Ruta (Donut Chart) */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Distribución de Estudio: Ruta vs Exploración Libre</CardTitle>
-          <CardDescription>Porcentaje del estudio en la ruta recomendada vs cursos fuera de ruta</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={400}>
-            <PieChart>
-              <Pie
-                data={data.routeAdherenceData}
-                cx="50%"
-                cy="50%"
-                innerRadius={80}
-                outerRadius={140}
-                paddingAngle={5}
-                dataKey="value"
-                label={({ name, percentage }) => `${name}: ${percentage.toFixed(1)}%`}
-              >
-                <Cell fill="hsl(142, 76%, 36%)" />
-                <Cell fill="hsl(35, 91%, 62%)" />
-              </Pie>
-              <Tooltip 
-                formatter={(value, name, props) => [
-                  `${value} cursos (${props.payload.percentage.toFixed(1)}%)`,
-                  props.payload.name
-                ]}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      {/* Gráfico 2: Evangelizadores vs Exploradores (Scatter Plot) */}
+      {/* Evangelizadores vs Exploradores (Scatter Plot) */}
       <Card>
         <CardHeader>
           <CardTitle>Evangelizadores de la Ruta vs Exploradores</CardTitle>
