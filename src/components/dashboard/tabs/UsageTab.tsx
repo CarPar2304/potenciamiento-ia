@@ -418,21 +418,21 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
         <CardHeader>
           <CardTitle>Distribución del Consumo de Cursos por Tipo de Ruta</CardTitle>
           <CardDescription>
-            Proporción del consumo en rutas de IA recomendadas vs otras rutas vs cursos sueltos
+            Detalle del consumo por cada ruta específica de aprendizaje
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={400}>
+          <ResponsiveContainer width="100%" height={500}>
             <PieChart>
               <Pie
                 data={data.courseDistributionByRouteType}
                 cx="50%"
                 cy="50%"
-                innerRadius={80}
-                outerRadius={140}
-                paddingAngle={5}
+                innerRadius={100}
+                outerRadius={180}
+                paddingAngle={2}
                 dataKey="value"
-                label={({ name, percentage }) => `${name}: ${percentage.toFixed(1)}%`}
+                label={({ percentage }) => percentage > 3 ? `${percentage.toFixed(1)}%` : ''}
               >
                 {data.courseDistributionByRouteType.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
@@ -449,23 +449,44 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
                   borderRadius: '8px'
                 }}
               />
-              <Legend />
+              <Legend 
+                layout="vertical" 
+                align="right" 
+                verticalAlign="middle"
+                iconType="circle"
+                wrapperStyle={{ maxHeight: '400px', overflowY: 'auto', paddingLeft: '20px' }}
+              />
             </PieChart>
           </ResponsiveContainer>
           
-          {/* Leyenda con insights */}
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div className="p-3 rounded-lg bg-[hsl(262,83%,58%)]/10 border border-[hsl(262,83%,58%)]/30">
-              <div className="font-semibold text-[hsl(262,83%,58%)]">Ruta IA (niveles 1-6)</div>
-              <div className="text-muted-foreground">Cursos de la ruta de IA recomendada</div>
-            </div>
-            <div className="p-3 rounded-lg bg-[hsl(221,83%,53%)]/10 border border-[hsl(221,83%,53%)]/30">
-              <div className="font-semibold text-[hsl(221,83%,53%)]">Otras rutas</div>
-              <div className="text-muted-foreground">Cursos de otras rutas de Platzi</div>
-            </div>
-            <div className="p-3 rounded-lg bg-[hsl(35,91%,62%)]/10 border border-[hsl(35,91%,62%)]/30">
-              <div className="font-semibold text-[hsl(35,91%,62%)]">Sin ruta</div>
-              <div className="text-muted-foreground">Cursos sueltos sin ruta asignada</div>
+          {/* Tabla resumen de rutas */}
+          <div className="mt-6 space-y-2">
+            <h4 className="font-semibold text-sm mb-3">Detalle por Ruta:</h4>
+            <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto">
+              {data.courseDistributionByRouteType.map((route, index) => (
+                <div 
+                  key={index}
+                  className="flex items-center justify-between p-2 rounded-md border border-border/50 hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div 
+                      className="w-3 h-3 rounded-full flex-shrink-0" 
+                      style={{ backgroundColor: route.color }}
+                    />
+                    <span className="text-sm truncate" title={route.name}>
+                      {route.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 flex-shrink-0">
+                    <span className="text-sm font-medium">
+                      {route.value} cursos
+                    </span>
+                    <span className="text-sm font-bold text-primary min-w-[50px] text-right">
+                      {route.percentage.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </CardContent>
