@@ -311,32 +311,53 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       certifiedCourses: user.cursos_totales_certificados || 0
     })).filter(u => u.progressInRoute > 0 || u.certifiedCourses > 0); // Only users with some activity
 
-    // Gráfico 3: Avance promedio por Nivel de IA
-    const progressByLevel = timeFilteredPlatzi.reduce((acc, p) => {
-      if (p.ruta && p.ruta.trim() !== '' && p.ruta.toLowerCase() !== 'not title') {
-        if (!acc[p.ruta]) {
-          acc[p.ruta] = { totalProgress: 0, count: 0 };
-        }
-        acc[p.ruta].totalProgress += (p.progreso_ruta || 0) * 100; // Convert to percentage
-        acc[p.ruta].count += 1;
-      }
-      return acc;
-    }, {} as Record<string, { totalProgress: number; count: number }>);
+    // Gráfico 3: Distribución del consumo de cursos por tipo de ruta
+    const iaRouteLevels = [
+      'Nivel 1 adopción IA Explorador de IA',
+      'Nivel 2 adopción IA Observador Crítico de IA',
+      'Nivel 3 adopción IA Usuario Competente Herramientas IA',
+      'Nivel 4 adopción IA Promotor de innovación usando IA',
+      'Nivel 5 adopción IA Estratega de IA para el Negocio',
+      'Nivel 6 adopción IA Especialista Técnico en IA'
+    ];
 
-    const avgProgressByLevel = Object.entries(progressByLevel)
-      .map(([level, data]) => ({
-        level,
-        avgProgress: data.count > 0 ? data.totalProgress / data.count : 0
-      }))
-      .sort((a, b) => {
-        // Sort by level number if possible
-        const aMatch = a.level.match(/nivel\s*(\d+)/i);
-        const bMatch = b.level.match(/nivel\s*(\d+)/i);
-        if (aMatch && bMatch) {
-          return parseInt(aMatch[1]) - parseInt(bMatch[1]);
-        }
-        return a.level.localeCompare(b.level);
-      });
+    // Grupo 1: Ruta IA (niveles 1-6)
+    const coursesInIARoute = seguimientoData.filter(s => 
+      s.ruta && iaRouteLevels.some(level => 
+        s.ruta.toLowerCase().includes(level.toLowerCase())
+      )
+    ).length;
+
+    // Grupo 3: Sin ruta (Not title o vacío)
+    const coursesWithoutRoute = seguimientoData.filter(s => 
+      !s.ruta || s.ruta.trim() === '' || s.ruta.toLowerCase() === 'not title'
+    ).length;
+
+    // Grupo 2: Otras rutas (lo que no es IA ni sin ruta)
+    const coursesOtherRoutes = seguimientoData.length - coursesInIARoute - coursesWithoutRoute;
+
+    const totalCourses = seguimientoData.length;
+
+    const courseDistributionByRouteType = [
+      { 
+        name: 'Ruta IA (niveles 1-6)', 
+        value: coursesInIARoute, 
+        percentage: totalCourses > 0 ? (coursesInIARoute / totalCourses) * 100 : 0,
+        color: 'hsl(262, 83%, 58%)' // Morado
+      },
+      { 
+        name: 'Otras rutas', 
+        value: coursesOtherRoutes, 
+        percentage: totalCourses > 0 ? (coursesOtherRoutes / totalCourses) * 100 : 0,
+        color: 'hsl(221, 83%, 53%)' // Azul
+      },
+      { 
+        name: 'Sin ruta', 
+        value: coursesWithoutRoute, 
+        percentage: totalCourses > 0 ? (coursesWithoutRoute / totalCourses) * 100 : 0,
+        color: 'hsl(35, 91%, 62%)' // Naranja
+      }
+    ];
 
     return { 
       levelDistribution, 
@@ -348,7 +369,7 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       topCourses,
       routeAdherenceData,
       userScatterData,
-      avgProgressByLevel,
+      courseDistributionByRouteType,
       dateRange: dateRange || { start: '', end: '' } 
     };
   }, [filteredData, dateRange]);

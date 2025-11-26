@@ -18,7 +18,7 @@ interface UsageTabProps {
     topCourses: Array<{ name: string; views: number; avgProgress: number }>;
     routeAdherenceData: Array<{ name: string; value: number; percentage: number }>;
     userScatterData: Array<{ name: string; progressInRoute: number; certifiedCourses: number }>;
-    avgProgressByLevel: Array<{ level: string; avgProgress: number }>;
+    courseDistributionByRouteType: Array<{ name: string; value: number; percentage: number; color: string }>;
     dateRange: {
       start: string;
       end: string;
@@ -413,49 +413,61 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
         </CardContent>
       </Card>
 
-      {/* Gráfico 3: Avance Promedio por Nivel de IA (Horizontal Bar Chart) */}
+      {/* Gráfico 3: Distribución del Consumo de Cursos por Tipo de Ruta */}
       <Card>
         <CardHeader>
-          <CardTitle>Avance Promedio por Nivel de IA</CardTitle>
+          <CardTitle>Distribución del Consumo de Cursos por Tipo de Ruta</CardTitle>
           <CardDescription>
-            Progreso promedio de usuarios en cada nivel de la ruta de aprendizaje
+            Proporción del consumo en rutas de IA recomendadas vs otras rutas vs cursos sueltos
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={Math.max(300, data.avgProgressByLevel.length * 60)}>
-            <BarChart 
-              data={data.avgProgressByLevel} 
-              layout="vertical"
-              margin={{ top: 5, right: 30, left: 150, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                type="number" 
-                domain={[0, 100]}
-                label={{ value: 'Progreso Promedio (%)', position: 'bottom', offset: 0 }}
-              />
-              <YAxis 
-                type="category" 
-                dataKey="level" 
-                width={140}
-                tick={{ fontSize: 12 }}
-              />
+          <ResponsiveContainer width="100%" height={400}>
+            <PieChart>
+              <Pie
+                data={data.courseDistributionByRouteType}
+                cx="50%"
+                cy="50%"
+                innerRadius={80}
+                outerRadius={140}
+                paddingAngle={5}
+                dataKey="value"
+                label={({ name, percentage }) => `${name}: ${percentage.toFixed(1)}%`}
+              >
+                {data.courseDistributionByRouteType.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
               <Tooltip 
-                formatter={(value) => [`${Number(value).toFixed(1)}%`, 'Progreso Promedio']}
-                labelFormatter={(label) => `Nivel: ${label}`}
-              />
-              <Bar 
-                dataKey="avgProgress" 
-                fill="hsl(262, 83%, 58%)" 
-                radius={[0, 4, 4, 0]}
-                label={{ 
-                  position: 'right', 
-                  formatter: (value: number) => `${value.toFixed(1)}%`,
-                  fontSize: 11 
+                formatter={(value, name, props) => [
+                  `${value} cursos (${props.payload.percentage.toFixed(1)}%)`,
+                  props.payload.name
+                ]}
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--background))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px'
                 }}
               />
-            </BarChart>
+              <Legend />
+            </PieChart>
           </ResponsiveContainer>
+          
+          {/* Leyenda con insights */}
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="p-3 rounded-lg bg-[hsl(262,83%,58%)]/10 border border-[hsl(262,83%,58%)]/30">
+              <div className="font-semibold text-[hsl(262,83%,58%)]">Ruta IA (niveles 1-6)</div>
+              <div className="text-muted-foreground">Cursos de la ruta de IA recomendada</div>
+            </div>
+            <div className="p-3 rounded-lg bg-[hsl(221,83%,53%)]/10 border border-[hsl(221,83%,53%)]/30">
+              <div className="font-semibold text-[hsl(221,83%,53%)]">Otras rutas</div>
+              <div className="text-muted-foreground">Cursos de otras rutas de Platzi</div>
+            </div>
+            <div className="p-3 rounded-lg bg-[hsl(35,91%,62%)]/10 border border-[hsl(35,91%,62%)]/30">
+              <div className="font-semibold text-[hsl(35,91%,62%)]">Sin ruta</div>
+              <div className="text-muted-foreground">Cursos sueltos sin ruta asignada</div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
