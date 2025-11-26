@@ -329,9 +329,14 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
               max={100}
               value={maxYAxis}
               onChange={(e) => {
-                const value = parseInt(e.target.value);
-                if (!isNaN(value) && value >= 5) {
-                  setMaxYAxis(value);
+                const value = e.target.value;
+                if (value === '') {
+                  setMaxYAxis(5);
+                } else {
+                  const numValue = parseInt(value);
+                  if (!isNaN(numValue) && numValue >= 5) {
+                    setMaxYAxis(numValue);
+                  }
                 }
               }}
               className="w-24"
@@ -354,6 +359,7 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
                 dataKey="certifiedCourses" 
                 name="Cursos Certificados"
                 domain={[0, maxYAxis]}
+                allowDataOverflow={true}
                 label={{ value: 'Cursos Certificados Totales', angle: -90, position: 'left' }}
               />
               <ZAxis range={[60, 400]} />
