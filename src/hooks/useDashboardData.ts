@@ -421,6 +421,112 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
+    // Top 5 empresas por métricas
+    // 1. Top 5 empresas con más usuarios con licencia
+    const companiesWithUsers = filteredData.empresas.map(empresa => {
+      // Obtener solicitudes aprobadas de esta empresa
+      const empresaNits = [empresa.nit];
+      const empresaRequests = filteredData.solicitudes.filter(s => 
+        empresaNits.includes(s.nit_empresa) && s.estado === 'Aprobada'
+      );
+      const userEmails = empresaRequests.map(s => s.email);
+      
+      // Contar usuarios con licencia activa en Platzi
+      const usersWithLicense = filteredData.platziGeneral.filter(p => 
+        userEmails.includes(p.email)
+      ).length;
+
+      return {
+        name: empresa.nombre,
+        nit: empresa.nit,
+        users: usersWithLicense
+      };
+    }).filter(e => e.users > 0)
+      .sort((a, b) => b.users - a.users)
+      .slice(0, 5);
+
+    // 2. Top 5 empresas con mayor consumo de cursos en rutas de IA
+    const companiesIACourseConsumption = filteredData.empresas.map(empresa => {
+      const empresaNits = [empresa.nit];
+      const empresaRequests = filteredData.solicitudes.filter(s => 
+        empresaNits.includes(s.nit_empresa) && s.estado === 'Aprobada'
+      );
+      const userEmails = empresaRequests.map(s => s.email);
+      
+      // Filtrar cursos de rutas de IA para usuarios de esta empresa
+      const iaCourses = filteredData.seguimientoData.filter(s => {
+        if (!userEmails.includes(s.email) || !s.ruta) return false;
+        const normalizedRoute = normalizeRoute(s.ruta);
+        return iaRouteLevels.some(level => normalizedRoute.includes(level));
+      });
+
+      // Agrupar por ruta y curso
+      const routeCourseMap = iaCourses.reduce((acc, s) => {
+        if (!s.curso) return acc;
+        const route = s.ruta || 'Sin especificar';
+        if (!acc[route]) acc[route] = {};
+        acc[route][s.curso] = (acc[route][s.curso] || 0) + 1;
+        return acc;
+      }, {} as Record<string, Record<string, number>>);
+
+      // Encontrar la ruta más consumida
+      const routeTotals = Object.entries(routeCourseMap).map(([route, courses]) => ({
+        route,
+        total: Object.values(courses).reduce((sum, count) => sum + count, 0),
+        topCourse: Object.entries(courses).sort((a, b) => b[1] - a[1])[0]
+      }));
+
+      const topRoute = routeTotals.sort((a, b) => b.total - a.total)[0];
+
+      return {
+        name: empresa.nombre,
+        nit: empresa.nit,
+        totalCourses: iaCourses.length,
+        topRoute: topRoute?.route || 'N/A',
+        topCourse: topRoute?.topCourse?.[0] || 'N/A',
+        topCourseCount: topRoute?.topCourse?.[1] || 0
+      };
+    }).filter(e => e.totalCourses > 0)
+      .sort((a, b) => b.totalCourses - a.totalCourses)
+      .slice(0, 5);
+
+    // 3. Top 5 empresas con mayor consumo de cursos fuera de rutas
+    const companiesOutsideRouteConsumption = filteredData.empresas.map(empresa => {
+      const empresaNits = [empresa.nit];
+      const empresaRequests = filteredData.solicitudes.filter(s => 
+        empresaNits.includes(s.nit_empresa) && s.estado === 'Aprobada'
+      );
+      const userEmails = empresaRequests.map(s => s.email);
+      
+      // Filtrar cursos fuera de rutas de IA
+      const outsideCourses = filteredData.seguimientoData.filter(s => {
+        if (!userEmails.includes(s.email)) return false;
+        if (!s.ruta || s.ruta.trim() === '' || s.ruta.toLowerCase() === 'not title') return false;
+        const normalizedRoute = normalizeRoute(s.ruta);
+        return !iaRouteLevels.some(level => normalizedRoute.includes(level));
+      });
+
+      // Encontrar el curso más consumido
+      const courseCounts = outsideCourses.reduce((acc, s) => {
+        if (!s.curso) return acc;
+        acc[s.curso] = (acc[s.curso] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const topCourse = Object.entries(courseCounts)
+        .sort((a, b) => b[1] - a[1])[0];
+
+      return {
+        name: empresa.nombre,
+        nit: empresa.nit,
+        totalCourses: outsideCourses.length,
+        topCourse: topCourse?.[0] || 'N/A',
+        topCourseCount: topCourse?.[1] || 0
+      };
+    }).filter(e => e.totalCourses > 0)
+      .sort((a, b) => b.totalCourses - a.totalCourses)
+      .slice(0, 5);
+
     return { 
       levelDistribution, 
       averageProgress: avgProgress, 
@@ -435,6 +541,9 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       topIACourses,
       topOtherCourses,
       topNoRouteCourses,
+      companiesWithUsers,
+      companiesIACourseConsumption,
+      companiesOutsideRouteConsumption,
       dateRange: dateRange || { start: '', end: '' } 
     };
   }, [filteredData, dateRange]);

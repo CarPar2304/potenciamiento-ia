@@ -22,6 +22,9 @@ interface UsageTabProps {
     topIACourses: Array<{ name: string; count: number; route: string }>;
     topOtherCourses: Array<{ name: string; count: number; route: string }>;
     topNoRouteCourses: Array<{ name: string; count: number }>;
+    companiesWithUsers: Array<{ name: string; nit: string; users: number }>;
+    companiesIACourseConsumption: Array<{ name: string; nit: string; totalCourses: number; topRoute: string; topCourse: string; topCourseCount: number }>;
+    companiesOutsideRouteConsumption: Array<{ name: string; nit: string; totalCourses: number; topCourse: string; topCourseCount: number }>;
     dateRange: {
       start: string;
       end: string;
@@ -675,6 +678,203 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
                   </div>
                   <div className="font-semibold text-primary">
                     {course.count} consumos
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Top 5 Empresas por Consumo */}
+      <div className="col-span-full mt-6">
+        <h3 className="text-xl font-bold mb-4">Análisis por Empresa</h3>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Top 5 Empresas con más Usuarios con Licencia */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Top 5 Empresas - Usuarios con Licencia</CardTitle>
+            <CardDescription>Empresas con más licencias activas consumidas</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {data.companiesWithUsers.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart 
+                  data={data.companiesWithUsers} 
+                  layout="vertical"
+                  margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis 
+                    type="category" 
+                    dataKey="name" 
+                    width={0}
+                    tick={false}
+                  />
+                  <Tooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-background border border-border rounded-lg p-3 shadow-lg max-w-xs">
+                            <p className="font-semibold text-sm mb-1">{data.name}</p>
+                            <p className="text-xs text-muted-foreground mb-1">NIT: {data.nit}</p>
+                            <p className="text-xs">Usuarios con licencia: {data.users}</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar dataKey="users" fill="hsl(262, 83%, 58%)" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
+                No hay datos disponibles
+              </div>
+            )}
+            <div className="mt-4 space-y-2">
+              {data.companiesWithUsers.map((company, index) => (
+                <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
+                  <div className="font-medium truncate" title={company.name}>
+                    {index + 1}. {company.name}
+                  </div>
+                  <div className="font-semibold text-primary">
+                    {company.users} usuarios
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Top 5 Empresas - Consumo en Rutas de IA */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Top 5 Empresas - Consumo en Rutas IA</CardTitle>
+            <CardDescription>Mayor consumo de cursos en rutas de IA</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {data.companiesIACourseConsumption.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart 
+                  data={data.companiesIACourseConsumption} 
+                  layout="vertical"
+                  margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis 
+                    type="category" 
+                    dataKey="name" 
+                    width={0}
+                    tick={false}
+                  />
+                  <Tooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-background border border-border rounded-lg p-3 shadow-lg max-w-xs">
+                            <p className="font-semibold text-sm mb-1">{data.name}</p>
+                            <p className="text-xs text-muted-foreground mb-1">Ruta principal: {data.topRoute}</p>
+                            <p className="text-xs text-muted-foreground mb-1">Curso top: {data.topCourse}</p>
+                            <p className="text-xs">Total cursos: {data.totalCourses}</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar dataKey="totalCourses" fill="hsl(221, 83%, 53%)" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
+                No hay datos disponibles
+              </div>
+            )}
+            <div className="mt-4 space-y-2">
+              {data.companiesIACourseConsumption.map((company, index) => (
+                <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
+                  <div className="font-medium truncate" title={company.name}>
+                    {index + 1}. {company.name}
+                  </div>
+                  <div className="text-muted-foreground truncate" title={company.topRoute}>
+                    Ruta: {company.topRoute}
+                  </div>
+                  <div className="text-muted-foreground truncate text-[10px]" title={company.topCourse}>
+                    Top: {company.topCourse}
+                  </div>
+                  <div className="font-semibold text-primary">
+                    {company.totalCourses} cursos
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Top 5 Empresas - Consumo Fuera de Rutas */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Top 5 Empresas - Consumo Fuera de Rutas</CardTitle>
+            <CardDescription>Mayor consumo de cursos fuera de rutas IA</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {data.companiesOutsideRouteConsumption.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart 
+                  data={data.companiesOutsideRouteConsumption} 
+                  layout="vertical"
+                  margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis 
+                    type="category" 
+                    dataKey="name" 
+                    width={0}
+                    tick={false}
+                  />
+                  <Tooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-background border border-border rounded-lg p-3 shadow-lg max-w-xs">
+                            <p className="font-semibold text-sm mb-1">{data.name}</p>
+                            <p className="text-xs text-muted-foreground mb-1">Curso top: {data.topCourse}</p>
+                            <p className="text-xs">Total cursos: {data.totalCourses}</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar dataKey="totalCourses" fill="hsl(35, 91%, 62%)" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
+                No hay datos disponibles
+              </div>
+            )}
+            <div className="mt-4 space-y-2">
+              {data.companiesOutsideRouteConsumption.map((company, index) => (
+                <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
+                  <div className="font-medium truncate" title={company.name}>
+                    {index + 1}. {company.name}
+                  </div>
+                  <div className="text-muted-foreground truncate text-[10px]" title={company.topCourse}>
+                    Top: {company.topCourse}
+                  </div>
+                  <div className="font-semibold text-primary">
+                    {company.totalCourses} cursos
                   </div>
                 </div>
               ))}
