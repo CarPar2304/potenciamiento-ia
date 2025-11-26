@@ -32,13 +32,13 @@ interface UsageTabProps {
       end: string;
     };
     userTypeFilter?: string;
+    chamberFilter?: string;
+    availableChambers?: Array<{ id: string; nombre: string }>;
   };
-  onDateRangeChange: (range: { start: string; end: string; userTypeFilter?: string }) => void;
+  onDateRangeChange: (range: { start: string; end: string; userTypeFilter?: string; chamberFilter?: string }) => void;
 }
 
 export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
-  const [selectedTimeframe, setSelectedTimeframe] = useState('all');
-  
   // Estados para controlar visibilidad de detalles
   const [showIACoursesDetails, setShowIACoursesDetails] = useState(false);
   const [showOtherCoursesDetails, setShowOtherCoursesDetails] = useState(false);
@@ -64,35 +64,6 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
     setMaxYAxis(newMax);
   }, [data.userScatterData]);
 
-  const handleTimeframeChange = (value: string) => {
-    setSelectedTimeframe(value);
-    const now = new Date();
-    let start = '';
-    
-    switch (value) {
-      case '30d':
-        start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        break;
-      case '90d':
-        start = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        break;
-      case '6m':
-        start = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        break;
-      case '1y':
-        start = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        break;
-      default:
-        start = '';
-    }
-    
-    onDateRangeChange({ 
-      start, 
-      end: now.toISOString().split('T')[0],
-      userTypeFilter: data.userTypeFilter || 'all'
-    });
-  };
-
   const COLORS = ['hsl(262, 83%, 58%)', 'hsl(221, 83%, 53%)', 'hsl(142, 76%, 36%)', 'hsl(346, 87%, 43%)', 'hsl(35, 91%, 62%)', 'hsl(196, 75%, 88%)'];
 
   return (
@@ -102,17 +73,26 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="timeframe">Período de tiempo</Label>
-              <Select value={selectedTimeframe} onValueChange={handleTimeframeChange}>
-                <SelectTrigger id="timeframe">
-                  <SelectValue placeholder="Seleccionar período" />
+              <Label htmlFor="chamber">Cámara de Comercio</Label>
+              <Select 
+                value={data.chamberFilter || 'all'} 
+                onValueChange={(value) => onDateRangeChange({ 
+                  start: data.dateRange.start,
+                  end: data.dateRange.end,
+                  userTypeFilter: data.userTypeFilter || 'all',
+                  chamberFilter: value 
+                })}
+              >
+                <SelectTrigger id="chamber">
+                  <SelectValue placeholder="Seleccionar cámara" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todo el tiempo</SelectItem>
-                  <SelectItem value="30d">Últimos 30 días</SelectItem>
-                  <SelectItem value="90d">Últimos 90 días</SelectItem>
-                  <SelectItem value="6m">Últimos 6 meses</SelectItem>
-                  <SelectItem value="1y">Último año</SelectItem>
+                  <SelectItem value="all">Todas las cámaras</SelectItem>
+                  {data.availableChambers?.map((chamber) => (
+                    <SelectItem key={chamber.id} value={chamber.id}>
+                      {chamber.nombre}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -123,7 +103,8 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
                 onValueChange={(value) => onDateRangeChange({ 
                   start: data.dateRange.start,
                   end: data.dateRange.end,
-                  userTypeFilter: value 
+                  userTypeFilter: value,
+                  chamberFilter: data.chamberFilter || 'all'
                 })}
               >
                 <SelectTrigger id="userType">
@@ -232,21 +213,6 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
         <CardHeader>
           <CardTitle>Progreso Promedio en el Tiempo</CardTitle>
           <CardDescription>Evolución del progreso en rutas de aprendizaje</CardDescription>
-          <div className="flex items-center space-x-4">
-            <Label htmlFor="timeframe">Período:</Label>
-            <Select value={selectedTimeframe} onValueChange={handleTimeframeChange}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Seleccionar período" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todo el tiempo</SelectItem>
-                <SelectItem value="30d">Últimos 30 días</SelectItem>
-                <SelectItem value="90d">Últimos 90 días</SelectItem>
-                <SelectItem value="6m">Últimos 6 meses</SelectItem>
-                <SelectItem value="1y">Último año</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
