@@ -31,8 +31,9 @@ interface UsageTabProps {
       start: string;
       end: string;
     };
+    userTypeFilter?: string;
   };
-  onDateRangeChange: (range: { start: string; end: string }) => void;
+  onDateRangeChange: (range: { start: string; end: string; userTypeFilter?: string }) => void;
 }
 
 export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
@@ -87,7 +88,8 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
     
     onDateRangeChange({ 
       start, 
-      end: now.toISOString().split('T')[0] 
+      end: now.toISOString().split('T')[0],
+      userTypeFilter: data.userTypeFilter || 'all'
     });
   };
 
@@ -95,6 +97,48 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Filtros */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="timeframe">Período de tiempo</Label>
+              <Select value={selectedTimeframe} onValueChange={handleTimeframeChange}>
+                <SelectTrigger id="timeframe">
+                  <SelectValue placeholder="Seleccionar período" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todo el tiempo</SelectItem>
+                  <SelectItem value="30d">Últimos 30 días</SelectItem>
+                  <SelectItem value="90d">Últimos 90 días</SelectItem>
+                  <SelectItem value="6m">Últimos 6 meses</SelectItem>
+                  <SelectItem value="1y">Último año</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="userType">Tipo de usuario</Label>
+              <Select 
+                value={data.userTypeFilter || 'all'} 
+                onValueChange={(value) => onDateRangeChange({ 
+                  start: data.dateRange.start,
+                  end: data.dateRange.end,
+                  userTypeFilter: value 
+                })}
+              >
+                <SelectTrigger id="userType">
+                  <SelectValue placeholder="Seleccionar tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los usuarios</SelectItem>
+                  <SelectItem value="empresarios">Solo Empresarios</SelectItem>
+                  <SelectItem value="colaboradores">Solo Colaboradores</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       {/* KPIs de Uso */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
