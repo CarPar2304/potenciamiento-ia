@@ -36,9 +36,10 @@ interface UsageTabProps {
     availableChambers?: Array<{ id: string; nombre: string }>;
   };
   onDateRangeChange: (range: { start: string; end: string; userTypeFilter?: string; chamberFilter?: string }) => void;
+  userRole?: string;
 }
 
-export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
+export function UsageTab({ data, onDateRangeChange, userRole }: UsageTabProps) {
   // Estados para controlar visibilidad de detalles
   const [showIACoursesDetails, setShowIACoursesDetails] = useState(false);
   const [showOtherCoursesDetails, setShowOtherCoursesDetails] = useState(false);
@@ -48,6 +49,10 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
   const [showCompaniesOutsideDetails, setShowCompaniesOutsideDetails] = useState(false);
   const [showChamberCoursesDetails, setShowChamberCoursesDetails] = useState(false);
   const [showChamberRoutesDetails, setShowChamberRoutesDetails] = useState(false);
+  
+  // Determinar si el usuario puede ver el filtro de cámaras
+  // Solo admin y ccc pueden ver todas las cámaras y filtrar
+  const canFilterChambers = userRole === 'admin' || userRole === 'ccc';
   
   // Calculate initial and dynamic max for Y axis
   const calculateMaxYAxis = () => {
@@ -71,31 +76,33 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
       {/* Filtros */}
       <Card>
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="chamber">Cámara de Comercio</Label>
-              <Select 
-                value={data.chamberFilter || 'all'} 
-                onValueChange={(value) => onDateRangeChange({ 
-                  start: data.dateRange.start,
-                  end: data.dateRange.end,
-                  userTypeFilter: data.userTypeFilter || 'all',
-                  chamberFilter: value 
-                })}
-              >
-                <SelectTrigger id="chamber">
-                  <SelectValue placeholder="Seleccionar cámara" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las cámaras</SelectItem>
-                  {data.availableChambers?.map((chamber) => (
-                    <SelectItem key={chamber.id} value={chamber.id}>
-                      {chamber.nombre}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className={`grid grid-cols-1 ${canFilterChambers ? 'md:grid-cols-2' : ''} gap-4`}>
+            {canFilterChambers && (
+              <div className="space-y-2">
+                <Label htmlFor="chamber">Cámara de Comercio</Label>
+                <Select 
+                  value={data.chamberFilter || 'all'} 
+                  onValueChange={(value) => onDateRangeChange({ 
+                    start: data.dateRange.start,
+                    end: data.dateRange.end,
+                    userTypeFilter: data.userTypeFilter || 'all',
+                    chamberFilter: value 
+                  })}
+                >
+                  <SelectTrigger id="chamber">
+                    <SelectValue placeholder="Seleccionar cámara" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas las cámaras</SelectItem>
+                    {data.availableChambers?.map((chamber) => (
+                      <SelectItem key={chamber.id} value={chamber.id}>
+                        {chamber.nombre}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="userType">Tipo de usuario</Label>
               <Select 
