@@ -33,7 +33,7 @@ const formatTimeFromSeconds = (seconds: number): string => {
   return `${hours}h ${minutes}m`;
 };
 
-export function useDashboardData(filters?: any, dateRange?: { start: string; end: string; userTypeFilter?: string }, overviewDateRange?: { start: Date | null; end: Date | null }) {
+export function useDashboardData(filters?: any, dateRange?: { start: string; end: string; userTypeFilter?: string; chamberFilter?: string }, overviewDateRange?: { start: Date | null; end: Date | null }) {
   const { profile } = useAuth();
   
   // Fetch all data sources
@@ -53,7 +53,7 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
     let filteredSeguimiento = seguimientoData;
     let filteredCamaras = camaras;
 
-    // Apply role-based filtering
+    // Apply role-based filtering first
     if (profile?.role === 'camara_aliada' && profile?.chamber) {
       const chamberName = profile.chamber;
       filteredCamaras = camaras.filter(c => c.nombre === chamberName);
@@ -71,6 +71,28 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       const chamberEmails = filteredSolicitudes.map(s => s.email);
       filteredPlatzi = platziData.filter(p => chamberEmails.includes(p.email));
       filteredSeguimiento = seguimientoData.filter(s => chamberEmails.includes(s.email));
+    }
+
+    // Apply chamber filter if specified
+    if (dateRange?.chamberFilter && dateRange.chamberFilter !== 'all') {
+      const selectedChamberId = dateRange.chamberFilter;
+      
+      // Filter empresas by selected chamber
+      filteredEmpresas = filteredEmpresas.filter(e => e.camara_id === selectedChamberId);
+      
+      // Get NITs from filtered empresas
+      const chamberNits = filteredEmpresas.map(e => e.nit);
+      
+      // Filter solicitudes: empresarios from chamber companies + colaboradores from chamber
+      filteredSolicitudes = filteredSolicitudes.filter(s => 
+        (!s.es_colaborador && chamberNits.includes(s.nit_empresa)) ||
+        (s.es_colaborador && s.camara_colaborador_id === selectedChamberId)
+      );
+      
+      // Filter platzi and seguimiento based on filtered solicitudes
+      const filteredEmails = filteredSolicitudes.map(s => s.email);
+      filteredPlatzi = filteredPlatzi.filter(p => filteredEmails.includes(p.email));
+      filteredSeguimiento = filteredSeguimiento.filter(s => filteredEmails.includes(s.email));
     }
 
     // Apply user type filter (colaboradores vs empresarios)
@@ -91,7 +113,7 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       seguimientoData: filteredSeguimiento,
       camaras: filteredCamaras 
     };
-  }, [solicitudes, empresas, platziData, seguimientoData, camaras, profile, dateRange?.userTypeFilter]);
+  }, [solicitudes, empresas, platziData, seguimientoData, camaras, profile, dateRange?.userTypeFilter, dateRange?.chamberFilter]);
 
   // Overall Vision Tab Data
   const overallVisionData = useMemo(() => {
@@ -646,7 +668,9 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       chamberCourseConsumption,
       chamberRouteConsumption,
       dateRange: dateRange || { start: '', end: '' },
-      userTypeFilter: dateRange?.userTypeFilter || 'all'
+      userTypeFilter: dateRange?.userTypeFilter || 'all',
+      chamberFilter: dateRange?.chamberFilter || 'all',
+      availableChambers: filteredData.camaras.map(c => ({ id: c.id, nombre: c.nombre }))
     };
   }, [filteredData, dateRange]);
 
