@@ -527,6 +527,94 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       .sort((a, b) => b.totalCourses - a.totalCourses)
       .slice(0, 5);
 
+    // Consumo de cursos por cámara (basado en empresas asociadas)
+    const chamberCourseConsumption = filteredData.camaras.map(camara => {
+      // Obtener empresas de esta cámara
+      const chamberEmpresas = filteredData.empresas.filter(e => e.camara_id === camara.id);
+      const chamberNits = chamberEmpresas.map(e => e.nit);
+      
+      // Obtener solicitudes de estas empresas (solo empresarios, no colaboradores de cámara)
+      const chamberSolicitudes = filteredData.solicitudes.filter(s => 
+        !s.es_colaborador && chamberNits.includes(s.nit_empresa)
+      );
+      const chamberEmails = chamberSolicitudes.map(s => s.email);
+      
+      // Obtener cursos consumidos por estas empresas
+      const chamberCourses = filteredData.seguimientoData.filter(s => 
+        chamberEmails.includes(s.email)
+      );
+      
+      // Agregar por curso
+      const courseCounts = chamberCourses.reduce((acc, s) => {
+        if (!s.curso) return acc;
+        if (!acc[s.curso]) {
+          acc[s.curso] = {
+            curso: s.curso,
+            count: 0,
+            totalTime: 0
+          };
+        }
+        acc[s.curso].count += 1;
+        acc[s.curso].totalTime += s.tiempo_invertido || 0;
+        return acc;
+      }, {} as Record<string, { curso: string; count: number; totalTime: number }>);
+      
+      const topCourses = Object.values(courseCounts)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+      
+      return {
+        chamber: camara.nombre,
+        totalCourses: chamberCourses.length,
+        topCourses
+      };
+    }).filter(c => c.totalCourses > 0)
+      .sort((a, b) => b.totalCourses - a.totalCourses);
+
+    // Consumo de rutas por cámara (basado en empresas asociadas)
+    const chamberRouteConsumption = filteredData.camaras.map(camara => {
+      // Obtener empresas de esta cámara
+      const chamberEmpresas = filteredData.empresas.filter(e => e.camara_id === camara.id);
+      const chamberNits = chamberEmpresas.map(e => e.nit);
+      
+      // Obtener solicitudes de estas empresas (solo empresarios, no colaboradores de cámara)
+      const chamberSolicitudes = filteredData.solicitudes.filter(s => 
+        !s.es_colaborador && chamberNits.includes(s.nit_empresa)
+      );
+      const chamberEmails = chamberSolicitudes.map(s => s.email);
+      
+      // Obtener cursos consumidos por estas empresas
+      const chamberCourses = filteredData.seguimientoData.filter(s => 
+        chamberEmails.includes(s.email) && s.ruta && s.ruta.trim() !== '' && s.ruta.toLowerCase() !== 'not title'
+      );
+      
+      // Agregar por ruta
+      const routeCounts = chamberCourses.reduce((acc, s) => {
+        if (!s.ruta) return acc;
+        if (!acc[s.ruta]) {
+          acc[s.ruta] = {
+            ruta: s.ruta,
+            count: 0,
+            totalTime: 0
+          };
+        }
+        acc[s.ruta].count += 1;
+        acc[s.ruta].totalTime += s.tiempo_invertido || 0;
+        return acc;
+      }, {} as Record<string, { ruta: string; count: number; totalTime: number }>);
+      
+      const topRoutes = Object.values(routeCounts)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+      
+      return {
+        chamber: camara.nombre,
+        totalCourses: chamberCourses.length,
+        topRoutes
+      };
+    }).filter(c => c.totalCourses > 0)
+      .sort((a, b) => b.totalCourses - a.totalCourses);
+
     return { 
       levelDistribution, 
       averageProgress: avgProgress, 
@@ -544,6 +632,8 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       companiesWithUsers,
       companiesIACourseConsumption,
       companiesOutsideRouteConsumption,
+      chamberCourseConsumption,
+      chamberRouteConsumption,
       dateRange: dateRange || { start: '', end: '' } 
     };
   }, [filteredData, dateRange]);
