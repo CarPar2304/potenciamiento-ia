@@ -33,7 +33,7 @@ const formatTimeFromSeconds = (seconds: number): string => {
   return `${hours}h ${minutes}m`;
 };
 
-export function useDashboardData(filters?: any, dateRange?: { start: string; end: string }, overviewDateRange?: { start: Date | null; end: Date | null }) {
+export function useDashboardData(filters?: any, dateRange?: { start: string; end: string; userTypeFilter?: string }, overviewDateRange?: { start: Date | null; end: Date | null }) {
   const { profile } = useAuth();
   
   // Fetch all data sources
@@ -73,6 +73,17 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       filteredSeguimiento = seguimientoData.filter(s => chamberEmails.includes(s.email));
     }
 
+    // Apply user type filter (colaboradores vs empresarios)
+    if (dateRange?.userTypeFilter && dateRange.userTypeFilter !== 'all') {
+      const isColaborador = dateRange.userTypeFilter === 'colaboradores';
+      filteredSolicitudes = filteredSolicitudes.filter(s => s.es_colaborador === isColaborador);
+      
+      // Filter platzi and seguimiento based on filtered solicitudes emails
+      const filteredEmails = filteredSolicitudes.map(s => s.email);
+      filteredPlatzi = filteredPlatzi.filter(p => filteredEmails.includes(p.email));
+      filteredSeguimiento = filteredSeguimiento.filter(s => filteredEmails.includes(s.email));
+    }
+
     return { 
       solicitudes: filteredSolicitudes, 
       empresas: filteredEmpresas, 
@@ -80,7 +91,7 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       seguimientoData: filteredSeguimiento,
       camaras: filteredCamaras 
     };
-  }, [solicitudes, empresas, platziData, seguimientoData, camaras, profile]);
+  }, [solicitudes, empresas, platziData, seguimientoData, camaras, profile, dateRange?.userTypeFilter]);
 
   // Overall Vision Tab Data
   const overallVisionData = useMemo(() => {
@@ -634,7 +645,8 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       companiesOutsideRouteConsumption,
       chamberCourseConsumption,
       chamberRouteConsumption,
-      dateRange: dateRange || { start: '', end: '' } 
+      dateRange: dateRange || { start: '', end: '' },
+      userTypeFilter: dateRange?.userTypeFilter || 'all'
     };
   }, [filteredData, dateRange]);
 

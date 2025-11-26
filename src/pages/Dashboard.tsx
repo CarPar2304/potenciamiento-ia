@@ -9,7 +9,11 @@ import { useDashboardData } from '@/hooks/useDashboardData';
 export default function Dashboard() {
   const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState('vision-general');
-  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
+  const [dateRange, setDateRange] = useState<{ start: string; end: string; userTypeFilter?: string }>({ 
+    start: '', 
+    end: '', 
+    userTypeFilter: 'all' 
+  });
   const [overviewDateRange, setOverviewDateRange] = useState<{ start: Date | null; end: Date | null }>({
     start: null,
     end: null,
