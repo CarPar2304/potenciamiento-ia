@@ -311,53 +311,33 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       certifiedCourses: user.cursos_totales_certificados || 0
     })).filter(u => u.progressInRoute > 0 || u.certifiedCourses > 0); // Only users with some activity
 
-    // Gráfico 3: Distribución del consumo de cursos por tipo de ruta
-    const iaRouteLevels = [
-      'Nivel 1 adopción IA Explorador de IA',
-      'Nivel 2 adopción IA Observador Crítico de IA',
-      'Nivel 3 adopción IA Usuario Competente Herramientas IA',
-      'Nivel 4 adopción IA Promotor de innovación usando IA',
-      'Nivel 5 adopción IA Estratega de IA para el Negocio',
-      'Nivel 6 adopción IA Especialista Técnico en IA'
-    ];
-
-    // Grupo 1: Ruta IA (niveles 1-6)
-    const coursesInIARoute = seguimientoData.filter(s => 
-      s.ruta && iaRouteLevels.some(level => 
-        s.ruta.toLowerCase().includes(level.toLowerCase())
-      )
-    ).length;
-
-    // Grupo 3: Sin ruta (Not title o vacío)
-    const coursesWithoutRoute = seguimientoData.filter(s => 
-      !s.ruta || s.ruta.trim() === '' || s.ruta.toLowerCase() === 'not title'
-    ).length;
-
-    // Grupo 2: Otras rutas (lo que no es IA ni sin ruta)
-    const coursesOtherRoutes = seguimientoData.length - coursesInIARoute - coursesWithoutRoute;
-
+    // Gráfico 3: Distribución del consumo de cursos por tipo de ruta (detallado)
     const totalCourses = seguimientoData.length;
-
-    const courseDistributionByRouteType = [
-      { 
-        name: 'Ruta IA (niveles 1-6)', 
-        value: coursesInIARoute, 
-        percentage: totalCourses > 0 ? (coursesInIARoute / totalCourses) * 100 : 0,
-        color: 'hsl(262, 83%, 58%)' // Morado
-      },
-      { 
-        name: 'Otras rutas', 
-        value: coursesOtherRoutes, 
-        percentage: totalCourses > 0 ? (coursesOtherRoutes / totalCourses) * 100 : 0,
-        color: 'hsl(221, 83%, 53%)' // Azul
-      },
-      { 
-        name: 'Sin ruta', 
-        value: coursesWithoutRoute, 
-        percentage: totalCourses > 0 ? (coursesWithoutRoute / totalCourses) * 100 : 0,
-        color: 'hsl(35, 91%, 62%)' // Naranja
+    
+    // Agrupar cursos por ruta específica
+    const routeCounts = seguimientoData.reduce((acc, s) => {
+      // Agrupar solo los "Not title" y vacíos como "Sin ruta"
+      if (!s.ruta || s.ruta.trim() === '' || s.ruta.toLowerCase() === 'not title') {
+        acc['Sin ruta'] = (acc['Sin ruta'] || 0) + 1;
+      } else {
+        // Cada ruta específica tiene su propia categoría
+        acc[s.ruta] = (acc[s.ruta] || 0) + 1;
       }
-    ];
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Generar colores para cada ruta
+    const routeEntries = Object.entries(routeCounts);
+    const colors = generateColors(routeEntries.length);
+    
+    const courseDistributionByRouteType = routeEntries
+      .map(([routeName, count], index) => ({
+        name: routeName,
+        value: count,
+        percentage: totalCourses > 0 ? (count / totalCourses) * 100 : 0,
+        color: colors[index]
+      }))
+      .sort((a, b) => b.value - a.value); // Ordenar por cantidad descendente
 
     return { 
       levelDistribution, 
