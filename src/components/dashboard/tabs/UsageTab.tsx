@@ -25,6 +25,8 @@ interface UsageTabProps {
     companiesWithUsers: Array<{ name: string; nit: string; users: number }>;
     companiesIACourseConsumption: Array<{ name: string; nit: string; totalCourses: number; topRoute: string; topCourse: string; topCourseCount: number }>;
     companiesOutsideRouteConsumption: Array<{ name: string; nit: string; totalCourses: number; topCourse: string; topCourseCount: number }>;
+    chamberCourseConsumption: Array<{ chamber: string; totalCourses: number; topCourses: Array<{ curso: string; count: number; totalTime: number }> }>;
+    chamberRouteConsumption: Array<{ chamber: string; totalCourses: number; topRoutes: Array<{ ruta: string; count: number; totalTime: number }> }>;
     dateRange: {
       start: string;
       end: string;
@@ -779,6 +781,182 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Análisis por Cámara de Comercio */}
+      <div className="space-y-4">
+        <h3 className="text-xl font-bold">Análisis por Cámara de Comercio</h3>
+        <p className="text-sm text-muted-foreground">Consumo de cursos por empresas asociadas a cada cámara</p>
+        
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Consumo de Cursos por Cámara */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Consumo de Cursos por Cámara</CardTitle>
+              <CardDescription>Top cursos consumidos por empresas de cada cámara</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {data.chamberCourseConsumption && data.chamberCourseConsumption.length > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart
+                      data={data.chamberCourseConsumption}
+                      layout="vertical"
+                      margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis 
+                        type="category" 
+                        dataKey="chamber" 
+                        width={0}
+                        tick={false}
+                      />
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="bg-background border border-border rounded-lg p-3 shadow-lg max-w-md">
+                                <p className="font-bold text-sm mb-2">{data.chamber}</p>
+                                <p className="text-xs mb-2">
+                                  Total cursos: <span className="font-semibold">{data.totalCourses}</span>
+                                </p>
+                                {data.topCourses && data.topCourses.length > 0 && (
+                                  <>
+                                    <p className="text-xs font-semibold mb-1">Top cursos:</p>
+                                    <ul className="text-[10px] space-y-1">
+                                      {data.topCourses.slice(0, 3).map((course: any, idx: number) => (
+                                        <li key={idx} className="text-muted-foreground truncate">
+                                          {idx + 1}. {course.curso} ({course.count} veces)
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Bar dataKey="totalCourses" fill="hsl(262, 83%, 58%)" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                  
+                  <div className="mt-4 space-y-2">
+                    {data.chamberCourseConsumption.map((chamber, index) => (
+                      <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
+                        <div className="font-medium">{chamber.chamber}</div>
+                        <div className="text-muted-foreground">
+                          {chamber.totalCourses} cursos consumidos
+                        </div>
+                        {chamber.topCourses && chamber.topCourses.length > 0 && (
+                          <div className="text-[10px] text-muted-foreground space-y-0.5 mt-1">
+                            <div className="font-semibold">Top cursos:</div>
+                            {chamber.topCourses.slice(0, 3).map((course, idx) => (
+                              <div key={idx} className="truncate" title={course.curso}>
+                                {idx + 1}. {course.curso} ({course.count})
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-[400px] text-muted-foreground text-sm">
+                  No hay datos disponibles
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Consumo de Rutas por Cámara */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Consumo de Rutas por Cámara</CardTitle>
+              <CardDescription>Top rutas de IA consumidas por empresas de cada cámara</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {data.chamberRouteConsumption && data.chamberRouteConsumption.length > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <BarChart
+                      data={data.chamberRouteConsumption}
+                      layout="vertical"
+                      margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis 
+                        type="category" 
+                        dataKey="chamber" 
+                        width={0}
+                        tick={false}
+                      />
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="bg-background border border-border rounded-lg p-3 shadow-lg max-w-md">
+                                <p className="font-bold text-sm mb-2">{data.chamber}</p>
+                                <p className="text-xs mb-2">
+                                  Total cursos en rutas: <span className="font-semibold">{data.totalCourses}</span>
+                                </p>
+                                {data.topRoutes && data.topRoutes.length > 0 && (
+                                  <>
+                                    <p className="text-xs font-semibold mb-1">Top rutas:</p>
+                                    <ul className="text-[10px] space-y-1">
+                                      {data.topRoutes.slice(0, 3).map((route: any, idx: number) => (
+                                        <li key={idx} className="text-muted-foreground truncate">
+                                          {idx + 1}. {route.ruta.substring(0, 40)}... ({route.count})
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </>
+                                )}
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Bar dataKey="totalCourses" fill="hsl(221, 83%, 53%)" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                  
+                  <div className="mt-4 space-y-2">
+                    {data.chamberRouteConsumption.map((chamber, index) => (
+                      <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
+                        <div className="font-medium">{chamber.chamber}</div>
+                        <div className="text-muted-foreground">
+                          {chamber.totalCourses} cursos en rutas
+                        </div>
+                        {chamber.topRoutes && chamber.topRoutes.length > 0 && (
+                          <div className="text-[10px] text-muted-foreground space-y-0.5 mt-1">
+                            <div className="font-semibold">Top rutas:</div>
+                            {chamber.topRoutes.slice(0, 3).map((route, idx) => (
+                              <div key={idx} className="truncate" title={route.ruta}>
+                                {idx + 1}. {route.ruta.substring(0, 45)}... ({route.count})
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-[400px] text-muted-foreground text-sm">
+                  No hay datos disponibles
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
