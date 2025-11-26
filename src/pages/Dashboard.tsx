@@ -70,6 +70,7 @@ export default function Dashboard() {
           <UsageTab 
             data={usageData} 
             onDateRangeChange={setDateRange}
+            userRole={profile?.role}
           />
         </TabsContent>
 
