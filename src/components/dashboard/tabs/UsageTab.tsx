@@ -19,6 +19,9 @@ interface UsageTabProps {
     routeAdherenceData: Array<{ name: string; value: number; percentage: number }>;
     userScatterData: Array<{ name: string; progressInRoute: number; certifiedCourses: number }>;
     courseDistributionByRouteType: Array<{ name: string; value: number; percentage: number; color: string }>;
+    topIACourses: Array<{ name: string; count: number; route: string }>;
+    topOtherCourses: Array<{ name: string; count: number; route: string }>;
+    topNoRouteCourses: Array<{ name: string; count: number }>;
     dateRange: {
       start: string;
       end: string;
@@ -491,6 +494,194 @@ export function UsageTab({ data, onDateRangeChange }: UsageTabProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Top 5 Cursos por Categoría */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Top 5 Cursos de Rutas de IA */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Top 5 Cursos - Rutas de IA</CardTitle>
+            <CardDescription>Cursos más consumidos de niveles 1-6 de IA</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {data.topIACourses.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart 
+                  data={data.topIACourses} 
+                  layout="vertical"
+                  margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis 
+                    type="category" 
+                    dataKey="name" 
+                    width={0}
+                    tick={false}
+                  />
+                  <Tooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-background border border-border rounded-lg p-3 shadow-lg max-w-xs">
+                            <p className="font-semibold text-sm mb-1">{data.name}</p>
+                            <p className="text-xs text-muted-foreground mb-1">Ruta: {data.route}</p>
+                            <p className="text-xs">Consumos: {data.count}</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar dataKey="count" fill="hsl(262, 83%, 58%)" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
+                No hay datos disponibles
+              </div>
+            )}
+            <div className="mt-4 space-y-2">
+              {data.topIACourses.map((course, index) => (
+                <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
+                  <div className="font-medium truncate" title={course.name}>
+                    {index + 1}. {course.name}
+                  </div>
+                  <div className="text-muted-foreground truncate" title={course.route}>
+                    {course.route}
+                  </div>
+                  <div className="font-semibold text-primary">
+                    {course.count} consumos
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Top 5 Cursos de Otras Rutas */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Top 5 Cursos - Otras Rutas</CardTitle>
+            <CardDescription>Cursos más consumidos fuera de rutas de IA</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {data.topOtherCourses.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart 
+                  data={data.topOtherCourses} 
+                  layout="vertical"
+                  margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis 
+                    type="category" 
+                    dataKey="name" 
+                    width={0}
+                    tick={false}
+                  />
+                  <Tooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-background border border-border rounded-lg p-3 shadow-lg max-w-xs">
+                            <p className="font-semibold text-sm mb-1">{data.name}</p>
+                            <p className="text-xs text-muted-foreground mb-1">Ruta: {data.route}</p>
+                            <p className="text-xs">Consumos: {data.count}</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar dataKey="count" fill="hsl(221, 83%, 53%)" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
+                No hay datos disponibles
+              </div>
+            )}
+            <div className="mt-4 space-y-2">
+              {data.topOtherCourses.map((course, index) => (
+                <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
+                  <div className="font-medium truncate" title={course.name}>
+                    {index + 1}. {course.name}
+                  </div>
+                  <div className="text-muted-foreground truncate" title={course.route}>
+                    {course.route}
+                  </div>
+                  <div className="font-semibold text-primary">
+                    {course.count} consumos
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Top 5 Cursos Sin Ruta */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Top 5 Cursos - Sin Ruta</CardTitle>
+            <CardDescription>Cursos sueltos más consumidos</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {data.topNoRouteCourses.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart 
+                  data={data.topNoRouteCourses} 
+                  layout="vertical"
+                  margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" />
+                  <YAxis 
+                    type="category" 
+                    dataKey="name" 
+                    width={0}
+                    tick={false}
+                  />
+                  <Tooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-background border border-border rounded-lg p-3 shadow-lg max-w-xs">
+                            <p className="font-semibold text-sm mb-1">{data.name}</p>
+                            <p className="text-xs">Consumos: {data.count}</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar dataKey="count" fill="hsl(35, 91%, 62%)" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">
+                No hay datos disponibles
+              </div>
+            )}
+            <div className="mt-4 space-y-2">
+              {data.topNoRouteCourses.map((course, index) => (
+                <div key={index} className="text-xs space-y-1 p-2 rounded-md bg-accent/50">
+                  <div className="font-medium truncate" title={course.name}>
+                    {index + 1}. {course.name}
+                  </div>
+                  <div className="font-semibold text-primary">
+                    {course.count} consumos
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

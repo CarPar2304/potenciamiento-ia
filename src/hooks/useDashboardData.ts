@@ -339,6 +339,86 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       }))
       .sort((a, b) => b.value - a.value); // Ordenar por cantidad descendente
 
+    // Top 5 cursos por categoría
+    const iaRouteLevels = [
+      'Nivel 1 adopción IA Explorador de IA',
+      'Nivel 2 adopción IA Observador Crítico de IA',
+      'Nivel 3 adopción IA Usuario Competente Herramientas IA',
+      'Nivel 4 adopción IA Promotor de innovación usando IA',
+      'Nivel 5 adopción IA Estratega de IA para el Negocio',
+      'Nivel 6 adopción IA Especialista Técnico en IA'
+    ];
+
+    // 1. Top 5 cursos de rutas de IA
+    const iaRouteCourses = seguimientoData.filter(s => 
+      s.ruta && iaRouteLevels.some(level => 
+        s.ruta.toLowerCase().includes(level.toLowerCase())
+      )
+    );
+
+    const iaCourseCounts = iaRouteCourses.reduce((acc, s) => {
+      if (!s.curso) return acc;
+      if (!acc[s.curso]) {
+        acc[s.curso] = { count: 0, route: s.ruta || 'Sin especificar' };
+      }
+      acc[s.curso].count += 1;
+      return acc;
+    }, {} as Record<string, { count: number; route: string }>);
+
+    const topIACourses = Object.entries(iaCourseCounts)
+      .map(([course, data]) => ({
+        name: course,
+        count: data.count,
+        route: data.route
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    // 2. Top 5 cursos de otras rutas (no IA, no sin ruta)
+    const otherRouteCourses = seguimientoData.filter(s => 
+      s.ruta && 
+      s.ruta.trim() !== '' && 
+      s.ruta.toLowerCase() !== 'not title' &&
+      !iaRouteLevels.some(level => s.ruta.toLowerCase().includes(level.toLowerCase()))
+    );
+
+    const otherCourseCounts = otherRouteCourses.reduce((acc, s) => {
+      if (!s.curso) return acc;
+      if (!acc[s.curso]) {
+        acc[s.curso] = { count: 0, route: s.ruta || 'Sin especificar' };
+      }
+      acc[s.curso].count += 1;
+      return acc;
+    }, {} as Record<string, { count: number; route: string }>);
+
+    const topOtherCourses = Object.entries(otherCourseCounts)
+      .map(([course, data]) => ({
+        name: course,
+        count: data.count,
+        route: data.route
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    // 3. Top 5 cursos sin ruta
+    const noRouteCourses = seguimientoData.filter(s => 
+      !s.ruta || s.ruta.trim() === '' || s.ruta.toLowerCase() === 'not title'
+    );
+
+    const noRouteCourseCounts = noRouteCourses.reduce((acc, s) => {
+      if (!s.curso) return acc;
+      acc[s.curso] = (acc[s.curso] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const topNoRouteCourses = Object.entries(noRouteCourseCounts)
+      .map(([course, count]) => ({
+        name: course,
+        count: count
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
     return { 
       levelDistribution, 
       averageProgress: avgProgress, 
@@ -350,6 +430,9 @@ export function useDashboardData(filters?: any, dateRange?: { start: string; end
       routeAdherenceData,
       userScatterData,
       courseDistributionByRouteType,
+      topIACourses,
+      topOtherCourses,
+      topNoRouteCourses,
       dateRange: dateRange || { start: '', end: '' } 
     };
   }, [filteredData, dateRange]);
