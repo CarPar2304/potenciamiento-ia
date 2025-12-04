@@ -24,10 +24,16 @@ interface BulkUploadEmpresasDialogProps {
 }
 
 interface ExcelRow {
-  nombre?: string;
-  nit?: string;
-  camara_id?: string;
+  nombre?: string | number;
+  nit?: string | number;
+  camara_id?: string | number;
 }
+
+// Helper para convertir valores del Excel a string
+const toStringValue = (value: string | number | undefined | null): string => {
+  if (value === undefined || value === null) return '';
+  return String(value).trim();
+};
 
 interface AnalysisResult {
   total: number;
@@ -155,7 +161,7 @@ export function BulkUploadEmpresasDialog({ isOpen, onClose, onSuccess, camaras }
 
       // Obtener NITs existentes
       const excelNits = jsonData
-        .map(row => row.nit?.trim())
+        .map(row => toStringValue(row.nit))
         .filter(nit => nit);
 
       const { data: existingNits } = await supabase
@@ -190,13 +196,13 @@ export function BulkUploadEmpresasDialog({ isOpen, onClose, onSuccess, camaras }
       // Filtrar solo los que no existen
       const recordsToInsert = jsonData
         .filter(row => {
-          const nit = row.nit?.trim();
+          const nit = toStringValue(row.nit);
           return nit && !existingNitSet.has(nit);
         })
         .map(row => ({
-          nombre: row.nombre?.trim() || '',
-          nit: row.nit?.trim() || '',
-          camara_id: row.camara_id?.trim() || null,
+          nombre: toStringValue(row.nombre) || '',
+          nit: toStringValue(row.nit) || '',
+          camara_id: toStringValue(row.camara_id) || null,
           carga_masiva_id: cargaData.id, // Asociar con la carga
         }));
 
@@ -468,7 +474,7 @@ export function BulkUploadEmpresasDialog({ isOpen, onClose, onSuccess, camaras }
                               {row.camara_id ? (
                                 <div className="flex flex-col gap-1">
                                   <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
-                                    {row.camara_id.substring(0, 12)}...
+                                    {String(row.camara_id).substring(0, 12)}...
                                   </code>
                                   {camara && (
                                     <span className="text-xs text-muted-foreground">
