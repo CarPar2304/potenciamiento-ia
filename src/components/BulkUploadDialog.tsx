@@ -22,13 +22,40 @@ interface BulkUploadDialogProps {
 }
 
 interface ExcelRow {
-  fecha_solicitud?: string;
+  fecha_solicitud?: string | number;
   nombre_apellidos?: string;
   email?: string;
   estado?: string;
   nit_empresa?: string;
   es_colaborador?: string | boolean;
 }
+
+// Función para convertir número serial de Excel a fecha ISO
+const excelSerialToDate = (serial: number | string): string => {
+  if (typeof serial === 'string') {
+    // Si ya es una cadena de fecha válida, devolverla
+    const parsed = new Date(serial);
+    if (!isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+    // Si es un número como string, convertirlo
+    const num = parseFloat(serial);
+    if (!isNaN(num) && num > 10000) {
+      // Es un número serial de Excel
+      const utcDays = Math.floor(num - 25569);
+      const utcValue = utcDays * 86400 * 1000;
+      return new Date(utcValue).toISOString();
+    }
+    return new Date().toISOString();
+  }
+  if (typeof serial === 'number' && serial > 10000) {
+    // Número serial de Excel: días desde el 30 de diciembre de 1899
+    const utcDays = Math.floor(serial - 25569);
+    const utcValue = utcDays * 86400 * 1000;
+    return new Date(utcValue).toISOString();
+  }
+  return new Date().toISOString();
+};
 
 interface AnalysisResult {
   total: number;
@@ -161,7 +188,7 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
             nit_empresa: row.nit_empresa || '',
             es_colaborador: esColaborador,
             estado: row.estado as any || 'Pendiente',
-            fecha_solicitud: row.fecha_solicitud || new Date().toISOString(),
+            fecha_solicitud: row.fecha_solicitud ? excelSerialToDate(row.fecha_solicitud) : new Date().toISOString(),
             numero_documento: '', // Campo requerido pero no está en el Excel
             // Los demás campos quedarán NULL por defecto
           };
@@ -383,7 +410,11 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
                     <tbody className="divide-y divide-border">
                       {analysis.previewData.map((row, index) => (
                         <tr key={index} className="hover:bg-muted/30">
-                          <td className="px-3 py-2 whitespace-nowrap text-xs">{row.fecha_solicitud || '-'}</td>
+                          <td className="px-3 py-2 whitespace-nowrap text-xs">
+                            {row.fecha_solicitud 
+                              ? new Date(excelSerialToDate(row.fecha_solicitud)).toLocaleDateString('es-CO')
+                              : '-'}
+                          </td>
                           <td className="px-3 py-2 text-xs max-w-[150px] truncate">{row.nombre_apellidos || '-'}</td>
                           <td className="px-3 py-2 text-xs max-w-[180px] truncate">{row.email || '-'}</td>
                           <td className="px-3 py-2 whitespace-nowrap">
