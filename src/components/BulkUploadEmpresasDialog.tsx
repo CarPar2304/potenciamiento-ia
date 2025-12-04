@@ -62,11 +62,41 @@ export function BulkUploadEmpresasDialog({ isOpen, onClose, onSuccess, camaras }
       const workbook = XLSX.read(data, { type: 'array' });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
+      
+      // Obtener los headers del archivo
+      const rawData = XLSX.utils.sheet_to_json<unknown[]>(worksheet, { header: 1 });
+      const firstRow = rawData[0] as unknown[] || [];
+      const headers = firstRow.map(h => String(h || '').toLowerCase().trim());
+      
+      // Validar columnas requeridas
+      const requiredColumns = ['nombre', 'nit'];
+      const missingColumns = requiredColumns.filter(col => !headers.includes(col));
+      
+      if (missingColumns.length > 0) {
+        toast({
+          title: "Columnas faltantes",
+          description: `El archivo debe tener las columnas: ${missingColumns.join(', ')}. Columnas encontradas: ${headers.join(', ') || 'ninguna'}`,
+          variant: "destructive"
+        });
+        setAnalyzing(false);
+        return;
+      }
+
       const jsonData = XLSX.utils.sheet_to_json<ExcelRow>(worksheet);
+      
+      if (jsonData.length === 0) {
+        toast({
+          title: "Archivo vacío",
+          description: "El archivo no contiene datos para cargar",
+          variant: "destructive"
+        });
+        setAnalyzing(false);
+        return;
+      }
 
       // Extraer todos los NITs del Excel
       const excelNits = jsonData
-        .map(row => row.nit?.trim())
+        .map(row => String(row.nit || '').trim())
         .filter(nit => nit);
 
       // Verificar duplicados en la base de datos
@@ -104,7 +134,7 @@ export function BulkUploadEmpresasDialog({ isOpen, onClose, onSuccess, camaras }
       console.error('Error analyzing file:', error);
       toast({
         title: "Error al analizar archivo",
-        description: "Verifica que el archivo tenga el formato correcto",
+        description: "Verifica que el archivo sea un Excel válido (.xlsx o .xls)",
         variant: "destructive"
       });
     } finally {
