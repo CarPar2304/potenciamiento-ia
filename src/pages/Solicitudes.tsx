@@ -46,6 +46,7 @@ import {
   Edit,
   CalendarIcon,
   Upload,
+  History,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
@@ -61,6 +62,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { ExportModal } from '@/components/export/ExportModal';
 import { BulkUploadDialog } from '@/components/BulkUploadDialog';
+import { UploadHistoryDialog } from '@/components/UploadHistoryDialog';
 
 const StatCard = ({ title, value, description, icon: Icon, variant }: {
   title: string;
@@ -849,6 +851,7 @@ export default function Solicitudes() {
   const [editingSolicitud, setEditingSolicitud] = useState(null);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [showUploadHistory, setShowUploadHistory] = useState(false);
 
   if (!profile) return null;
 
@@ -1133,6 +1136,17 @@ export default function Solicitudes() {
               Carga masiva
             </Button>
           )}
+          {canExecuteActions && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowUploadHistory(true)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <History className="h-4 w-4 mr-2" />
+              Historial
+            </Button>
+          )}
           <Button 
             variant="outline" 
             size="sm"
@@ -1335,6 +1349,14 @@ export default function Solicitudes() {
         isOpen={showBulkUpload}
         onClose={() => setShowBulkUpload(false)}
         onSuccess={refetch}
+      />
+
+      {/* Upload History Dialog */}
+      <UploadHistoryDialog
+        isOpen={showUploadHistory}
+        onClose={() => setShowUploadHistory(false)}
+        tipo="solicitudes"
+        onDeleted={refetch}
       />
     </div>
   );

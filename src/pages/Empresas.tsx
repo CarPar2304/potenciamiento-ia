@@ -45,6 +45,7 @@ import {
   Trash2,
   CalendarIcon,
   Upload,
+  History,
 } from 'lucide-react';
 import { useEmpresas, useCamaras, useSolicitudes, usePlatziGeneral } from '@/hooks/useSupabaseData';
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
@@ -53,6 +54,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ExportModal } from '@/components/export/ExportModal';
 import { BulkUploadEmpresasDialog } from '@/components/BulkUploadEmpresasDialog';
+import { UploadHistoryDialog } from '@/components/UploadHistoryDialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -1224,6 +1226,7 @@ export default function Empresas() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
+  const [showUploadHistory, setShowUploadHistory] = useState(false);
 
   if (!profile) return null;
 
@@ -1414,6 +1417,14 @@ export default function Empresas() {
               >
                 <Upload className="h-4 w-4" />
                 Carga masiva
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => setShowUploadHistory(true)}
+                className="gap-2 text-muted-foreground hover:text-foreground"
+              >
+                <History className="h-4 w-4" />
+                Historial
               </Button>
               <Button 
                 className="gap-2 bg-gradient-primary text-primary-foreground hover:opacity-90"
@@ -1646,6 +1657,14 @@ export default function Empresas() {
         onClose={() => setShowBulkUpload(false)}
         onSuccess={refetch}
         camaras={camaras}
+      />
+
+      {/* Upload History Dialog */}
+      <UploadHistoryDialog
+        isOpen={showUploadHistory}
+        onClose={() => setShowUploadHistory(false)}
+        tipo="empresas"
+        onDeleted={refetch}
       />
     </div>
   );

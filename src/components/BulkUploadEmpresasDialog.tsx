@@ -137,6 +137,26 @@ export function BulkUploadEmpresasDialog({ isOpen, onClose, onSuccess, camaras }
         existingNits?.map(e => e.nit) || []
       );
 
+      // Obtener usuario actual
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
+
+      // Crear registro de carga masiva
+      const { data: cargaData, error: cargaError } = await supabase
+        .from('cargas_masivas')
+        .insert({
+          tipo: 'empresas',
+          nombre_archivo: file.name,
+          registros_totales: analysis.total,
+          registros_insertados: analysis.toInsert,
+          registros_duplicados: analysis.duplicates,
+          usuario_id: user.id
+        })
+        .select('id')
+        .single();
+
+      if (cargaError) throw cargaError;
+
       // Filtrar solo los que no existen
       const recordsToInsert = jsonData
         .filter(row => {
@@ -147,10 +167,12 @@ export function BulkUploadEmpresasDialog({ isOpen, onClose, onSuccess, camaras }
           nombre: row.nombre?.trim() || '',
           nit: row.nit?.trim() || '',
           camara_id: row.camara_id?.trim() || null,
-          // Los demás campos quedarán NULL por defecto
+          carga_masiva_id: cargaData.id, // Asociar con la carga
         }));
 
       if (recordsToInsert.length === 0) {
+        // Eliminar el registro de carga si no hay registros
+        await supabase.from('cargas_masivas').delete().eq('id', cargaData.id);
         toast({
           title: "Sin registros para cargar",
           description: "Todos los NITs ya existen en la base de datos",
