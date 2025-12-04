@@ -41,6 +41,39 @@ export type Database = {
         }
         Relationships: []
       }
+      cargas_masivas: {
+        Row: {
+          created_at: string
+          id: string
+          nombre_archivo: string
+          registros_duplicados: number
+          registros_insertados: number
+          registros_totales: number
+          tipo: string
+          usuario_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nombre_archivo: string
+          registros_duplicados?: number
+          registros_insertados?: number
+          registros_totales?: number
+          tipo: string
+          usuario_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nombre_archivo?: string
+          registros_duplicados?: number
+          registros_insertados?: number
+          registros_totales?: number
+          tipo?: string
+          usuario_id?: string
+        }
+        Relationships: []
+      }
       crm_actividades: {
         Row: {
           camara_id: string
@@ -114,6 +147,7 @@ export type Database = {
           areas_implementacion_ia: string | null
           asigno_recursos_ia: Database["public"]["Enums"]["si_no_enum"] | null
           camara_id: string | null
+          carga_masiva_id: string | null
           colaboradores_capacitados_ia: number | null
           created_at: string
           decision_adoptar_ia: Database["public"]["Enums"]["si_no_enum"] | null
@@ -142,6 +176,7 @@ export type Database = {
           areas_implementacion_ia?: string | null
           asigno_recursos_ia?: Database["public"]["Enums"]["si_no_enum"] | null
           camara_id?: string | null
+          carga_masiva_id?: string | null
           colaboradores_capacitados_ia?: number | null
           created_at?: string
           decision_adoptar_ia?: Database["public"]["Enums"]["si_no_enum"] | null
@@ -172,6 +207,7 @@ export type Database = {
           areas_implementacion_ia?: string | null
           asigno_recursos_ia?: Database["public"]["Enums"]["si_no_enum"] | null
           camara_id?: string | null
+          carga_masiva_id?: string | null
           colaboradores_capacitados_ia?: number | null
           created_at?: string
           decision_adoptar_ia?: Database["public"]["Enums"]["si_no_enum"] | null
@@ -204,6 +240,13 @@ export type Database = {
             columns: ["camara_id"]
             isOneToOne: false
             referencedRelation: "camaras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "empresas_carga_masiva_id_fkey"
+            columns: ["carga_masiva_id"]
+            isOneToOne: false
+            referencedRelation: "cargas_masivas"
             referencedColumns: ["id"]
           },
         ]
@@ -418,6 +461,7 @@ export type Database = {
       solicitudes: {
         Row: {
           camara_colaborador_id: string | null
+          carga_masiva_id: string | null
           cargo: string | null
           celular: string | null
           created_at: string
@@ -441,6 +485,7 @@ export type Database = {
         }
         Insert: {
           camara_colaborador_id?: string | null
+          carga_masiva_id?: string | null
           cargo?: string | null
           celular?: string | null
           created_at?: string
@@ -464,6 +509,7 @@ export type Database = {
         }
         Update: {
           camara_colaborador_id?: string | null
+          carga_masiva_id?: string | null
           cargo?: string | null
           celular?: string | null
           created_at?: string
@@ -491,6 +537,13 @@ export type Database = {
             columns: ["camara_colaborador_id"]
             isOneToOne: false
             referencedRelation: "camaras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitudes_carga_masiva_id_fkey"
+            columns: ["carga_masiva_id"]
+            isOneToOne: false
+            referencedRelation: "cargas_masivas"
             referencedColumns: ["id"]
           },
         ]

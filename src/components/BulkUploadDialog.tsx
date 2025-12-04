@@ -164,6 +164,26 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
         existingEmails?.map(e => e.email.toLowerCase()) || []
       );
 
+      // Obtener usuario actual
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
+
+      // Crear registro de carga masiva
+      const { data: cargaData, error: cargaError } = await supabase
+        .from('cargas_masivas')
+        .insert({
+          tipo: 'solicitudes',
+          nombre_archivo: file.name,
+          registros_totales: analysis.total,
+          registros_insertados: analysis.toInsert,
+          registros_duplicados: analysis.duplicates,
+          usuario_id: user.id
+        })
+        .select('id')
+        .single();
+
+      if (cargaError) throw cargaError;
+
       // Filtrar solo los que no existen
       const recordsToInsert = jsonData
         .filter(row => {
@@ -190,11 +210,13 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
             estado: row.estado as any || 'Pendiente',
             fecha_solicitud: row.fecha_solicitud ? excelSerialToDate(row.fecha_solicitud) : new Date().toISOString(),
             numero_documento: '', // Campo requerido pero no está en el Excel
-            // Los demás campos quedarán NULL por defecto
+            carga_masiva_id: cargaData.id, // Asociar con la carga
           };
         });
 
       if (recordsToInsert.length === 0) {
+        // Eliminar el registro de carga si no hay registros
+        await supabase.from('cargas_masivas').delete().eq('id', cargaData.id);
         toast({
           title: "Sin registros para cargar",
           description: "Todos los emails ya existen en la base de datos",
