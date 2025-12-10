@@ -100,10 +100,18 @@ const StatCard = ({ title, value, description, icon: Icon, variant }: {
   );
 };
 
-const ColaboradorCard = ({ colaborador, onViewDetails, platziData, onSendReminder, sendingReminder, isSent, canExecuteActions, onEditColaborador, isAdmin }: {
+// Helper para identificar si una ruta es de IA
+const isRutaIA = (ruta: string | null | undefined): boolean => {
+  if (!ruta) return false;
+  const rutaLower = ruta.toLowerCase();
+  return rutaLower.includes('nivel') || rutaLower.includes('adopción') || rutaLower.includes('adopcion') || rutaLower.includes('ia') || rutaLower.includes('inteligencia artificial');
+};
+
+const ColaboradorCard = ({ colaborador, onViewDetails, platziData, seguimientoData, onSendReminder, sendingReminder, isSent, canExecuteActions, onEditColaborador, isAdmin }: {
   colaborador: any;
   onViewDetails: () => void;
   platziData: any[];
+  seguimientoData: any[];
   onSendReminder: (colaborador: any) => void;
   sendingReminder: boolean;
   isSent: boolean;
@@ -135,6 +143,11 @@ const ColaboradorCard = ({ colaborador, onViewDetails, platziData, onSendReminde
   const statusConfig = getStatusConfig(colaborador.estado);
   const userPlatziData = platziData.find(p => p.email === colaborador.email);
   const hasConsumedLicense = !!userPlatziData;
+  
+  // Calcular cursos complementarios desde seguimientoData
+  const userSeguimiento = seguimientoData.filter(s => s.email === colaborador.email);
+  const cursosCertificados = userSeguimiento.filter(c => c.estado_curso === 'Certificado');
+  const cursosComplementarios = cursosCertificados.filter(c => !isRutaIA(c.ruta));
 
   return (
     <Card className="hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-gradient-to-br from-background to-background/50 backdrop-blur-sm border-l-4 border-l-primary/30">
@@ -248,7 +261,7 @@ const ColaboradorCard = ({ colaborador, onViewDetails, platziData, onSendReminde
             <div className="space-y-3">
               <div className="flex justify-between items-center text-sm text-muted-foreground">
                 <span>Progreso: {Math.round((userPlatziData.progreso_ruta || 0) * 100)}%</span>
-                <span>Cursos certificados: {userPlatziData.cursos_totales_certificados || 0}</span>
+                <span>Cursos certificados: {cursosCertificados.length}</span>
               </div>
               <div className="w-full bg-muted rounded-full h-2">
                 <div 
@@ -256,6 +269,11 @@ const ColaboradorCard = ({ colaborador, onViewDetails, platziData, onSendReminde
                   style={{ width: `${(userPlatziData.progreso_ruta || 0) * 100}%` }}
                 />
               </div>
+              {cursosComplementarios.length > 0 && (
+                <div className="text-xs text-muted-foreground pt-1 border-t border-muted">
+                  Cursos certificados de rutas complementarias: <span className="font-semibold text-foreground">{cursosComplementarios.length}</span>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -661,6 +679,7 @@ export default function Colaboradores() {
                 colaborador={colaborador}
                 onViewDetails={() => setSelectedColaborador(colaborador)}
                 platziData={platziData}
+                seguimientoData={seguimientoData}
                 onSendReminder={handleSendReminder}
                 sendingReminder={sendingReminderId === colaborador.id}
                 isSent={sentReminders.has(colaborador.id)}
@@ -758,6 +777,19 @@ export default function Colaboradores() {
                   const userPlatziData = platziData.find(p => p.email === selectedColaborador.email);
                   const userSeguimiento = seguimientoData.filter(s => s.email === selectedColaborador.email);
                   
+                  // Calcular conteos reales desde platzi_seguimiento
+                  const cursosCertificados = userSeguimiento.filter(c => c.estado_curso === 'Certificado');
+                  const cursosEnProgreso = userSeguimiento.filter(c => c.estado_curso === 'En progreso');
+                  const cursosRutaIA = cursosCertificados.filter(c => isRutaIA(c.ruta));
+                  const cursosComplementarios = cursosCertificados.filter(c => !isRutaIA(c.ruta));
+                  
+                  // Ordenar cursos: en progreso primero, luego certificados
+                  const cursosOrdenados = [...userSeguimiento].sort((a, b) => {
+                    if (a.estado_curso === 'En progreso' && b.estado_curso !== 'En progreso') return -1;
+                    if (a.estado_curso !== 'En progreso' && b.estado_curso === 'En progreso') return 1;
+                    return 0;
+                  });
+                  
                   if (!userPlatziData) {
                     return selectedColaborador.estado === 'Aprobada' ? (
                       <Card>
@@ -807,14 +839,18 @@ export default function Colaboradores() {
                             </div>
                           </div>
 
-                          <div className="grid gap-4 md:grid-cols-3 pt-4 border-t">
+                          <div className="grid gap-4 md:grid-cols-4 pt-4 border-t">
                             <div className="text-center">
-                              <div className="text-2xl font-bold text-primary">{userPlatziData.cursos_totales_certificados || 0}</div>
+                              <div className="text-2xl font-bold text-green-600">{cursosCertificados.length}</div>
                               <div className="text-sm text-muted-foreground">Cursos certificados</div>
                             </div>
                             <div className="text-center">
-                              <div className="text-2xl font-bold text-primary">{userPlatziData.cursos_totales_progreso || 0}</div>
+                              <div className="text-2xl font-bold text-amber-600">{cursosEnProgreso.length}</div>
                               <div className="text-sm text-muted-foreground">Cursos en progreso</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-primary">{cursosComplementarios.length}</div>
+                              <div className="text-sm text-muted-foreground">Rutas complementarias</div>
                             </div>
                             <div className="text-center">
                               <div className="text-2xl font-bold text-primary">
@@ -826,30 +862,43 @@ export default function Colaboradores() {
                         </CardContent>
                       </Card>
 
-                      {userSeguimiento.length > 0 && (
+                      {cursosOrdenados.length > 0 && (
                         <Card>
                           <CardHeader>
                             <CardTitle className="text-lg">Detalle de Cursos</CardTitle>
                             <CardDescription>
-                              Progreso detallado por curso ({userSeguimiento.length} cursos)
+                              Progreso detallado por curso ({cursosOrdenados.length} cursos: {cursosCertificados.length} certificados, {cursosEnProgreso.length} en progreso)
                             </CardDescription>
                           </CardHeader>
                           <CardContent>
                             <div className="space-y-3">
-                              {userSeguimiento.map((curso, index) => (
-                                <div key={index} className="border rounded-lg p-3 bg-background/50">
+                              {cursosOrdenados.map((curso, index) => (
+                                <div key={index} className={`border rounded-lg p-3 ${curso.estado_curso === 'En progreso' ? 'bg-amber-50/50 border-amber-200' : 'bg-background/50'}`}>
                                   <div className="flex items-start justify-between mb-2">
                                     <div className="flex-1">
                                       <h4 className="font-medium text-sm line-clamp-2">{curso.curso || "Curso sin nombre"}</h4>
-                                      <p className="text-xs text-muted-foreground">
-                                        <span className="font-medium">Ruta:</span> {curso.ruta || "Sin ruta"}
-                                      </p>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <p className="text-xs text-muted-foreground">
+                                          <span className="font-medium">Ruta:</span> {curso.ruta || "Sin ruta"}
+                                        </p>
+                                        {!isRutaIA(curso.ruta) && (
+                                          <Badge variant="outline" className="text-xs text-purple-600 border-purple-200 bg-purple-50">
+                                            Complementaria
+                                          </Badge>
+                                        )}
+                                      </div>
                                     </div>
-                                    <div className="flex items-center gap-2 ml-2">
+                                    <div className="flex items-center gap-2 ml-2 flex-wrap justify-end">
                                       {curso.estado_curso === 'Certificado' && (
                                         <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
                                           <Award className="h-3 w-3 mr-1" />
                                           Certificado
+                                        </Badge>
+                                      )}
+                                      {curso.estado_curso === 'En progreso' && (
+                                        <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">
+                                          <Clock className="h-3 w-3 mr-1" />
+                                          En progreso
                                         </Badge>
                                       )}
                                       {curso.fecha_certificacion && (
@@ -867,7 +916,7 @@ export default function Colaboradores() {
                                       </div>
                                       <div className="flex-1 bg-muted rounded-full h-2">
                                         <div 
-                                          className="bg-primary h-2 rounded-full transition-all"
+                                          className={`h-2 rounded-full transition-all ${curso.estado_curso === 'En progreso' ? 'bg-amber-500' : 'bg-primary'}`}
                                           style={{ width: `${(curso.porcentaje_avance || 0) * 100}%` }}
                                         />
                                       </div>
