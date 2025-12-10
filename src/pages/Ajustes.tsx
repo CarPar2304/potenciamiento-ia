@@ -77,7 +77,7 @@ export default function Ajustes() {
   const [selectedReport, setSelectedReport] = useState<'sheet1' | 'sheet2' | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
-  const [isPromotingAdmin, setIsPromotingAdmin] = useState(false);
+  
   const [pendingData, setPendingData] = useState<any[] | null>(null);
   const [uploadResults, setUploadResults] = useState<{
     success: number;
@@ -388,38 +388,7 @@ export default function Ajustes() {
     }
   };
 
-  const handlePromoteToAdmin = async () => {
-    if (!profile?.id) return;
-    
-    setIsPromotingAdmin(true);
-    try {
-      const { error } = await supabase.rpc('set_user_admin', {
-        user_id: profile.id,
-        admin_status: true
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "¡Permisos actualizados!",
-        description: "Ahora tienes permisos de administrador. Recarga la página para ver los cambios.",
-      });
-
-      // Recargar la página para actualizar los permisos
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "No se pudieron actualizar los permisos",
-        variant: "destructive"
-      });
-    } finally {
-      setIsPromotingAdmin(false);
-    }
-  };
+  // Admin promotion removed - only existing admins can grant admin privileges via set_user_admin RPC
 
   const processSheet1Data = async (data: any[]) => {
     const processed = [];
@@ -889,36 +858,27 @@ export default function Ajustes() {
 
       {/* Integration Cards */}
       <div className="space-y-6">
-        {/* Admin Configuration - Solo para usuarios de CCC que no son admin */}
+        {/* Admin Configuration information - informational only */}
         {isFromCCC && !profile.is_admin && (
           <SettingCard
-            title="Configuración de Administrador"
-            description="Como usuario de la Cámara de Comercio de Cali, puedes solicitar permisos de administrador"
+            title="Permisos de Administrador"
+            description="Información sobre los permisos de administrador del sistema"
             icon={Shield}
             variant="info"
           >
-            <div className="space-y-4">
-              <div className="bg-blue-50 dark:bg-blue-950/50 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="flex items-start space-x-3">
-                  <Info className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                      Permisos de Administrador
-                    </p>
-                    <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                      Los administradores pueden acceder a todas las funciones del sistema, gestionar usuarios, subir reportes y configurar integraciones.
-                    </p>
-                  </div>
+            <div className="bg-blue-50 dark:bg-blue-950/50 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+              <div className="flex items-start space-x-3">
+                <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    ¿Necesitas permisos de administrador?
+                  </p>
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                    Los permisos de administrador solo pueden ser otorgados por un administrador existente. 
+                    Si necesitas estos permisos, contacta al administrador del sistema.
+                  </p>
                 </div>
               </div>
-              
-              <Button 
-                onClick={handlePromoteToAdmin}
-                disabled={isPromotingAdmin}
-                className="w-full"
-              >
-                {isPromotingAdmin ? 'Configurando...' : 'Activar Permisos de Administrador'}
-              </Button>
             </div>
           </SettingCard>
         )}

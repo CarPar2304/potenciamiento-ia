@@ -35,18 +35,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
 
-  const getUserRole = async (camaraId?: string, isAdmin?: boolean): Promise<UserRole> => {
-    if (isAdmin) return 'admin';
-    if (!camaraId) return 'ccc';
-    
+  const getUserRole = async (userId: string, camaraId?: string): Promise<UserRole> => {
     try {
+      // First check if user has admin role in user_roles table (secure server-side check)
+      const { data: roleData } = await supabase.rpc('get_user_role');
+      
+      if (roleData === 'admin') return 'admin';
+      if (roleData === 'ccc') return 'ccc';
+      if (roleData === 'camara_aliada') return 'camara_aliada';
+      
+      // Fallback: determine role based on chamber if RPC doesn't return expected value
+      if (!camaraId) return 'ccc';
+      
       const { data: camara } = await supabase
         .from('camaras')
         .select('nit')
         .eq('id', camaraId)
         .single();
 
-      // CCC (Cali) tiene permisos de CCC
       if (camara?.nit === '890399001') {
         return 'ccc';
       }
@@ -77,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
 
       if (profileData) {
-        const role = await getUserRole(profileData.camara_id, profileData.is_admin);
+        const role = await getUserRole(userId, profileData.camara_id);
         const userProfile: UserProfile = {
           id: profileData.id,
           nombre: profileData.nombre,
