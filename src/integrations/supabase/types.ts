@@ -548,6 +548,30 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       webhook_config: {
         Row: {
           created_at: string
@@ -586,6 +610,13 @@ export type Database = {
       get_chamber_by_email: { Args: { user_email: string }; Returns: string }
       get_user_role: { Args: never; Returns: string }
       has_approved_request: { Args: { user_email: string }; Returns: boolean }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       match_documents: {
         Args: { filter?: Json; match_count?: number; query_embedding: string }
         Returns: {
@@ -602,6 +633,7 @@ export type Database = {
       sync_platzi_with_solicitudes: { Args: never; Returns: undefined }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       estado_solicitud_enum: "Pendiente" | "Aprobada" | "Rechazada"
       genero_enum: "Hombre" | "Mujer" | "No Binario" | "Prefiero no especificar"
       mercado_enum:
@@ -741,6 +773,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       estado_solicitud_enum: ["Pendiente", "Aprobada", "Rechazada"],
       genero_enum: ["Hombre", "Mujer", "No Binario", "Prefiero no especificar"],
       mercado_enum: [
