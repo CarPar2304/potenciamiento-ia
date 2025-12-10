@@ -144,9 +144,10 @@ const ColaboradorCard = ({ colaborador, onViewDetails, platziData, seguimientoDa
   const userPlatziData = platziData.find(p => p.email === colaborador.email);
   const hasConsumedLicense = !!userPlatziData;
   
-  // Calcular cursos complementarios desde seguimientoData
+  // Calcular cursos de la ruta y complementarios desde seguimientoData
   const userSeguimiento = seguimientoData.filter(s => s.email === colaborador.email);
   const cursosCertificados = userSeguimiento.filter(c => c.estado_curso === 'Certificado');
+  const cursosRutaIA = cursosCertificados.filter(c => isRutaIA(c.ruta));
   const cursosComplementarios = cursosCertificados.filter(c => !isRutaIA(c.ruta));
 
   return (
@@ -261,7 +262,7 @@ const ColaboradorCard = ({ colaborador, onViewDetails, platziData, seguimientoDa
             <div className="space-y-3">
               <div className="flex justify-between items-center text-sm text-muted-foreground">
                 <span>Progreso: {Math.round((userPlatziData.progreso_ruta || 0) * 100)}%</span>
-                <span>Cursos certificados: {cursosCertificados.length}</span>
+                <span>Cursos de la ruta: {cursosRutaIA.length}</span>
               </div>
               <div className="w-full bg-muted rounded-full h-2">
                 <div 
@@ -271,7 +272,7 @@ const ColaboradorCard = ({ colaborador, onViewDetails, platziData, seguimientoDa
               </div>
               {cursosComplementarios.length > 0 && (
                 <div className="text-xs text-muted-foreground pt-1 border-t border-muted">
-                  Cursos certificados de rutas complementarias: <span className="font-semibold text-foreground">{cursosComplementarios.length}</span>
+                  Cursos complementarios certificados: <span className="font-semibold text-purple-600">{cursosComplementarios.length}</span>
                 </div>
               )}
             </div>
@@ -839,18 +840,22 @@ export default function Colaboradores() {
                             </div>
                           </div>
 
-                          <div className="grid gap-4 md:grid-cols-4 pt-4 border-t">
+                          <div className="grid gap-4 md:grid-cols-5 pt-4 border-t">
                             <div className="text-center">
-                              <div className="text-2xl font-bold text-green-600">{cursosCertificados.length}</div>
-                              <div className="text-sm text-muted-foreground">Cursos certificados</div>
+                              <div className="text-2xl font-bold text-green-600">{cursosRutaIA.length}</div>
+                              <div className="text-sm text-muted-foreground">Cursos de la ruta</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-purple-600">{cursosComplementarios.length}</div>
+                              <div className="text-sm text-muted-foreground">Cursos complementarios</div>
                             </div>
                             <div className="text-center">
                               <div className="text-2xl font-bold text-amber-600">{cursosEnProgreso.length}</div>
                               <div className="text-sm text-muted-foreground">Cursos en progreso</div>
                             </div>
                             <div className="text-center">
-                              <div className="text-2xl font-bold text-primary">{cursosComplementarios.length}</div>
-                              <div className="text-sm text-muted-foreground">Rutas complementarias</div>
+                              <div className="text-2xl font-bold text-muted-foreground">{cursosCertificados.length}</div>
+                              <div className="text-sm text-muted-foreground">Total certificados</div>
                             </div>
                             <div className="text-center">
                               <div className="text-2xl font-bold text-primary">
