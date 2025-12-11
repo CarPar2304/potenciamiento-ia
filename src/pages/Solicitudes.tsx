@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { StatCard, VirtualizedSolicitudList } from '@/components/solicitudes';
+import { SolicitudCard, StatCard } from '@/components/solicitudes';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -637,7 +637,7 @@ export default function Solicitudes() {
   const canViewGlobal = hasPermission(profile.role, 'view_all');
   const canExecuteActions = hasPermission(profile.role, 'admin_actions');
 
-  const handleSendReminder = useCallback(async (solicitud: any) => {
+  const handleSendReminder = async (solicitud: any) => {
     if (!solicitud.celular) {
       toast({
         title: "Error",
@@ -663,7 +663,6 @@ export default function Solicitudes() {
           description: "No se encontró configuración de webhook activa para recordatorios.",
           variant: "destructive"
         });
-        setSendingReminderId(null);
         return;
       }
 
@@ -704,9 +703,9 @@ export default function Solicitudes() {
     } finally {
       setSendingReminderId(null);
     }
-  }, [toast]);
+  };
 
-  const handleApproveRequest = useCallback(async (solicitud: any) => {
+  const handleApproveRequest = async (solicitud: any) => {
     if (!solicitud.celular) {
       toast({
         title: "Error",
@@ -732,7 +731,6 @@ export default function Solicitudes() {
           description: "No se encontró configuración de webhook activa para aprobación.",
           variant: "destructive"
         });
-        setApprovingRequestId(null);
         return;
       }
 
@@ -772,7 +770,7 @@ export default function Solicitudes() {
     } finally {
       setApprovingRequestId(null);
     }
-  }, [toast]);
+  };
 
   // Filter applications based on user permissions
   const baseApplications = useMemo(() => 
@@ -841,7 +839,7 @@ export default function Solicitudes() {
     setShowEditDialog(true);
   }, []);
 
-  const handleLookupChamber = useCallback(async (solicitud: any) => {
+  const handleLookupChamber = async (solicitud: any) => {
     setLookingUpChamberId(solicitud.id);
     
     try {
@@ -862,7 +860,6 @@ export default function Solicitudes() {
           description: `El NIT ${solicitud.nit_empresa} no fue encontrado en el RUES.`,
           variant: "destructive"
         });
-        setLookingUpChamberId(null);
         return;
       }
       
@@ -877,7 +874,6 @@ export default function Solicitudes() {
           description: `La cámara "${camaraAPI}" no está en la lista de cámaras aliadas.`,
           variant: "destructive"
         });
-        setLookingUpChamberId(null);
         return;
       }
       
@@ -911,7 +907,7 @@ export default function Solicitudes() {
     } finally {
       setLookingUpChamberId(null);
     }
-  }, [camaras, toast, refetch]);
+  };
 
   const handleSaveEdit = async (updatedSolicitud: any) => {
     try {
@@ -1167,21 +1163,27 @@ export default function Solicitudes() {
             </CardContent>
           </Card>
         ) : (
-          <VirtualizedSolicitudList
-            solicitudes={filteredApplications}
-            canViewGlobal={canViewGlobal}
-            canExecuteActions={canExecuteActions}
-            platziData={platziData}
-            sendingReminderId={sendingReminderId}
-            approvingRequestId={approvingRequestId}
-            sentReminders={sentReminders}
-            lookingUpChamberId={lookingUpChamberId}
-            onViewDetails={handleViewDetails}
-            onSendReminder={handleSendReminder}
-            onApproveRequest={handleApproveRequest}
-            onEditRequest={handleEditRequest}
-            onLookupChamber={handleLookupChamber}
-          />
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+            {filteredApplications.slice(0, 50).map((solicitud) => (
+              <SolicitudCard
+                key={solicitud.id}
+                solicitud={solicitud}
+                canViewGlobal={canViewGlobal}
+                canExecuteActions={canExecuteActions}
+                onViewDetails={() => handleViewDetails(solicitud)}
+                onSendReminder={handleSendReminder}
+                onApproveRequest={handleApproveRequest}
+                onEditRequest={handleEditRequest}
+                onLookupChamber={handleLookupChamber}
+                isAdmin={canExecuteActions}
+                platziData={platziData}
+                sendingReminder={sendingReminderId === solicitud.id}
+                approvingRequest={approvingRequestId === solicitud.id}
+                isSent={sentReminders.has(solicitud.id)}
+                lookingUpChamber={lookingUpChamberId === solicitud.id}
+              />
+            ))}
+          </div>
         )}
       </div>
 

@@ -1,4 +1,4 @@
-import { memo, useMemo, useCallback } from 'react';
+import { memo, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,13 +23,7 @@ interface SolicitudCardProps {
   solicitud: any;
   canViewGlobal: boolean;
   onViewDetails: () => void;
-  hasConsumedLicense: boolean;
-  personPlatziData?: {
-    progreso_ruta?: number;
-    cursos_totales_certificados?: number;
-    cursos_totales_progreso?: number;
-    ruta?: string;
-  } | null;
+  platziData: any[];
   onSendReminder: (solicitud: any) => void;
   onApproveRequest: (solicitud: any) => void;
   sendingReminder: boolean;
@@ -62,9 +56,9 @@ const statusConfig: Record<string, { color: string; bg: string; border: string }
 
 export const SolicitudCard = memo(function SolicitudCard({
   solicitud,
+  canViewGlobal,
   onViewDetails,
-  hasConsumedLicense,
-  personPlatziData,
+  platziData,
   onSendReminder,
   onApproveRequest,
   sendingReminder,
@@ -76,10 +70,18 @@ export const SolicitudCard = memo(function SolicitudCard({
   onLookupChamber,
   lookingUpChamber
 }: SolicitudCardProps) {
-  const statusStyle = statusConfig[solicitud.estado] || statusConfig['Pendiente'];
+  const statusStyle = useMemo(() => 
+    statusConfig[solicitud.estado] || statusConfig['Pendiente'],
+    [solicitud.estado]
+  );
 
   const isApprovedStatus = solicitud.estado === 'Aprobada';
   const isRejectedStatus = solicitud.estado === 'Rechazada';
+  
+  const personPlatziData = useMemo(() => 
+    platziData.find(p => p.email.toLowerCase() === solicitud.email.toLowerCase()),
+    [platziData, solicitud.email]
+  );
   
   const hasCompletedTest = personPlatziData?.ruta && personPlatziData.ruta !== '';
 
@@ -105,24 +107,8 @@ export const SolicitudCard = memo(function SolicitudCard({
     }
   }, [solicitud.fecha_solicitud]);
 
-  const handleSendReminder = useCallback(() => {
-    onSendReminder(solicitud);
-  }, [onSendReminder, solicitud]);
-
-  const handleApproveRequest = useCallback(() => {
-    onApproveRequest(solicitud);
-  }, [onApproveRequest, solicitud]);
-
-  const handleEditRequest = useCallback(() => {
-    onEditRequest(solicitud);
-  }, [onEditRequest, solicitud]);
-
-  const handleLookupChamber = useCallback(() => {
-    onLookupChamber(solicitud);
-  }, [onLookupChamber, solicitud]);
-
   return (
-    <Card className={`group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border ${statusStyle.border} ${statusStyle.bg}/30 backdrop-blur-sm overflow-hidden`}>
+    <Card className={`group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in border ${statusStyle.border} ${statusStyle.bg}/30 backdrop-blur-sm overflow-hidden`}>
       <CardContent className="p-4 sm:p-5">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">
@@ -153,7 +139,7 @@ export const SolicitudCard = memo(function SolicitudCard({
                 Colaborador
               </Badge>
             )}
-            {hasConsumedLicense && (
+            {hasCompletedTest && (
               <Badge variant="default" className="bg-success/20 text-success border-success/30 text-xs">
                 <CheckCircle className="h-3 w-3 mr-1" />
                 Licencia consumida
@@ -239,7 +225,7 @@ export const SolicitudCard = memo(function SolicitudCard({
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={handleSendReminder}
+              onClick={() => onSendReminder(solicitud)}
               disabled={sendingReminder || isSent}
               className={`transition-colors ${isSent ? 'bg-success/10 text-success border-success/30' : 'text-primary hover:text-primary-foreground hover:bg-primary'}`}
             >
@@ -269,7 +255,7 @@ export const SolicitudCard = memo(function SolicitudCard({
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={handleApproveRequest}
+              onClick={() => onApproveRequest(solicitud)}
               disabled={approvingRequest}
               className="text-success hover:text-success-foreground hover:bg-success border-success/30 transition-colors"
             >
@@ -293,7 +279,7 @@ export const SolicitudCard = memo(function SolicitudCard({
             <Button
               variant="outline"
               size="sm"
-              onClick={handleEditRequest}
+              onClick={() => onEditRequest(solicitud)}
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
               <Edit className="h-4 w-4 mr-1" />
@@ -307,7 +293,7 @@ export const SolicitudCard = memo(function SolicitudCard({
             <Button
               variant="outline" 
               size="sm" 
-              onClick={handleLookupChamber}
+              onClick={() => onLookupChamber(solicitud)}
               disabled={lookingUpChamber}
               className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-400 transition-colors"
             >
