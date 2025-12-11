@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { SolicitudCard, StatCard } from '@/components/solicitudes';
+import { StatCard, VirtualizedSolicitudList } from '@/components/solicitudes';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -1163,27 +1163,21 @@ export default function Solicitudes() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-            {filteredApplications.slice(0, 50).map((solicitud) => (
-              <SolicitudCard
-                key={solicitud.id}
-                solicitud={solicitud}
-                canViewGlobal={canViewGlobal}
-                canExecuteActions={canExecuteActions}
-                onViewDetails={() => handleViewDetails(solicitud)}
-                onSendReminder={handleSendReminder}
-                onApproveRequest={handleApproveRequest}
-                onEditRequest={handleEditRequest}
-                onLookupChamber={handleLookupChamber}
-                isAdmin={canExecuteActions}
-                platziData={platziData}
-                sendingReminder={sendingReminderId === solicitud.id}
-                approvingRequest={approvingRequestId === solicitud.id}
-                isSent={sentReminders.has(solicitud.id)}
-                lookingUpChamber={lookingUpChamberId === solicitud.id}
-              />
-            ))}
-          </div>
+          <VirtualizedSolicitudList
+            solicitudes={filteredApplications}
+            canViewGlobal={canViewGlobal}
+            canExecuteActions={canExecuteActions}
+            platziData={platziData}
+            sendingReminderId={sendingReminderId}
+            approvingRequestId={approvingRequestId}
+            sentReminders={sentReminders}
+            lookingUpChamberId={lookingUpChamberId}
+            onViewDetails={handleViewDetails}
+            onSendReminder={handleSendReminder}
+            onApproveRequest={handleApproveRequest}
+            onEditRequest={handleEditRequest}
+            onLookupChamber={handleLookupChamber}
+          />
         )}
       </div>
 
