@@ -1139,16 +1139,17 @@ export default function Solicitudes() {
       
       if (error) throw error;
       
-      // Obtener nombre de la cámara para el mensaje
-      const camaraNombre = camaras.find(c => c.id === camaraId)?.nombre || camaraAPI;
+      // Obtener información de la cámara para el mensaje y actualización local
+      const camaraInfo = camaras.find(c => c.id === camaraId);
+      const camaraNombre = camaraInfo?.nombre || camaraAPI;
       
       toast({
         title: "Cámara asignada",
         description: `Se asignó correctamente: ${camaraNombre}`,
       });
       
-      // Refrescar datos
-      await refetch();
+      // Refrescar datos en segundo plano sin bloquear la UI
+      refetch();
       
     } catch (err: any) {
       console.error('Error consultando RUES:', err);
