@@ -1,4 +1,4 @@
-import { memo, useRef, useEffect, useState } from 'react';
+import { memo, useRef, useEffect, useState, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { SolicitudCard } from './SolicitudCard';
 
@@ -49,6 +49,17 @@ export const VirtualizedSolicitudList = memo(function VirtualizedSolicitudList(p
   
   const parentRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+
+  // Pre-compute platzi data map for O(1) lookup
+  const platziDataMap = useMemo(() => {
+    const map = new Map<string, any>();
+    platziData.forEach(p => {
+      if (p.email) {
+        map.set(p.email.toLowerCase(), p);
+      }
+    });
+    return map;
+  }, [platziData]);
 
   useEffect(() => {
     const updateWidth = () => {
@@ -119,25 +130,32 @@ export const VirtualizedSolicitudList = memo(function VirtualizedSolicitudList(p
                     gridTemplateColumns: `repeat(${columnCount}, 1fr)`,
                   }}
                 >
-                  {items.map((solicitud) => (
-                    <SolicitudCard
-                      key={solicitud.id}
-                      solicitud={solicitud}
-                      canViewGlobal={canViewGlobal}
-                      canExecuteActions={canExecuteActions}
-                      onViewDetails={() => onViewDetails(solicitud)}
-                      onSendReminder={onSendReminder}
-                      onApproveRequest={onApproveRequest}
-                      onEditRequest={onEditRequest}
-                      onLookupChamber={onLookupChamber}
-                      isAdmin={canExecuteActions}
-                      platziData={platziData}
-                      sendingReminder={sendingReminderId === solicitud.id}
-                      approvingRequest={approvingRequestId === solicitud.id}
-                      isSent={sentReminders.has(solicitud.id)}
-                      lookingUpChamber={lookingUpChamberId === solicitud.id}
-                    />
-                  ))}
+                  {items.map((solicitud) => {
+                    const emailLower = solicitud.email?.toLowerCase();
+                    const personPlatziData = emailLower ? platziDataMap.get(emailLower) : null;
+                    const hasConsumedLicense = !!personPlatziData;
+
+                    return (
+                      <SolicitudCard
+                        key={solicitud.id}
+                        solicitud={solicitud}
+                        canViewGlobal={canViewGlobal}
+                        canExecuteActions={canExecuteActions}
+                        onViewDetails={() => onViewDetails(solicitud)}
+                        onSendReminder={onSendReminder}
+                        onApproveRequest={onApproveRequest}
+                        onEditRequest={onEditRequest}
+                        onLookupChamber={onLookupChamber}
+                        isAdmin={canExecuteActions}
+                        hasConsumedLicense={hasConsumedLicense}
+                        personPlatziData={personPlatziData}
+                        sendingReminder={sendingReminderId === solicitud.id}
+                        approvingRequest={approvingRequestId === solicitud.id}
+                        isSent={sentReminders.has(solicitud.id)}
+                        lookingUpChamber={lookingUpChamberId === solicitud.id}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             );

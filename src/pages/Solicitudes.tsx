@@ -637,7 +637,7 @@ export default function Solicitudes() {
   const canViewGlobal = hasPermission(profile.role, 'view_all');
   const canExecuteActions = hasPermission(profile.role, 'admin_actions');
 
-  const handleSendReminder = async (solicitud: any) => {
+  const handleSendReminder = useCallback(async (solicitud: any) => {
     if (!solicitud.celular) {
       toast({
         title: "Error",
@@ -663,6 +663,7 @@ export default function Solicitudes() {
           description: "No se encontró configuración de webhook activa para recordatorios.",
           variant: "destructive"
         });
+        setSendingReminderId(null);
         return;
       }
 
@@ -703,9 +704,9 @@ export default function Solicitudes() {
     } finally {
       setSendingReminderId(null);
     }
-  };
+  }, [toast]);
 
-  const handleApproveRequest = async (solicitud: any) => {
+  const handleApproveRequest = useCallback(async (solicitud: any) => {
     if (!solicitud.celular) {
       toast({
         title: "Error",
@@ -731,6 +732,7 @@ export default function Solicitudes() {
           description: "No se encontró configuración de webhook activa para aprobación.",
           variant: "destructive"
         });
+        setApprovingRequestId(null);
         return;
       }
 
@@ -770,7 +772,7 @@ export default function Solicitudes() {
     } finally {
       setApprovingRequestId(null);
     }
-  };
+  }, [toast]);
 
   // Filter applications based on user permissions
   const baseApplications = useMemo(() => 
@@ -839,7 +841,7 @@ export default function Solicitudes() {
     setShowEditDialog(true);
   }, []);
 
-  const handleLookupChamber = async (solicitud: any) => {
+  const handleLookupChamber = useCallback(async (solicitud: any) => {
     setLookingUpChamberId(solicitud.id);
     
     try {
@@ -860,6 +862,7 @@ export default function Solicitudes() {
           description: `El NIT ${solicitud.nit_empresa} no fue encontrado en el RUES.`,
           variant: "destructive"
         });
+        setLookingUpChamberId(null);
         return;
       }
       
@@ -874,6 +877,7 @@ export default function Solicitudes() {
           description: `La cámara "${camaraAPI}" no está en la lista de cámaras aliadas.`,
           variant: "destructive"
         });
+        setLookingUpChamberId(null);
         return;
       }
       
@@ -907,7 +911,7 @@ export default function Solicitudes() {
     } finally {
       setLookingUpChamberId(null);
     }
-  };
+  }, [camaras, toast, refetch]);
 
   const handleSaveEdit = async (updatedSolicitud: any) => {
     try {
