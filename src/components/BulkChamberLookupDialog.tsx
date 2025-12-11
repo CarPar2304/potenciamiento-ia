@@ -61,9 +61,11 @@ interface BulkLookupItem {
   selected: boolean;
   status: 'idle' | 'searching' | 'found' | 'not_found' | 'invalid_chamber' | 'error' | 'manually_assigned';
   foundChamber?: string;
+  foundCamaraId?: string;
   editingNit: boolean;
   tempNit: string;
   manualCamaraId?: string;
+  pendingSave?: boolean;
 }
 
 interface BulkChamberLookupDialogProps {
@@ -86,6 +88,7 @@ export function BulkChamberLookupDialog({
   const [statusFilter, setStatusFilter] = useState('todos');
   const [chamberFilter, setChamberFilter] = useState('sin_camara');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [hasSearched, setHasSearched] = useState(false);
 
@@ -250,32 +253,21 @@ export function BulkChamberLookupDialog({
           continue;
         }
 
-        // Si el NIT fue editado, actualizar en ambas tablas
-        if (item.tempNit !== item.solicitud.nit_empresa) {
-          // Actualizar NIT en solicitudes
-          await supabase
-            .from('solicitudes')
-            .update({ nit_empresa: item.tempNit })
-            .eq('id', item.solicitud.id);
-
-          // Actualizar NIT en empresas
-          await supabase
-            .from('empresas')
-            .update({ nit: item.tempNit, camara_id: camaraId })
-            .eq('nit', item.solicitud.nit_empresa);
-        } else {
-          // Solo actualizar cámara en empresas
-          await supabase
-            .from('empresas')
-            .update({ camara_id: camaraId })
-            .eq('nit', item.solicitud.nit_empresa);
-        }
-
+        // Marcar como encontrado con datos pendientes de guardar
         const camaraInfo = camaras.find((c) => c.id === camaraId);
-        updateItemStatus(
-          item.solicitud.id,
-          'found',
-          camaraInfo?.nombre || camaraAPI
+        setItems((prev) =>
+          prev.map((i) =>
+            i.solicitud.id === item.solicitud.id
+              ? { 
+                  ...i, 
+                  status: 'found', 
+                  foundChamber: camaraInfo?.nombre || camaraAPI,
+                  foundCamaraId: camaraId,
+                  pendingSave: true,
+                  selected: false 
+                }
+              : i
+          )
         );
         successCount++;
       } catch (err) {
@@ -297,51 +289,97 @@ export function BulkChamberLookupDialog({
       title: 'Búsqueda completada',
       description: `Encontradas: ${successCount} | No encontradas: ${notFoundCount} | Cámara no aliada: ${invalidCount}`,
     });
+  };
 
-    // Refrescar datos
+  // Guardar todos los cambios pendientes
+  const handleSaveChanges = async () => {
+    const itemsToSave = items.filter(
+      (item) => item.pendingSave || item.status === 'manually_assigned'
+    );
+    
+    if (itemsToSave.length === 0) {
+      toast({
+        title: 'Sin cambios',
+        description: 'No hay cambios pendientes por guardar.',
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    let savedCount = 0;
+    let errorCount = 0;
+
+    for (const item of itemsToSave) {
+      const camaraId = item.foundCamaraId || item.manualCamaraId;
+      if (!camaraId) continue;
+
+      try {
+        // Si el NIT fue editado, actualizar en ambas tablas
+        if (item.tempNit !== item.solicitud.nit_empresa) {
+          await supabase
+            .from('solicitudes')
+            .update({ nit_empresa: item.tempNit })
+            .eq('id', item.solicitud.id);
+
+          await supabase
+            .from('empresas')
+            .update({ nit: item.tempNit, camara_id: camaraId })
+            .eq('nit', item.solicitud.nit_empresa);
+        } else {
+          await supabase
+            .from('empresas')
+            .update({ camara_id: camaraId })
+            .eq('nit', item.solicitud.nit_empresa);
+        }
+
+        // Marcar como guardado
+        setItems((prev) =>
+          prev.map((i) =>
+            i.solicitud.id === item.solicitud.id
+              ? { ...i, pendingSave: false }
+              : i
+          )
+        );
+        savedCount++;
+      } catch (err) {
+        console.error('Error guardando:', err);
+        errorCount++;
+      }
+    }
+
+    setIsSaving(false);
+
+    toast({
+      title: 'Cambios guardados',
+      description: `Se guardaron ${savedCount} asignaciones${errorCount > 0 ? ` (${errorCount} errores)` : ''}.`,
+    });
+
     onSuccess();
   };
 
-  // Asignar cámara manualmente
-  const handleManualChamberAssign = async (itemId: string, camaraId: string) => {
-    const item = items.find((i) => i.solicitud.id === itemId);
-    if (!item) return;
-
-    try {
-      // Actualizar en base de datos
-      const { error } = await supabase
-        .from('empresas')
-        .update({ camara_id: camaraId })
-        .eq('nit', item.tempNit || item.solicitud.nit_empresa);
-
-      if (error) throw error;
-
-      const camaraInfo = camaras.find((c) => c.id === camaraId);
-      
-      setItems((prev) =>
-        prev.map((i) =>
-          i.solicitud.id === itemId
-            ? { ...i, status: 'manually_assigned', foundChamber: camaraInfo?.nombre, manualCamaraId: camaraId }
-            : i
-        )
-      );
-
-      toast({
-        title: 'Cámara asignada',
-        description: `Se asignó ${camaraInfo?.nombre} correctamente.`,
-      });
-
-      // Refrescar datos en segundo plano
-      onSuccess();
-    } catch (err) {
-      console.error('Error asignando cámara:', err);
-      toast({
-        title: 'Error',
-        description: 'No se pudo asignar la cámara.',
-        variant: 'destructive',
-      });
-    }
+  // Asignar cámara manualmente (sin guardar aún)
+  const handleManualChamberAssign = (itemId: string, camaraId: string) => {
+    const camaraInfo = camaras.find((c) => c.id === camaraId);
+    
+    setItems((prev) =>
+      prev.map((i) =>
+        i.solicitud.id === itemId
+          ? { 
+              ...i, 
+              status: 'manually_assigned', 
+              foundChamber: camaraInfo?.nombre, 
+              manualCamaraId: camaraId,
+              pendingSave: true 
+            }
+          : i
+      )
+    );
   };
+
+  // Contador de cambios pendientes
+  const pendingChangesCount = items.filter(
+    (item) => item.pendingSave || (item.status === 'manually_assigned' && item.manualCamaraId)
+  ).length;
 
   const getStatusBadge = (item: BulkLookupItem) => {
     switch (item.status) {
@@ -607,31 +645,58 @@ export function BulkChamberLookupDialog({
         )}
 
         {/* Footer */}
-        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4 border-t">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isProcessing}
-          >
-            {isProcessing ? 'Procesando...' : 'Cerrar'}
-          </Button>
-          <Button
-            onClick={handleBulkSearch}
-            disabled={selectedCount === 0 || isProcessing}
-            className="gap-2"
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Buscando...
-              </>
-            ) : (
-              <>
-                <Search className="h-4 w-4" />
-                Buscar Seleccionados ({selectedCount})
-              </>
+        <div className="flex flex-col-reverse sm:flex-row justify-between gap-2 pt-4 border-t">
+          <div className="flex items-center gap-2">
+            {pendingChangesCount > 0 && (
+              <Badge variant="outline" className="text-primary">
+                {pendingChangesCount} cambio{pendingChangesCount !== 1 ? 's' : ''} pendiente{pendingChangesCount !== 1 ? 's' : ''}
+              </Badge>
             )}
-          </Button>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={isProcessing || isSaving}
+            >
+              {isProcessing || isSaving ? 'Procesando...' : 'Cerrar'}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={handleSaveChanges}
+              disabled={pendingChangesCount === 0 || isProcessing || isSaving}
+              className="gap-2"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4" />
+                  Guardar Cambios ({pendingChangesCount})
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={handleBulkSearch}
+              disabled={selectedCount === 0 || isProcessing || isSaving}
+              className="gap-2"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Buscando...
+                </>
+              ) : (
+                <>
+                  <Search className="h-4 w-4" />
+                  Buscar ({selectedCount})
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
