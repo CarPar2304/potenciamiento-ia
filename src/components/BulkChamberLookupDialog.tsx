@@ -407,108 +407,110 @@ export function BulkChamberLookupDialog({
         </div>
 
         {/* Tabla */}
-        <ScrollArea className="flex-1 min-h-0 border rounded-md">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12"></TableHead>
-                <TableHead>Nombre</TableHead>
-                <TableHead className="w-[180px]">NIT</TableHead>
-                <TableHead className="w-[180px]">Estado</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {items.length === 0 ? (
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ScrollArea className="h-[300px] border rounded-md">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
-                    <p className="text-muted-foreground">
-                      No hay solicitudes que coincidan con los filtros.
-                    </p>
-                  </TableCell>
+                  <TableHead className="w-12"></TableHead>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead className="w-[180px]">NIT</TableHead>
+                  <TableHead className="w-[180px]">Estado</TableHead>
                 </TableRow>
-              ) : (
-                items.map((item) => (
-                  <TableRow key={item.solicitud.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={item.selected}
-                        onCheckedChange={(checked) =>
-                          handleSelectItem(item.solicitud.id, checked as boolean)
-                        }
-                        disabled={isProcessing || item.status === 'searching'}
-                      />
+              </TableHeader>
+              <TableBody>
+                {items.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="h-24 text-center">
+                      <p className="text-muted-foreground">
+                        No hay solicitudes que coincidan con los filtros.
+                      </p>
                     </TableCell>
-                    <TableCell className="font-medium">
-                      {item.solicitud.nombres_apellidos}
-                    </TableCell>
-                    <TableCell>
-                      {item.editingNit ? (
-                        <div className="flex items-center gap-1">
-                          <Input
-                            value={item.tempNit}
-                            onChange={(e) =>
-                              handleNitChange(item.solicitud.id, e.target.value)
-                            }
-                            className="h-8 w-28"
-                            autoFocus
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                handleSaveNit(item.solicitud.id);
-                              } else if (e.key === 'Escape') {
-                                handleCancelNit(item.solicitud.id);
+                  </TableRow>
+                ) : (
+                  items.map((item) => (
+                    <TableRow key={item.solicitud.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={item.selected}
+                          onCheckedChange={(checked) =>
+                            handleSelectItem(item.solicitud.id, checked as boolean)
+                          }
+                          disabled={isProcessing || item.status === 'searching'}
+                        />
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {item.solicitud.nombres_apellidos}
+                      </TableCell>
+                      <TableCell>
+                        {item.editingNit ? (
+                          <div className="flex items-center gap-1">
+                            <Input
+                              value={item.tempNit}
+                              onChange={(e) =>
+                                handleNitChange(item.solicitud.id, e.target.value)
                               }
-                            }}
-                          />
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7"
-                            onClick={() => handleSaveNit(item.solicitud.id)}
-                          >
-                            <Check className="h-4 w-4 text-success" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-7 w-7"
-                            onClick={() => handleCancelNit(item.solicitud.id)}
-                          >
-                            <X className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <span
-                            className={
-                              item.tempNit !== item.solicitud.nit_empresa
-                                ? 'text-primary font-medium'
-                                : ''
-                            }
-                          >
-                            {item.tempNit}
-                          </span>
-                          {(item.status === 'not_found' ||
-                            item.status === 'idle') && (
+                              className="h-8 w-28"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleSaveNit(item.solicitud.id);
+                                } else if (e.key === 'Escape') {
+                                  handleCancelNit(item.solicitud.id);
+                                }
+                              }}
+                            />
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-6 w-6"
-                              onClick={() => handleEditNit(item.solicitud.id)}
-                              disabled={isProcessing}
+                              className="h-7 w-7"
+                              onClick={() => handleSaveNit(item.solicitud.id)}
                             >
-                              <Edit2 className="h-3 w-3" />
+                              <Check className="h-4 w-4 text-success" />
                             </Button>
-                          )}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(item)}</TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </ScrollArea>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              onClick={() => handleCancelNit(item.solicitud.id)}
+                            >
+                              <X className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <span
+                              className={
+                                item.tempNit !== item.solicitud.nit_empresa
+                                  ? 'text-primary font-medium'
+                                  : ''
+                              }
+                            >
+                              {item.tempNit}
+                            </span>
+                            {(item.status === 'not_found' ||
+                              item.status === 'idle') && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-6 w-6"
+                                onClick={() => handleEditNit(item.solicitud.id)}
+                                disabled={isProcessing}
+                              >
+                                <Edit2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(item)}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </div>
 
         {/* Progress Bar */}
         {isProcessing && (
