@@ -79,6 +79,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ExportModal } from '@/components/export/ExportModal';
 import { BulkUploadDialog } from '@/components/BulkUploadDialog';
 import { UploadHistoryDialog } from '@/components/UploadHistoryDialog';
+import { BulkChamberLookupDialog } from '@/components/BulkChamberLookupDialog';
 
 const StatCard = ({ title, value, description, icon: Icon, variant }: {
   title: string;
@@ -896,6 +897,7 @@ export default function Solicitudes() {
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [showUploadHistory, setShowUploadHistory] = useState(false);
   const [lookingUpChamberId, setLookingUpChamberId] = useState<string | null>(null);
+  const [showBulkChamberLookup, setShowBulkChamberLookup] = useState(false);
 
   if (!profile) return null;
 
@@ -1238,7 +1240,18 @@ export default function Solicitudes() {
           </p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {canExecuteActions && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowBulkChamberLookup(true)}
+              className="bg-blue-50 hover:bg-blue-100 text-blue-600 border-blue-200 dark:bg-blue-950 dark:hover:bg-blue-900 dark:text-blue-400 dark:border-blue-800"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Buscar Cámaras
+            </Button>
+          )}
           {canExecuteActions && (
             <Button 
               variant="outline" 
@@ -1473,6 +1486,15 @@ export default function Solicitudes() {
         onClose={() => setShowUploadHistory(false)}
         tipo="solicitudes"
         onDeleted={refetch}
+      />
+
+      {/* Bulk Chamber Lookup Dialog */}
+      <BulkChamberLookupDialog
+        isOpen={showBulkChamberLookup}
+        onClose={() => setShowBulkChamberLookup(false)}
+        solicitudes={baseApplications}
+        camaras={camaras}
+        onSuccess={refetch}
       />
     </div>
   );
