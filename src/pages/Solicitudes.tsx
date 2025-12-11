@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { SolicitudCard, StatCard } from '@/components/solicitudes';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -80,276 +81,8 @@ import { ExportModal } from '@/components/export/ExportModal';
 import { BulkUploadDialog } from '@/components/BulkUploadDialog';
 import { UploadHistoryDialog } from '@/components/UploadHistoryDialog';
 import { BulkChamberLookupDialog } from '@/components/BulkChamberLookupDialog';
-
-const StatCard = ({ title, value, description, icon: Icon, variant }: {
-  title: string;
-  value: number;
-  description: string;
-  icon: any;
-  variant: 'primary' | 'success' | 'warning' | 'error';
-}) => {
-  const variants = {
-    primary: {
-      bg: 'bg-primary/10',
-      icon: 'text-primary',
-      border: 'border-l-primary'
-    },
-    success: {
-      bg: 'bg-success/10',
-      icon: 'text-success',
-      border: 'border-l-success'
-    },
-    warning: {
-      bg: 'bg-warning/10', 
-      icon: 'text-warning',
-      border: 'border-l-warning'
-    },
-    error: {
-      bg: 'bg-destructive/10',
-      icon: 'text-destructive', 
-      border: 'border-l-destructive'
-    }
-  };
-
-  const style = variants[variant];
-
-  return (
-    <Card className={`relative overflow-hidden group hover:shadow-card transition-all duration-300 hover:-translate-y-1 animate-fade-in border-l-4 ${style.border} backdrop-blur-sm`}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <div className={`p-3 rounded-xl ${style.bg} group-hover:scale-110 transition-transform duration-300`}>
-          <Icon className={`h-5 w-5 ${style.icon}`} />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent group-hover:scale-105 transition-transform duration-300">{value}</div>
-        <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{description}</p>
-      </CardContent>
-    </Card>
-  );
-};
-
-const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, onSendReminder, onApproveRequest, sendingReminder, approvingRequest, isSent, canExecuteActions, onEditRequest, isAdmin, onLookupChamber, lookingUpChamber }: {
-  solicitud: any;
-  canViewGlobal: boolean;
-  onViewDetails: () => void;
-  platziData: any[];
-  onSendReminder: (solicitud: any) => void;
-  onApproveRequest: (solicitud: any) => void;
-  sendingReminder: boolean;
-  approvingRequest: boolean;
-  isSent: boolean;
-  canExecuteActions: boolean;
-  onEditRequest: (solicitud: any) => void;
-  isAdmin: boolean;
-  onLookupChamber: (solicitud: any) => void;
-  lookingUpChamber: boolean;
-}) => {
-  const getStatusConfig = (status: string) => {
-    const configs: Record<string, { color: string; bg: string; border: string }> = {
-      'Aprobada': { 
-        color: 'text-green-700', 
-        bg: 'bg-green-50', 
-        border: 'border-green-200' 
-      },
-      'Pendiente': { 
-        color: 'text-amber-700', 
-        bg: 'bg-amber-50', 
-        border: 'border-amber-200' 
-      },
-      'Rechazada': { 
-        color: 'text-red-700', 
-        bg: 'bg-red-50', 
-        border: 'border-red-200' 
-      },
-    };
-    return configs[status] || { 
-      color: 'text-muted-foreground', 
-      bg: 'bg-muted/50', 
-      border: 'border-muted' 
-    };
-  };
-
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
-
-  // Verificar si ya hizo el test (existe en platzi_general)
-  const hasCompletedTest = platziData.some(p => p.email === solicitud.email);
-  const isApprovedStatus = solicitud.estado === 'Aprobada';
-  const isRejectedStatus = solicitud.estado === 'Rechazada';
-
-  const statusConfig = getStatusConfig(solicitud.estado);
-
-  return (
-    <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 animate-fade-in">
-      <CardContent className="p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
-          <div className="flex items-center space-x-3 min-w-0 flex-1">
-            <Avatar className="h-10 w-10 flex-shrink-0">
-              <AvatarFallback className="bg-gradient-primary text-primary-foreground text-sm font-medium">
-                {getInitials(solicitud.nombres_apellidos)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <h3 className="font-semibold text-base text-foreground">{solicitud.nombres_apellidos}</h3>
-              <p className="text-sm text-muted-foreground flex items-center gap-1">
-                <Mail className="h-3 w-3 flex-shrink-0" />
-                <span className="truncate">{solicitud.email}</span>
-              </p>
-            </div>
-          </div>
-          <Badge className={`${statusConfig.color} ${statusConfig.bg} ${statusConfig.border} border shrink-0`}>
-            {solicitud.estado}
-          </Badge>
-        </div>
-
-        <div className="space-y-2 mb-4">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Building className="h-4 w-4 text-primary/60" />
-            <span className="truncate text-sm">{solicitud.empresas?.nombre || 'Sin empresa'}</span>
-          </div>
-          {solicitud.cargo && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Briefcase className="h-4 w-4 text-primary/60" />
-              <span className="truncate text-sm">{solicitud.cargo}</span>
-            </div>
-          )}
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Calendar className="h-4 w-4 text-primary/60" />
-            <span className="text-sm">{new Date(solicitud.fecha_solicitud).toLocaleDateString('es-CO')}</span>
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-muted/20">
-          {isApprovedStatus && (
-            <Badge 
-              variant={hasCompletedTest ? "default" : "secondary"} 
-              className={`text-xs w-fit ${hasCompletedTest 
-                ? 'bg-green-100 text-green-700 border-green-200' 
-                : 'bg-amber-100 text-amber-700 border-amber-200'
-              }`}
-            >
-              {hasCompletedTest ? 'Licencia consumida' : 'Licencia no consumida'}
-            </Badge>
-          )}
-          {!isApprovedStatus && <div />}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Botón para enviar recordatorio (solo para aprobadas sin licencia consumida) */}
-            {canExecuteActions && isApprovedStatus && !hasCompletedTest && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => onSendReminder(solicitud)}
-                disabled={sendingReminder || isSent}
-                className={`transition-all duration-500 font-medium shadow-sm hover:shadow-md ${
-                  isSent 
-                    ? 'text-success bg-success/10 border-success/30 animate-pulse-subtle' 
-                    : 'text-primary hover:text-primary hover:bg-primary/10 border-primary/30 hover:border-primary'
-                } ${sendingReminder ? 'animate-pulse' : ''}`}
-              >
-                {sendingReminder ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-primary" />
-                    <span className="hidden sm:inline">Enviando...</span>
-                    <span className="sm:hidden">Enviando</span>
-                  </>
-                ) : isSent ? (
-                  <>
-                    <div className="animate-bounce mr-2">✓</div>
-                    <span className="hidden sm:inline">Recordatorio enviado</span>
-                    <span className="sm:hidden">Enviado</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-4 w-4 mr-1" />
-                    <span className="hidden sm:inline">Enviar recordatorio</span>
-                    <span className="sm:hidden">Recordatorio</span>
-                  </>
-                )}
-              </Button>
-            )}
-            
-            {/* Botón para aprobar solicitud (solo para rechazadas) */}
-            {canExecuteActions && isRejectedStatus && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => onApproveRequest(solicitud)}
-                disabled={approvingRequest}
-                className={`transition-all duration-500 font-medium shadow-sm hover:shadow-md text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200 hover:border-green-400 ${approvingRequest ? 'animate-pulse' : ''}`}
-              >
-                {approvingRequest ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 mr-2 border-b-2 border-green-600" />
-                    <span className="hidden sm:inline">Enviando...</span>
-                    <span className="sm:hidden">Enviando</span>
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-4 w-4 mr-1" />
-                    <span className="hidden sm:inline">Aprobar solicitud</span>
-                    <span className="sm:hidden">Aprobar</span>
-                  </>
-                )}
-               </Button>
-            )}
-            
-            {/* Botón de edición solo para administradores */}
-            {isAdmin && (
-              <Button
-                variant="outline" 
-                size="sm" 
-                onClick={() => onEditRequest(solicitud)}
-                className="text-amber-600 hover:text-amber-700 hover:bg-amber-50 border-amber-200 hover:border-amber-400 transition-colors"
-              >
-                <Edit className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Editar</span>
-                <span className="sm:hidden">Editar</span>
-              </Button>
-            )}
-            
-            {/* Botón para buscar cámara en RUES (solo si no tiene cámara asignada y no es colaborador) */}
-            {isAdmin && !solicitud.es_colaborador && solicitud.empresas && !solicitud.empresas.camara_id && (
-              <Button
-                variant="outline" 
-                size="sm" 
-                onClick={() => onLookupChamber(solicitud)}
-                disabled={lookingUpChamber}
-                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-400 transition-colors"
-              >
-                {lookingUpChamber ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 mr-1 border-b-2 border-blue-600" />
-                    <span className="hidden sm:inline">Buscando...</span>
-                    <span className="sm:hidden">...</span>
-                  </>
-                ) : (
-                  <>
-                    <MapPin className="h-4 w-4 mr-1" />
-                    <span className="hidden sm:inline">Buscar Cámara</span>
-                    <span className="sm:hidden">Cámara</span>
-                  </>
-                )}
-              </Button>
-            )}
-            
-            <Button
-              variant="ghost" 
-              size="sm" 
-              onClick={onViewDetails}
-              className="text-primary hover:text-primary/80 hover:bg-primary/10 transition-colors"
-            >
-              <Eye className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">Ver detalles</span>
-              <span className="sm:hidden">Detalles</span>
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
+// StatCard component moved to src/components/solicitudes/StatCard.tsx
+// SolicitudCard component moved to src/components/solicitudes/SolicitudCard.tsx
 
 const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave, camaras }: {
   solicitud: any;
@@ -1040,60 +773,71 @@ export default function Solicitudes() {
   };
 
   // Filter applications based on user permissions
-  const baseApplications = canViewGlobal 
-    ? solicitudes 
-    : solicitudes.filter(sol => sol.empresas?.camaras?.nombre === profile.chamber);
-
-  // Apply filters
-  const filteredApplications = baseApplications.filter(sol => {
-    const matchesSearch = 
-      sol.nombres_apellidos.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sol.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (sol.empresas?.nombre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      sol.numero_documento.includes(searchTerm);
-    
-    const matchesStatus = statusFilter === 'todos' || sol.estado === statusFilter;
-    const matchesChamber = chamberFilter === 'todas' || 
-      (chamberFilter === 'sin_camara' && !sol.empresas?.camaras?.nombre) ||
-      sol.empresas?.camaras?.nombre === chamberFilter;
-    const matchesSector = sectorFilter === 'todos' || sol.empresas?.sector === sectorFilter;
-    
-    // Nuevo filtro para licencias consumidas/no consumidas
-    const hasConsummed = platziData.some(p => p.email === sol.email);
-    const matchesLicense = licenseFilter === 'todas' ||
-      (licenseFilter === 'consumidas' && hasConsummed) ||
-      (licenseFilter === 'no_consumidas' && !hasConsummed);
-    
-    // Filtro de colaborador
-    const matchesColaborador = colaboradorFilter === 'todos' ||
-      (colaboradorFilter === 'si' && sol.es_colaborador === true) ||
-      (colaboradorFilter === 'no' && sol.es_colaborador === false);
-
-    return matchesSearch && matchesStatus && matchesChamber && matchesSector && matchesLicense && matchesColaborador;
-  });
-
-  // Calculate stats
-  const approvedApplications = baseApplications.filter(sol => sol.estado === 'Aprobada');
-  const consumedApplications = approvedApplications.filter(sol => 
-    platziData.some(p => p.email === sol.email)
+  const baseApplications = useMemo(() => 
+    canViewGlobal 
+      ? solicitudes 
+      : solicitudes.filter(sol => sol.empresas?.camaras?.nombre === profile.chamber),
+    [canViewGlobal, solicitudes, profile.chamber]
   );
 
-  const stats = {
-    total: baseApplications.length,
-    approved: approvedApplications.length,
-    consumed: consumedApplications.length,
-    rejected: baseApplications.filter(sol => sol.estado === 'Rechazada').length,
-  };
+  // Pre-compute platzi emails for faster lookup
+  const platziEmailSet = useMemo(() => 
+    new Set(platziData.map(p => p.email?.toLowerCase())),
+    [platziData]
+  );
 
-  const handleViewDetails = (solicitud: any) => {
+  // Apply filters with useMemo
+  const filteredApplications = useMemo(() => {
+    const searchLower = searchTerm.toLowerCase();
+    
+    return baseApplications.filter(sol => {
+      const matchesSearch = 
+        sol.nombres_apellidos.toLowerCase().includes(searchLower) ||
+        sol.email.toLowerCase().includes(searchLower) ||
+        (sol.empresas?.nombre || '').toLowerCase().includes(searchLower) ||
+        sol.numero_documento.includes(searchTerm);
+      
+      const matchesStatus = statusFilter === 'todos' || sol.estado === statusFilter;
+      const matchesChamber = chamberFilter === 'todas' || 
+        (chamberFilter === 'sin_camara' && !sol.empresas?.camaras?.nombre) ||
+        sol.empresas?.camaras?.nombre === chamberFilter;
+      const matchesSector = sectorFilter === 'todos' || sol.empresas?.sector === sectorFilter;
+      
+      const hasConsumed = platziEmailSet.has(sol.email?.toLowerCase());
+      const matchesLicense = licenseFilter === 'todas' ||
+        (licenseFilter === 'consumidas' && hasConsumed) ||
+        (licenseFilter === 'no_consumidas' && !hasConsumed);
+      
+      const matchesColaborador = colaboradorFilter === 'todos' ||
+        (colaboradorFilter === 'si' && sol.es_colaborador === true) ||
+        (colaboradorFilter === 'no' && sol.es_colaborador === false);
+
+      return matchesSearch && matchesStatus && matchesChamber && matchesSector && matchesLicense && matchesColaborador;
+    });
+  }, [baseApplications, searchTerm, statusFilter, chamberFilter, sectorFilter, licenseFilter, colaboradorFilter, platziEmailSet]);
+
+  // Calculate stats with useMemo
+  const stats = useMemo(() => {
+    const approved = baseApplications.filter(sol => sol.estado === 'Aprobada');
+    const consumed = approved.filter(sol => platziEmailSet.has(sol.email?.toLowerCase()));
+    
+    return {
+      total: baseApplications.length,
+      approved: approved.length,
+      consumed: consumed.length,
+      rejected: baseApplications.filter(sol => sol.estado === 'Rechazada').length,
+    };
+  }, [baseApplications, platziEmailSet]);
+
+  const handleViewDetails = useCallback((solicitud: any) => {
     setSelectedSolicitud(solicitud);
     setShowDetails(true);
-  };
+  }, []);
 
-  const handleEditRequest = (solicitud: any) => {
+  const handleEditRequest = useCallback((solicitud: any) => {
     setEditingSolicitud(solicitud);
     setShowEditDialog(true);
-  };
+  }, []);
 
   const handleLookupChamber = async (solicitud: any) => {
     setLookingUpChamberId(solicitud.id);
