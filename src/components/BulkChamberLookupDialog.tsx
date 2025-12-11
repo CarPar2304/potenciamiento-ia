@@ -59,10 +59,11 @@ const CAMARA_API_TO_ID: Record<string, string> = {
 interface BulkLookupItem {
   solicitud: any;
   selected: boolean;
-  status: 'idle' | 'searching' | 'found' | 'not_found' | 'invalid_chamber' | 'error';
+  status: 'idle' | 'searching' | 'found' | 'not_found' | 'invalid_chamber' | 'error' | 'manually_assigned';
   foundChamber?: string;
   editingNit: boolean;
   tempNit: string;
+  manualCamaraId?: string;
 }
 
 interface BulkChamberLookupDialogProps {
@@ -86,10 +87,11 @@ export function BulkChamberLookupDialog({
   const [chamberFilter, setChamberFilter] = useState('sin_camara');
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [hasSearched, setHasSearched] = useState(false);
 
-  // Inicializar items cuando cambian las solicitudes o filtros
+  // Inicializar items cuando cambian las solicitudes o filtros (solo si no hay búsqueda activa)
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !hasSearched) {
       const filteredSolicitudes = solicitudes.filter((sol) => {
         const matchesStatus = statusFilter === 'todos' || sol.estado === statusFilter;
         const hasChamber = sol.empresas?.camaras?.nombre;
@@ -111,7 +113,12 @@ export function BulkChamberLookupDialog({
         }))
       );
     }
-  }, [isOpen, solicitudes, statusFilter, chamberFilter]);
+  }, [isOpen, solicitudes, statusFilter, chamberFilter, hasSearched]);
+
+  // Función para resetear y aplicar filtros
+  const handleResetAndFilter = () => {
+    setHasSearched(false);
+  };
 
   // Reset state when dialog closes
   useEffect(() => {
@@ -121,6 +128,7 @@ export function BulkChamberLookupDialog({
       setChamberFilter('sin_camara');
       setIsProcessing(false);
       setProgress({ current: 0, total: 0 });
+      setHasSearched(false);
     }
   }, [isOpen]);
 
@@ -198,6 +206,7 @@ export function BulkChamberLookupDialog({
     const selectedItems = items.filter((item) => item.selected);
     if (selectedItems.length === 0) return;
 
+    setHasSearched(true);
     setIsProcessing(true);
     setProgress({ current: 0, total: selectedItems.length });
 
@@ -293,6 +302,47 @@ export function BulkChamberLookupDialog({
     onSuccess();
   };
 
+  // Asignar cámara manualmente
+  const handleManualChamberAssign = async (itemId: string, camaraId: string) => {
+    const item = items.find((i) => i.solicitud.id === itemId);
+    if (!item) return;
+
+    try {
+      // Actualizar en base de datos
+      const { error } = await supabase
+        .from('empresas')
+        .update({ camara_id: camaraId })
+        .eq('nit', item.tempNit || item.solicitud.nit_empresa);
+
+      if (error) throw error;
+
+      const camaraInfo = camaras.find((c) => c.id === camaraId);
+      
+      setItems((prev) =>
+        prev.map((i) =>
+          i.solicitud.id === itemId
+            ? { ...i, status: 'manually_assigned', foundChamber: camaraInfo?.nombre, manualCamaraId: camaraId }
+            : i
+        )
+      );
+
+      toast({
+        title: 'Cámara asignada',
+        description: `Se asignó ${camaraInfo?.nombre} correctamente.`,
+      });
+
+      // Refrescar datos en segundo plano
+      onSuccess();
+    } catch (err) {
+      console.error('Error asignando cámara:', err);
+      toast({
+        title: 'Error',
+        description: 'No se pudo asignar la cámara.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const getStatusBadge = (item: BulkLookupItem) => {
     switch (item.status) {
       case 'searching':
@@ -303,6 +353,7 @@ export function BulkChamberLookupDialog({
           </Badge>
         );
       case 'found':
+      case 'manually_assigned':
         return (
           <Badge className="bg-success/20 text-success border-success/30 gap-1">
             <CheckCircle className="h-3 w-3" />
@@ -414,14 +465,15 @@ export function BulkChamberLookupDialog({
                 <TableRow>
                   <TableHead className="w-12"></TableHead>
                   <TableHead>Nombre</TableHead>
-                  <TableHead className="w-[180px]">NIT</TableHead>
-                  <TableHead className="w-[180px]">Estado</TableHead>
+                  <TableHead className="w-[140px]">NIT</TableHead>
+                  <TableHead className="w-[160px]">Estado</TableHead>
+                  <TableHead className="w-[180px]">Asignar Cámara</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {items.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
                       <p className="text-muted-foreground">
                         No hay solicitudes que coincidan con los filtros.
                       </p>
@@ -450,7 +502,7 @@ export function BulkChamberLookupDialog({
                               onChange={(e) =>
                                 handleNitChange(item.solicitud.id, e.target.value)
                               }
-                              className="h-8 w-28"
+                              className="h-8 w-24"
                               autoFocus
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
@@ -489,7 +541,8 @@ export function BulkChamberLookupDialog({
                               {item.tempNit}
                             </span>
                             {(item.status === 'not_found' ||
-                              item.status === 'idle') && (
+                              item.status === 'idle' ||
+                              item.status === 'error') && (
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -504,6 +557,31 @@ export function BulkChamberLookupDialog({
                         )}
                       </TableCell>
                       <TableCell>{getStatusBadge(item)}</TableCell>
+                      <TableCell>
+                        {(item.status === 'not_found' || 
+                          item.status === 'invalid_chamber' || 
+                          item.status === 'error' ||
+                          item.status === 'idle') ? (
+                          <Select
+                            value={item.manualCamaraId || ''}
+                            onValueChange={(value) => handleManualChamberAssign(item.solicitud.id, value)}
+                            disabled={isProcessing}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue placeholder="Seleccionar..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {camaras.map((camara) => (
+                                <SelectItem key={camara.id} value={camara.id}>
+                                  {camara.nombre}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : item.status === 'found' || item.status === 'manually_assigned' ? (
+                          <span className="text-xs text-success">Asignada</span>
+                        ) : null}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
