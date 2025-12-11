@@ -1202,16 +1202,16 @@ export default function Solicitudes() {
         if (empresaError) throw empresaError;
       }
 
-      // Refrescar datos para ver cambios inmediatamente
-      await refetch();
-
       toast({
         title: "Cambios guardados",
-        description: "El NIT se actualizó en ambas tablas: solicitudes y empresas.",
+        description: "La información se actualizó correctamente.",
       });
 
       setShowEditDialog(false);
       setEditingSolicitud(null);
+      
+      // Refrescar datos en segundo plano sin bloquear la UI
+      refetch();
     } catch (error: any) {
       console.error('Error updating request:', error);
       toast({
