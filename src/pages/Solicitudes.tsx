@@ -57,6 +57,22 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
 import { useSolicitudes, useCamaras, usePlatziGeneral, usePlatziSeguimiento } from '@/hooks/useSupabaseData';
+
+// Mapeo de nombres de cámara de la API RUES a IDs del sistema
+const CAMARA_API_TO_ID: Record<string, string> = {
+  'CALI': '7f567c19-8963-4910-a033-36689f29f9d7',
+  'TULUA': '9592810c-00df-4911-9609-fc786aeda0ee',
+  'PALMIRA': '4c4fbdea-3e85-4b0b-9510-d25127642e5d',
+  'SEVILLA': 'a8b4724b-bc0f-4cfb-9e92-46f91c1a26ba',
+  'BUENAVENTURA': '53ee279d-16e6-40c2-8f6f-16e0755285b2',
+  'PASTO': '26803edf-b616-452b-99b2-4d5acdf5b3a0',
+  'TUMACO': '0c80faa8-d6c6-42d8-902a-6f32aadf6040',
+  'PUTUMAYO': 'a7efd2bb-4ce3-4bf7-9e01-d4503ffbd4c9',
+  'BUGA': 'b5b431a7-a47f-4f4e-a48d-ec5e509c29d7',
+  'IPIALES': '774c338b-703f-46fc-86d5-bf5fdcb2ea32',
+  'CARTAGO': 'f2559589-feb3-405e-8ac2-f8a7551b8568',
+  'CAUCA': '5a78633d-c13d-41d8-9ce1-bcfd162706cb',
+};
 import { useAuth, hasPermission } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -112,7 +128,7 @@ const StatCard = ({ title, value, description, icon: Icon, variant }: {
   );
 };
 
-const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, onSendReminder, onApproveRequest, sendingReminder, approvingRequest, isSent, canExecuteActions, onEditRequest, isAdmin }: {
+const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, onSendReminder, onApproveRequest, sendingReminder, approvingRequest, isSent, canExecuteActions, onEditRequest, isAdmin, onLookupChamber, lookingUpChamber }: {
   solicitud: any;
   canViewGlobal: boolean;
   onViewDetails: () => void;
@@ -125,6 +141,8 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
   canExecuteActions: boolean;
   onEditRequest: (solicitud: any) => void;
   isAdmin: boolean;
+  onLookupChamber: (solicitud: any) => void;
+  lookingUpChamber: boolean;
 }) => {
   const getStatusConfig = (status: string) => {
     const configs: Record<string, { color: string; bg: string; border: string }> = {
@@ -287,6 +305,31 @@ const SolicitudCard = ({ solicitud, canViewGlobal, onViewDetails, platziData, on
                 <Edit className="h-4 w-4 mr-1" />
                 <span className="hidden sm:inline">Editar</span>
                 <span className="sm:hidden">Editar</span>
+              </Button>
+            )}
+            
+            {/* Botón para buscar cámara en RUES (solo si no tiene cámara asignada y no es colaborador) */}
+            {isAdmin && !solicitud.es_colaborador && solicitud.empresas && !solicitud.empresas.camara_id && (
+              <Button
+                variant="outline" 
+                size="sm" 
+                onClick={() => onLookupChamber(solicitud)}
+                disabled={lookingUpChamber}
+                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 hover:border-blue-400 transition-colors"
+              >
+                {lookingUpChamber ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 mr-1 border-b-2 border-blue-600" />
+                    <span className="hidden sm:inline">Buscando...</span>
+                    <span className="sm:hidden">...</span>
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="h-4 w-4 mr-1" />
+                    <span className="hidden sm:inline">Buscar Cámara</span>
+                    <span className="sm:hidden">Cámara</span>
+                  </>
+                )}
               </Button>
             )}
             
@@ -852,6 +895,7 @@ export default function Solicitudes() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [showBulkUpload, setShowBulkUpload] = useState(false);
   const [showUploadHistory, setShowUploadHistory] = useState(false);
+  const [lookingUpChamberId, setLookingUpChamberId] = useState<string | null>(null);
 
   if (!profile) return null;
 
@@ -1047,6 +1091,75 @@ export default function Solicitudes() {
   const handleEditRequest = (solicitud: any) => {
     setEditingSolicitud(solicitud);
     setShowEditDialog(true);
+  };
+
+  const handleLookupChamber = async (solicitud: any) => {
+    setLookingUpChamberId(solicitud.id);
+    
+    try {
+      // Consultar API de datos.gov.co (RUES)
+      const response = await fetch(
+        `https://www.datos.gov.co/resource/c82u-588k.json?` +
+        `nit=${solicitud.nit_empresa}` +
+        `&$select=camara_comercio,razon_social,nit` +
+        `&$limit=1`
+      );
+      
+      const data = await response.json();
+      
+      // Verificar si hay resultados
+      if (!data || data.length === 0) {
+        toast({
+          title: "NIT No encontrado",
+          description: `El NIT ${solicitud.nit_empresa} no fue encontrado en el RUES.`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const camaraAPI = data[0].camara_comercio;
+      
+      // Buscar el ID correspondiente en el mapeo
+      const camaraId = CAMARA_API_TO_ID[camaraAPI];
+      
+      if (!camaraId) {
+        toast({
+          title: "Cámara no válida",
+          description: `La cámara "${camaraAPI}" no está en la lista de cámaras aliadas.`,
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Actualizar la empresa con la cámara encontrada
+      const { error } = await supabase
+        .from('empresas')
+        .update({ camara_id: camaraId })
+        .eq('nit', solicitud.nit_empresa);
+      
+      if (error) throw error;
+      
+      // Obtener nombre de la cámara para el mensaje
+      const camaraNombre = camaras.find(c => c.id === camaraId)?.nombre || camaraAPI;
+      
+      toast({
+        title: "Cámara asignada",
+        description: `Se asignó correctamente: ${camaraNombre}`,
+      });
+      
+      // Refrescar datos
+      await refetch();
+      
+    } catch (err: any) {
+      console.error('Error consultando RUES:', err);
+      toast({
+        title: "Error",
+        description: err.message || "No se pudo consultar la API o actualizar la empresa.",
+        variant: "destructive"
+      });
+    } finally {
+      setLookingUpChamberId(null);
+    }
   };
 
   const handleSaveEdit = async (updatedSolicitud: any) => {
@@ -1303,11 +1416,13 @@ export default function Solicitudes() {
                 onSendReminder={handleSendReminder}
                 onApproveRequest={handleApproveRequest}
                 onEditRequest={handleEditRequest}
+                onLookupChamber={handleLookupChamber}
                 isAdmin={canExecuteActions}
                 platziData={platziData}
                 sendingReminder={sendingReminderId === solicitud.id}
                 approvingRequest={approvingRequestId === solicitud.id}
                 isSent={sentReminders.has(solicitud.id)}
+                lookingUpChamber={lookingUpChamberId === solicitud.id}
               />
             ))}
           </div>
