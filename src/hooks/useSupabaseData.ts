@@ -108,39 +108,38 @@ export function useSolicitudes() {
     try {
       setLoading(true);
       
-      // Obtener TODAS las solicitudes (empresariales y colaboradores)
-      const { data: solicitudesData, error: solicitudesError } = await supabase
-        .from('solicitudes')
-        .select(`
-          *,
-          camaras:camara_colaborador_id (
-            id,
-            nombre,
-            nit
-          )
-        `)
-        .order('fecha_solicitud', { ascending: false });
+      // Ejecutar ambas consultas en paralelo para mayor velocidad
+      const [solicitudesResult, empresasResult] = await Promise.all([
+        supabase
+          .from('solicitudes')
+          .select(`
+            id, email, nombres_apellidos, numero_documento, nit_empresa, 
+            estado, fecha_solicitud, celular, cargo, es_colaborador,
+            camara_colaborador_id, genero, tipo_identificacion, nivel_educativo,
+            grupo_etnico, fecha_nacimiento, razon_rechazo,
+            camaras:camara_colaborador_id (id, nombre, nit)
+          `)
+          .order('fecha_solicitud', { ascending: false }),
+        supabase
+          .from('empresas')
+          .select(`
+            id, nit, nombre, sector, camara_id,
+            camaras (id, nombre, nit)
+          `)
+      ]);
 
-      if (solicitudesError) throw solicitudesError;
+      if (solicitudesResult.error) throw solicitudesResult.error;
+      if (empresasResult.error) throw empresasResult.error;
 
-      // Obtener empresas con sus cámaras
-      const { data: empresasData, error: empresasError } = await supabase
-        .from('empresas')
-        .select(`
-          *,
-          camaras (
-            id,
-            nombre,
-            nit
-          )
-        `);
+      // Crear mapa de empresas por NIT para búsqueda O(1)
+      const empresasMap = new Map(
+        empresasResult.data?.map(empresa => [empresa.nit, empresa]) || []
+      );
 
-      if (empresasError) throw empresasError;
-
-      // Combinar los datos manualmente por NIT para solicitudes empresariales
-      const solicitudesWithEmpresas = solicitudesData?.map(solicitud => ({
+      // Combinar los datos usando el mapa
+      const solicitudesWithEmpresas = solicitudesResult.data?.map(solicitud => ({
         ...solicitud,
-        empresas: solicitud.es_colaborador ? undefined : empresasData?.find(empresa => empresa.nit === solicitud.nit_empresa)
+        empresas: solicitud.es_colaborador ? undefined : empresasMap.get(solicitud.nit_empresa)
       })) || [];
 
       setSolicitudes(solicitudesWithEmpresas);

@@ -632,6 +632,7 @@ export default function Solicitudes() {
   const [showUploadHistory, setShowUploadHistory] = useState(false);
   const [lookingUpChamberId, setLookingUpChamberId] = useState<string | null>(null);
   const [showBulkChamberLookup, setShowBulkChamberLookup] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(30);
 
   if (!profile) return null;
 
@@ -822,7 +823,10 @@ export default function Solicitudes() {
     });
   }, [baseApplications, searchTerm, statusFilter, chamberFilter, sectorFilter, licenseFilter, colaboradorFilter, empresaFilter, platziEmailSet]);
 
-  // Calculate stats with useMemo
+  // Reset visible count when filters change
+  useEffect(() => {
+    setVisibleCount(30);
+  }, [searchTerm, statusFilter, chamberFilter, sectorFilter, licenseFilter, colaboradorFilter, empresaFilter]);
   const stats = useMemo(() => {
     const approved = baseApplications.filter(sol => sol.estado === 'Aprobada');
     const consumed = approved.filter(sol => platziEmailSet.has(sol.email?.toLowerCase()));
@@ -1154,7 +1158,10 @@ export default function Solicitudes() {
       {/* Results Counter */}
       <div className="flex items-center justify-between py-2">
         <p className="text-sm text-muted-foreground">
-          Mostrando <span className="font-semibold text-foreground">{filteredApplications.length}</span> de <span className="font-semibold text-foreground">{baseApplications.length}</span> solicitudes
+          Mostrando <span className="font-semibold text-foreground">{Math.min(visibleCount, filteredApplications.length)}</span> de <span className="font-semibold text-foreground">{filteredApplications.length}</span> solicitudes
+          {filteredApplications.length !== baseApplications.length && (
+            <span className="text-muted-foreground/70"> (filtradas de {baseApplications.length})</span>
+          )}
         </p>
       </div>
 
@@ -1180,27 +1187,40 @@ export default function Solicitudes() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
-            {filteredApplications.slice(0, 50).map((solicitud) => (
-              <SolicitudCard
-                key={solicitud.id}
-                solicitud={solicitud}
-                canViewGlobal={canViewGlobal}
-                canExecuteActions={canExecuteActions}
-                onViewDetails={() => handleViewDetails(solicitud)}
-                onSendReminder={handleSendReminder}
-                onApproveRequest={handleApproveRequest}
-                onEditRequest={handleEditRequest}
-                onLookupChamber={handleLookupChamber}
-                isAdmin={canExecuteActions}
-                platziData={platziData}
-                sendingReminder={sendingReminderId === solicitud.id}
-                approvingRequest={approvingRequestId === solicitud.id}
-                isSent={sentReminders.has(solicitud.id)}
-                lookingUpChamber={lookingUpChamberId === solicitud.id}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3">
+              {filteredApplications.slice(0, visibleCount).map((solicitud) => (
+                <SolicitudCard
+                  key={solicitud.id}
+                  solicitud={solicitud}
+                  canViewGlobal={canViewGlobal}
+                  canExecuteActions={canExecuteActions}
+                  onViewDetails={() => handleViewDetails(solicitud)}
+                  onSendReminder={handleSendReminder}
+                  onApproveRequest={handleApproveRequest}
+                  onEditRequest={handleEditRequest}
+                  onLookupChamber={handleLookupChamber}
+                  isAdmin={canExecuteActions}
+                  platziData={platziData}
+                  sendingReminder={sendingReminderId === solicitud.id}
+                  approvingRequest={approvingRequestId === solicitud.id}
+                  isSent={sentReminders.has(solicitud.id)}
+                  lookingUpChamber={lookingUpChamberId === solicitud.id}
+                />
+              ))}
+            </div>
+            {visibleCount < filteredApplications.length && (
+              <div className="flex justify-center pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setVisibleCount(prev => prev + 30)}
+                  className="min-w-[200px]"
+                >
+                  Cargar más ({filteredApplications.length - visibleCount} restantes)
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
