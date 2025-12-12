@@ -308,28 +308,63 @@ export function BulkChamberLookupDialog({
     setIsSaving(true);
     let savedCount = 0;
     let errorCount = 0;
+    let noEmpresaCount = 0;
 
     for (const item of itemsToSave) {
       const camaraId = item.foundCamaraId || item.manualCamaraId;
       if (!camaraId) continue;
 
       try {
-        // Si el NIT fue editado, actualizar en ambas tablas
+        const nitToUse = item.tempNit || item.solicitud.nit_empresa;
+        
+        // Verificar si existe una empresa con este NIT
+        const { data: existingEmpresa, error: checkError } = await supabase
+          .from('empresas')
+          .select('id, nit')
+          .eq('nit', item.solicitud.nit_empresa)
+          .maybeSingle();
+
+        if (checkError) {
+          console.error('Error verificando empresa:', checkError);
+          errorCount++;
+          continue;
+        }
+
+        // Si el NIT fue editado, actualizar en solicitudes
         if (item.tempNit !== item.solicitud.nit_empresa) {
-          await supabase
+          const { error: solError } = await supabase
             .from('solicitudes')
             .update({ nit_empresa: item.tempNit })
             .eq('id', item.solicitud.id);
 
-          await supabase
+          if (solError) {
+            console.error('Error actualizando solicitud:', solError);
+            errorCount++;
+            continue;
+          }
+        }
+
+        if (existingEmpresa) {
+          // Actualizar empresa existente
+          const updateData: { camara_id: string; nit?: string } = { camara_id: camaraId };
+          if (item.tempNit !== item.solicitud.nit_empresa) {
+            updateData.nit = item.tempNit;
+          }
+          
+          const { error: updateError } = await supabase
             .from('empresas')
-            .update({ nit: item.tempNit, camara_id: camaraId })
-            .eq('nit', item.solicitud.nit_empresa);
+            .update(updateData)
+            .eq('id', existingEmpresa.id);
+
+          if (updateError) {
+            console.error('Error actualizando empresa:', updateError);
+            errorCount++;
+            continue;
+          }
         } else {
-          await supabase
-            .from('empresas')
-            .update({ camara_id: camaraId })
-            .eq('nit', item.solicitud.nit_empresa);
+          // No existe empresa - registrar para informar al usuario
+          noEmpresaCount++;
+          console.warn(`Solicitud ${item.solicitud.id} no tiene empresa asociada con NIT ${nitToUse}`);
         }
 
         // Marcar como guardado
@@ -349,9 +384,17 @@ export function BulkChamberLookupDialog({
 
     setIsSaving(false);
 
+    let description = `Se guardaron ${savedCount} asignaciones`;
+    if (noEmpresaCount > 0) {
+      description += ` (${noEmpresaCount} sin empresa en BD)`;
+    }
+    if (errorCount > 0) {
+      description += ` (${errorCount} errores)`;
+    }
+
     toast({
       title: 'Cambios guardados',
-      description: `Se guardaron ${savedCount} asignaciones${errorCount > 0 ? ` (${errorCount} errores)` : ''}.`,
+      description,
     });
 
     onSuccess();
