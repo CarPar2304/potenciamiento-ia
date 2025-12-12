@@ -619,6 +619,7 @@ export default function Solicitudes() {
   const [sectorFilter, setSectorFilter] = useState('todos');
   const [licenseFilter, setLicenseFilter] = useState('todas');
   const [colaboradorFilter, setColaboradorFilter] = useState('todos');
+  const [empresaFilter, setEmpresaFilter] = useState('todas');
   const [selectedSolicitud, setSelectedSolicitud] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [sendingReminderId, setSendingReminderId] = useState<string | null>(null);
@@ -811,10 +812,15 @@ export default function Solicitudes() {
       const matchesColaborador = colaboradorFilter === 'todos' ||
         (colaboradorFilter === 'si' && sol.es_colaborador === true) ||
         (colaboradorFilter === 'no' && sol.es_colaborador === false);
+      
+      // Filtro de empresa: sin_empresa = solicitudes de empresarios cuyo NIT no cruza con ninguna empresa
+      const matchesEmpresa = empresaFilter === 'todas' ||
+        (empresaFilter === 'sin_empresa' && !sol.es_colaborador && !sol.empresas) ||
+        (empresaFilter === 'con_empresa' && !sol.es_colaborador && sol.empresas);
 
-      return matchesSearch && matchesStatus && matchesChamber && matchesSector && matchesLicense && matchesColaborador;
+      return matchesSearch && matchesStatus && matchesChamber && matchesSector && matchesLicense && matchesColaborador && matchesEmpresa;
     });
-  }, [baseApplications, searchTerm, statusFilter, chamberFilter, sectorFilter, licenseFilter, colaboradorFilter, platziEmailSet]);
+  }, [baseApplications, searchTerm, statusFilter, chamberFilter, sectorFilter, licenseFilter, colaboradorFilter, empresaFilter, platziEmailSet]);
 
   // Calculate stats with useMemo
   const stats = useMemo(() => {
@@ -1129,6 +1135,17 @@ export default function Solicitudes() {
                   </SelectContent>
                 </Select>
               )}
+              
+              <Select value={empresaFilter} onValueChange={setEmpresaFilter}>
+                <SelectTrigger className="w-[180px] bg-background/50 border-muted-foreground/20">
+                  <SelectValue placeholder="Empresa" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas</SelectItem>
+                  <SelectItem value="sin_empresa">Sin empresa</SelectItem>
+                  <SelectItem value="con_empresa">Con empresa</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
