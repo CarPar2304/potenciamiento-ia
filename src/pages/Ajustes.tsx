@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Dialog,
   DialogContent,
@@ -88,6 +89,11 @@ export default function Ajustes() {
     emailsNotFound?: number;
   } | null>(null);
   const [notFoundRecords, setNotFoundRecords] = useState<any[]>([]);
+  
+  // Estado de acceso filter states (for sheet1)
+  const [availableEstados, setAvailableEstados] = useState<string[]>([]);
+  const [selectedEstados, setSelectedEstados] = useState<Set<string>>(new Set());
+  const [allProcessedData, setAllProcessedData] = useState<any[] | null>(null);
   
   // Webhook configuration states
   const [webhookConfig, setWebhookConfig] = useState<any>(null);
@@ -663,8 +669,25 @@ export default function Ajustes() {
       setUploadProgress(100);
 
       // Guardar datos procesados para confirmación posterior
-      setPendingData(processResult.processed);
       setNotFoundRecords(processResult.notFoundData || []);
+
+      // For sheet1, extract unique "Estado de acceso" values and set up filters
+      if (selectedReport === 'sheet1') {
+        const estados = [...new Set(
+          processResult.processed
+            .map((r: any) => r.estado_acceso)
+            .filter((e: any) => e && e.toString().trim() !== '')
+        )] as string[];
+        setAvailableEstados(estados);
+        setSelectedEstados(new Set(estados)); // Select all by default
+        setAllProcessedData(processResult.processed);
+        setPendingData(processResult.processed);
+      } else {
+        setAvailableEstados([]);
+        setSelectedEstados(new Set());
+        setAllProcessedData(null);
+        setPendingData(processResult.processed);
+      }
 
       const results = {
         success: processResult.processed.length,
@@ -1255,6 +1278,76 @@ export default function Ajustes() {
                 </div>
               )}
 
+              {/* Estado de acceso filter for sheet1 */}
+              {selectedReport === 'sheet1' && availableEstados.length > 0 && allProcessedData && (
+                <div className="p-4 rounded-lg border bg-muted/30">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-sm">Filtrar por Estado de Acceso</h4>
+                    <span className="text-xs text-muted-foreground">
+                      {pendingData?.length || 0} de {allProcessedData.length} registros seleccionados
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {availableEstados.map((estado) => {
+                      const count = allProcessedData.filter((r: any) => r.estado_acceso === estado).length;
+                      const isChecked = selectedEstados.has(estado);
+                      return (
+                        <label
+                          key={estado}
+                          className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 cursor-pointer text-sm"
+                        >
+                          <Checkbox
+                            checked={isChecked}
+                            onCheckedChange={(checked) => {
+                              const newSelected = new Set(selectedEstados);
+                              if (checked) {
+                                newSelected.add(estado);
+                              } else {
+                                newSelected.delete(estado);
+                              }
+                              setSelectedEstados(newSelected);
+                              // Filter pending data based on selection
+                              const filteredData = allProcessedData.filter(
+                                (r: any) => newSelected.has(r.estado_acceso)
+                              );
+                              setPendingData(filteredData);
+                            }}
+                          />
+                          <span className="flex-1">{estado}</span>
+                          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            {count}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <div className="flex gap-2 mt-3 pt-3 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedEstados(new Set(availableEstados));
+                        setPendingData(allProcessedData);
+                      }}
+                      className="text-xs"
+                    >
+                      Seleccionar todos
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedEstados(new Set());
+                        setPendingData([]);
+                      }}
+                      className="text-xs"
+                    >
+                      Deseleccionar todos
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Results */}
               {uploadResults && (
                 <div className={`p-4 rounded-lg border ${
@@ -1327,9 +1420,12 @@ export default function Ajustes() {
                     setIsDialogOpen(false);
                     setUploadResults(null);
                     setPendingData(null);
+                    setAllProcessedData(null);
+                    setAvailableEstados([]);
+                    setSelectedEstados(new Set());
                     setNotFoundRecords([]);
                     setUploadProgress(0);
-                  }} 
+                  }}
                   disabled={isUploading}
                 >
                   {uploadResults ? 'Cerrar' : 'Cancelar'}
