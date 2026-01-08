@@ -1645,10 +1645,11 @@ export default function Empresas() {
       <ExportModal
         isOpen={showExportModal}
         onClose={() => setShowExportModal(false)}
-        data={filteredCompanies}
+        data={baseCompanies}
         type="empresas"
         platziEmails={new Set(platziData?.map(p => p.email?.toLowerCase() || '') || [])}
         platziData={platziData}
+        camaras={camaras}
       />
 
       {/* Bulk Upload Dialog */}
