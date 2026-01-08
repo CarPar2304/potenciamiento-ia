@@ -1079,6 +1079,7 @@ export default function Colaboradores() {
         type="colaboradores"
         platziEmails={new Set(platziData?.map(p => p.email?.toLowerCase() || '') || [])}
         platziData={platziData}
+        camaras={camaras}
       />
     </div>
   );

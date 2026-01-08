@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,14 +10,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FileSpreadsheet, Calendar, Settings, Download } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { FileSpreadsheet, Calendar, Settings, Download, Building2 } from 'lucide-react';
 import { FieldSelector } from './FieldSelector';
 import { DateRangeFilter } from './DateRangeFilter';
 import { useToast } from '@/hooks/use-toast';
 import {
   MANDATORY_FIELDS,
+  MANDATORY_EMPRESA_FIELDS,
   SOLICITUD_FIELDS,
   EMPRESA_FIELDS,
+  EMPRESA_EXPORT_FIELDS,
   PLATZI_FIELDS,
   exportToExcel,
   createFieldLabelsMap,
@@ -30,12 +39,22 @@ interface ExportModalProps {
   type: 'solicitudes' | 'empresas' | 'colaboradores';
   platziEmails?: Set<string>;
   platziData?: any[];
+  camaras?: { id: string; nombre: string }[];
 }
 
-export const ExportModal = ({ isOpen, onClose, data, type, platziEmails, platziData }: ExportModalProps) => {
+export const ExportModal = ({ isOpen, onClose, data, type, platziEmails, platziData, camaras = [] }: ExportModalProps) => {
   const { toast } = useToast();
+  
+  // Determinar campos iniciales según el tipo
+  const getMandatoryFields = () => {
+    if (type === 'empresas') {
+      return MANDATORY_EMPRESA_FIELDS;
+    }
+    return MANDATORY_FIELDS;
+  };
+
   const [selectedFields, setSelectedFields] = useState<string[]>(
-    MANDATORY_FIELDS.map(f => f.key)
+    getMandatoryFields().map(f => f.key)
   );
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined;
@@ -50,10 +69,44 @@ export const ExportModal = ({ isOpen, onClose, data, type, platziEmails, platziD
     return typeNames[type];
   });
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedCamara, setSelectedCamara] = useState<string>('todas');
+
+  // Reset fields when type changes
+  useEffect(() => {
+    setSelectedFields(getMandatoryFields().map(f => f.key));
+  }, [type]);
+
+  // Extraer cámaras únicas de los datos si no se pasan como prop
+  const availableCamaras = useMemo(() => {
+    if (camaras && camaras.length > 0) {
+      return camaras;
+    }
+    // Extraer cámaras de los datos
+    const camaraMap = new Map<string, string>();
+    data.forEach(item => {
+      const camaraNombre = item.camaras?.nombre || item.empresas?.camaras?.nombre;
+      if (camaraNombre) {
+        camaraMap.set(camaraNombre, camaraNombre);
+      }
+    });
+    return Array.from(camaraMap.keys()).map(nombre => ({ id: nombre, nombre }));
+  }, [data, camaras]);
+
+  // Filtrar datos por cámara seleccionada
+  const filteredData = useMemo(() => {
+    if (selectedCamara === 'todas') {
+      return data;
+    }
+    return data.filter(item => {
+      const camaraNombre = item.camaras?.nombre || item.empresas?.camaras?.nombre;
+      return camaraNombre === selectedCamara;
+    });
+  }, [data, selectedCamara]);
 
   const handleFieldToggle = (fieldKey: string) => {
     // No permitir deseleccionar campos mínimos
-    if (MANDATORY_FIELDS.some(f => f.key === fieldKey)) {
+    const mandatoryFields = getMandatoryFields();
+    if (mandatoryFields.some(f => f.key === fieldKey)) {
       return;
     }
 
@@ -67,9 +120,9 @@ export const ExportModal = ({ isOpen, onClose, data, type, platziEmails, platziD
   const handleExport = async () => {
     setIsExporting(true);
     try {
-      const fieldLabels = createFieldLabelsMap();
+      const fieldLabels = createFieldLabelsMap(type);
       const result = exportToExcel(
-        data,
+        filteredData,
         selectedFields,
         fileName,
         fieldLabels,
@@ -95,8 +148,9 @@ export const ExportModal = ({ isOpen, onClose, data, type, platziEmails, platziD
     }
   };
 
-  const totalRecords = data.length;
+  const totalRecords = filteredData.length;
   const selectedFieldsCount = selectedFields.length;
+  const mandatoryFields = getMandatoryFields();
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -110,6 +164,40 @@ export const ExportModal = ({ isOpen, onClose, data, type, platziEmails, platziD
             Configura los campos y filtros para exportar los datos a Excel
           </DialogDescription>
         </DialogHeader>
+
+        {/* Filtro de cámara siempre visible */}
+        {availableCamaras.length > 0 && (
+          <div className="bg-muted/30 rounded-lg p-4 space-y-2">
+            <Label className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Filtrar por Cámara
+            </Label>
+            <Select value={selectedCamara} onValueChange={setSelectedCamara}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar cámara" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas las cámaras ({data.length} registros)</SelectItem>
+                {availableCamaras.map((camara) => {
+                  const count = data.filter(item => {
+                    const camaraNombre = item.camaras?.nombre || item.empresas?.camaras?.nombre;
+                    return camaraNombre === camara.nombre;
+                  }).length;
+                  return (
+                    <SelectItem key={camara.id || camara.nombre} value={camara.nombre}>
+                      {camara.nombre} ({count} registros)
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            {selectedCamara !== 'todas' && (
+              <p className="text-sm text-primary font-medium">
+                Se exportarán {totalRecords} registros de "{selectedCamara}"
+              </p>
+            )}
+          </div>
+        )}
 
         <Tabs defaultValue="fields" className="flex-1 flex flex-col overflow-hidden">
           <TabsList className="grid w-full grid-cols-3">
@@ -131,7 +219,7 @@ export const ExportModal = ({ isOpen, onClose, data, type, platziEmails, platziD
             <TabsContent value="fields" className="space-y-6 mt-0">
               {/* Campos mínimos */}
               <FieldSelector
-                fields={MANDATORY_FIELDS}
+                fields={mandatoryFields}
                 selectedFields={selectedFields}
                 onFieldToggle={handleFieldToggle}
                 disabled={true}
@@ -139,32 +227,45 @@ export const ExportModal = ({ isOpen, onClose, data, type, platziEmails, platziD
                 description="Estos campos siempre se incluyen en la exportación"
               />
 
-              {/* Campos de solicitud */}
-              <FieldSelector
-                fields={SOLICITUD_FIELDS}
-                selectedFields={selectedFields}
-                onFieldToggle={handleFieldToggle}
-                title="Campos adicionales - Solicitudes"
-                description="Selecciona campos adicionales de información de solicitudes"
-              />
+              {/* Campos adicionales según tipo */}
+              {type === 'empresas' ? (
+                <FieldSelector
+                  fields={EMPRESA_EXPORT_FIELDS}
+                  selectedFields={selectedFields}
+                  onFieldToggle={handleFieldToggle}
+                  title="Campos adicionales - Empresas"
+                  description="Selecciona campos adicionales de información de empresas"
+                />
+              ) : (
+                <>
+                  {/* Campos de solicitud */}
+                  <FieldSelector
+                    fields={SOLICITUD_FIELDS}
+                    selectedFields={selectedFields}
+                    onFieldToggle={handleFieldToggle}
+                    title="Campos adicionales - Solicitudes"
+                    description="Selecciona campos adicionales de información de solicitudes"
+                  />
 
-              {/* Campos de empresa */}
-              <FieldSelector
-                fields={EMPRESA_FIELDS}
-                selectedFields={selectedFields}
-                onFieldToggle={handleFieldToggle}
-                title="Campos adicionales - Empresas"
-                description="Selecciona campos adicionales de información de empresas"
-              />
+                  {/* Campos de empresa */}
+                  <FieldSelector
+                    fields={EMPRESA_FIELDS}
+                    selectedFields={selectedFields}
+                    onFieldToggle={handleFieldToggle}
+                    title="Campos adicionales - Empresas"
+                    description="Selecciona campos adicionales de información de empresas"
+                  />
 
-              {/* Campos de Platzi */}
-              <FieldSelector
-                fields={PLATZI_FIELDS}
-                selectedFields={selectedFields}
-                onFieldToggle={handleFieldToggle}
-                title="Campos adicionales - Platzi"
-                description="Selecciona campos de progreso y cursos en Platzi"
-              />
+                  {/* Campos de Platzi */}
+                  <FieldSelector
+                    fields={PLATZI_FIELDS}
+                    selectedFields={selectedFields}
+                    onFieldToggle={handleFieldToggle}
+                    title="Campos adicionales - Platzi"
+                    description="Selecciona campos de progreso y cursos en Platzi"
+                  />
+                </>
+              )}
 
               <div className="bg-muted/30 rounded-lg p-3 text-sm">
                 <p className="text-muted-foreground">
@@ -181,7 +282,7 @@ export const ExportModal = ({ isOpen, onClose, data, type, platziEmails, platziD
 
               <div className="bg-muted/30 rounded-lg p-4 text-sm space-y-2">
                 <p className="text-muted-foreground">
-                  <span className="font-semibold text-foreground">{totalRecords}</span> registros totales
+                  <span className="font-semibold text-foreground">{totalRecords}</span> registros a exportar
                 </p>
                 {dateRange.from && dateRange.to && (
                   <p className="text-xs text-muted-foreground">
@@ -212,18 +313,22 @@ export const ExportModal = ({ isOpen, onClose, data, type, platziEmails, platziD
                     <span className="font-semibold">Excel (.xlsx)</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Cámara:</span>
+                    <span className="font-semibold">{selectedCamara === 'todas' ? 'Todas' : selectedCamara}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Campos seleccionados:</span>
                     <span className="font-semibold">{selectedFieldsCount}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Registros totales:</span>
+                    <span className="text-muted-foreground">Registros a exportar:</span>
                     <span className="font-semibold">{totalRecords}</span>
                   </div>
                 </div>
 
                 <Button
                   onClick={handleExport}
-                  disabled={isExporting || !fileName.trim()}
+                  disabled={isExporting || !fileName.trim() || totalRecords === 0}
                   className="w-full"
                   size="lg"
                 >
@@ -235,7 +340,7 @@ export const ExportModal = ({ isOpen, onClose, data, type, platziEmails, platziD
                   ) : (
                     <>
                       <Download className="h-4 w-4 mr-2" />
-                      Exportar a Excel
+                      Exportar a Excel ({totalRecords} registros)
                     </>
                   )}
                 </Button>

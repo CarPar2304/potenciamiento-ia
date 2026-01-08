@@ -7,6 +7,7 @@ export interface ExportField {
   category: 'minimo' | 'solicitud' | 'empresa';
 }
 
+// Campos mínimos para exportación de SOLICITUDES y COLABORADORES
 export const MANDATORY_FIELDS: ExportField[] = [
   { key: 'nombres_apellidos', label: 'Nombre', category: 'minimo' },
   { key: 'tipo_identificacion', label: 'Tipo de documento', category: 'minimo' },
@@ -20,6 +21,37 @@ export const MANDATORY_FIELDS: ExportField[] = [
   { key: 'licencia_consumida', label: 'Licencia Consumida', category: 'minimo' },
 ];
 
+// Campos mínimos para exportación de EMPRESAS
+export const MANDATORY_EMPRESA_FIELDS: ExportField[] = [
+  { key: 'nombre', label: 'Nombre Empresa', category: 'minimo' },
+  { key: 'nit', label: 'NIT', category: 'minimo' },
+  { key: 'camaras.nombre', label: 'Cámara', category: 'minimo' },
+  { key: 'sector', label: 'Sector', category: 'minimo' },
+];
+
+// Campos adicionales para exportación de EMPRESAS
+export const EMPRESA_EXPORT_FIELDS: ExportField[] = [
+  { key: 'mercado', label: 'Mercado', category: 'empresa' },
+  { key: 'productos_servicios', label: 'Productos/Servicios', category: 'empresa' },
+  { key: 'tipo_cliente', label: 'Tipo de cliente', category: 'empresa' },
+  { key: 'tipo_sociedad', label: 'Tipo de sociedad', category: 'empresa' },
+  { key: 'num_colaboradores', label: '# Colaboradores', category: 'empresa' },
+  { key: 'mujeres_colaboradoras', label: '# Mujeres colaboradoras', category: 'empresa' },
+  { key: 'ventas_2024', label: 'Ventas 2024', category: 'empresa' },
+  { key: 'utilidades_2024', label: 'Utilidades 2024', category: 'empresa' },
+  { key: 'decision_adoptar_ia', label: 'Decisión adoptar IA', category: 'empresa' },
+  { key: 'invirtio_ia_2024', label: 'Invirtió en IA 2024', category: 'empresa' },
+  { key: 'monto_inversion_2024', label: 'Monto inversión 2024', category: 'empresa' },
+  { key: 'areas_implementacion_ia', label: 'Áreas implementación IA', category: 'empresa' },
+  { key: 'razon_no_adopcion', label: 'Razón no adopción IA', category: 'empresa' },
+  { key: 'asigno_recursos_ia', label: 'Asignó recursos IA', category: 'empresa' },
+  { key: 'probabilidad_adopcion_12m', label: 'Probabilidad adopción 12m', category: 'empresa' },
+  { key: 'probabilidad_inversion_12m', label: 'Probabilidad inversión 12m', category: 'empresa' },
+  { key: 'monto_invertir_12m', label: 'Monto a invertir 12m', category: 'empresa' },
+  { key: 'colaboradores_capacitados_ia', label: 'Colaboradores capacitados en IA', category: 'empresa' },
+  { key: 'plan_capacitacion_ia', label: 'Plan capacitación IA', category: 'empresa' },
+];
+
 export const SOLICITUD_FIELDS: ExportField[] = [
   { key: 'cargo', label: 'Cargo', category: 'solicitud' },
   { key: 'nivel_educativo', label: 'Nivel educativo', category: 'solicitud' },
@@ -31,6 +63,7 @@ export const SOLICITUD_FIELDS: ExportField[] = [
   { key: 'razon_rechazo', label: 'Razón de rechazo', category: 'solicitud' },
 ];
 
+// Campos de empresas para solicitudes (acceso anidado)
 export const EMPRESA_FIELDS: ExportField[] = [
   { key: 'empresas.sector', label: 'Sector', category: 'empresa' },
   { key: 'empresas.mercado', label: 'Mercado', category: 'empresa' },
@@ -236,12 +269,18 @@ export const exportToExcel = (
   }
 };
 
-export const createFieldLabelsMap = (): Record<string, string> => {
+export const createFieldLabelsMap = (type?: 'solicitudes' | 'empresas' | 'colaboradores'): Record<string, string> => {
   const map: Record<string, string> = {};
   
-  [...MANDATORY_FIELDS, ...SOLICITUD_FIELDS, ...EMPRESA_FIELDS, ...PLATZI_FIELDS].forEach(field => {
-    map[field.key] = field.label;
-  });
+  if (type === 'empresas') {
+    [...MANDATORY_EMPRESA_FIELDS, ...EMPRESA_EXPORT_FIELDS].forEach(field => {
+      map[field.key] = field.label;
+    });
+  } else {
+    [...MANDATORY_FIELDS, ...SOLICITUD_FIELDS, ...EMPRESA_FIELDS, ...PLATZI_FIELDS].forEach(field => {
+      map[field.key] = field.label;
+    });
+  }
   
   // Agregar mapeos adicionales para campos nested
   map['empresas.nombre'] = 'Empresa';
