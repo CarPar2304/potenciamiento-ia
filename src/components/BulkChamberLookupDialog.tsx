@@ -35,8 +35,16 @@ import {
   AlertTriangle,
   Edit2,
   Check,
-  X
+  X,
+  Building2,
+  AlertCircle
 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -444,6 +452,10 @@ export function BulkChamberLookupDialog({
     (item) => item.pendingSave || (item.status === 'manually_assigned' && item.manualCamaraId)
   ).length;
 
+  // Contador de solicitudes sin empresa
+  const withoutEmpresaCount = items.filter((item) => !item.solicitud.empresas).length;
+  const withEmpresaCount = items.length - withoutEmpresaCount;
+
   const getStatusBadge = (item: BulkLookupItem) => {
     switch (item.status) {
       case 'searching':
@@ -567,6 +579,7 @@ export function BulkChamberLookupDialog({
                   <TableHead className="w-12"></TableHead>
                   <TableHead>Nombre</TableHead>
                   <TableHead className="w-[140px]">NIT</TableHead>
+                  <TableHead className="w-[60px] text-center">Empresa</TableHead>
                   <TableHead className="w-[160px]">Estado</TableHead>
                   <TableHead className="w-[180px]">Asignar Cámara</TableHead>
                 </TableRow>
@@ -574,15 +587,17 @@ export function BulkChamberLookupDialog({
               <TableBody>
                 {items.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
+                    <TableCell colSpan={6} className="h-24 text-center">
                       <p className="text-muted-foreground">
                         No hay solicitudes que coincidan con los filtros.
                       </p>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  items.map((item) => (
-                    <TableRow key={item.solicitud.id}>
+                  items.map((item) => {
+                    const hasEmpresa = !!item.solicitud.empresas;
+                    return (
+                    <TableRow key={item.solicitud.id} className={!hasEmpresa ? 'bg-warning/5' : ''}>
                       <TableCell>
                         <Checkbox
                           checked={item.selected}
@@ -657,6 +672,27 @@ export function BulkChamberLookupDialog({
                           </div>
                         )}
                       </TableCell>
+                      <TableCell className="text-center">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex justify-center">
+                                {hasEmpresa ? (
+                                  <Building2 className="h-4 w-4 text-success" />
+                                ) : (
+                                  <AlertCircle className="h-4 w-4 text-warning" />
+                                )}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {hasEmpresa 
+                                ? `Empresa vinculada: ${item.solicitud.empresas?.nombre || 'Sin nombre'}`
+                                : 'Sin empresa vinculada - se creará automáticamente al guardar'
+                              }
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
                       <TableCell>{getStatusBadge(item)}</TableCell>
                       <TableCell>
                         {(item.status === 'not_found' || 
@@ -684,7 +720,7 @@ export function BulkChamberLookupDialog({
                         ) : null}
                       </TableCell>
                     </TableRow>
-                  ))
+                  )})
                 )}
               </TableBody>
             </Table>
@@ -709,7 +745,28 @@ export function BulkChamberLookupDialog({
 
         {/* Footer */}
         <div className="flex flex-col-reverse sm:flex-row justify-between gap-2 pt-4 border-t">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {withoutEmpresaCount > 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="text-warning border-warning/30 gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {withoutEmpresaCount} sin empresa
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Estas solicitudes no tienen empresa vinculada. Al guardar, se crearán automáticamente.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {withEmpresaCount > 0 && (
+              <Badge variant="outline" className="text-success border-success/30 gap-1">
+                <Building2 className="h-3 w-3" />
+                {withEmpresaCount} con empresa
+              </Badge>
+            )}
             {pendingChangesCount > 0 && (
               <Badge variant="outline" className="text-primary">
                 {pendingChangesCount} cambio{pendingChangesCount !== 1 ? 's' : ''} pendiente{pendingChangesCount !== 1 ? 's' : ''}
