@@ -309,29 +309,18 @@ export function BulkChamberLookupDialog({
     let savedCount = 0;
     let errorCount = 0;
     let noEmpresaCount = 0;
+    let createdEmpresaCount = 0;
 
     for (const item of itemsToSave) {
       const camaraId = item.foundCamaraId || item.manualCamaraId;
       if (!camaraId) continue;
 
       try {
+        // Usar el NIT editado si fue modificado, sino el original
         const nitToUse = item.tempNit || item.solicitud.nit_empresa;
         
-        // Verificar si existe una empresa con este NIT
-        const { data: existingEmpresa, error: checkError } = await supabase
-          .from('empresas')
-          .select('id, nit')
-          .eq('nit', item.solicitud.nit_empresa)
-          .maybeSingle();
-
-        if (checkError) {
-          console.error('Error verificando empresa:', checkError);
-          errorCount++;
-          continue;
-        }
-
-        // Si el NIT fue editado, actualizar en solicitudes
-        if (item.tempNit !== item.solicitud.nit_empresa) {
+        // Si el NIT fue editado, actualizar primero en solicitudes
+        if (item.tempNit && item.tempNit !== item.solicitud.nit_empresa) {
           const { error: solError } = await supabase
             .from('solicitudes')
             .update({ nit_empresa: item.tempNit })
@@ -343,17 +332,25 @@ export function BulkChamberLookupDialog({
             continue;
           }
         }
+        
+        // Verificar si existe una empresa con el NIT que vamos a usar
+        const { data: existingEmpresa, error: checkError } = await supabase
+          .from('empresas')
+          .select('id, nit, camara_id')
+          .eq('nit', nitToUse)
+          .maybeSingle();
+
+        if (checkError) {
+          console.error('Error verificando empresa:', checkError);
+          errorCount++;
+          continue;
+        }
 
         if (existingEmpresa) {
-          // Actualizar empresa existente
-          const updateData: { camara_id: string; nit?: string } = { camara_id: camaraId };
-          if (item.tempNit !== item.solicitud.nit_empresa) {
-            updateData.nit = item.tempNit;
-          }
-          
+          // Actualizar empresa existente con la cámara
           const { error: updateError } = await supabase
             .from('empresas')
-            .update(updateData)
+            .update({ camara_id: camaraId })
             .eq('id', existingEmpresa.id);
 
           if (updateError) {
@@ -361,10 +358,31 @@ export function BulkChamberLookupDialog({
             errorCount++;
             continue;
           }
+          
+          console.log(`Empresa ${existingEmpresa.id} actualizada con cámara ${camaraId}`);
+          savedCount++;
         } else {
-          // No existe empresa - registrar para informar al usuario
-          noEmpresaCount++;
-          console.warn(`Solicitud ${item.solicitud.id} no tiene empresa asociada con NIT ${nitToUse}`);
+          // No existe empresa - crear una nueva con el NIT y cámara
+          const empresaNombre = item.solicitud.empresas?.nombre || `Empresa NIT ${nitToUse}`;
+          
+          const { error: insertError } = await supabase
+            .from('empresas')
+            .insert({
+              nit: nitToUse,
+              nombre: empresaNombre,
+              camara_id: camaraId,
+            });
+
+          if (insertError) {
+            // Si falla por duplicado u otro error, contar como "sin empresa"
+            console.error('Error creando empresa:', insertError);
+            noEmpresaCount++;
+            continue;
+          }
+          
+          console.log(`Empresa creada con NIT ${nitToUse} y cámara ${camaraId}`);
+          createdEmpresaCount++;
+          savedCount++;
         }
 
         // Marcar como guardado
@@ -375,7 +393,6 @@ export function BulkChamberLookupDialog({
               : i
           )
         );
-        savedCount++;
       } catch (err) {
         console.error('Error guardando:', err);
         errorCount++;
@@ -384,9 +401,12 @@ export function BulkChamberLookupDialog({
 
     setIsSaving(false);
 
-    let description = `Se guardaron ${savedCount} asignaciones`;
+    let description = `Se asignaron ${savedCount} cámaras`;
+    if (createdEmpresaCount > 0) {
+      description += ` (${createdEmpresaCount} empresas creadas)`;
+    }
     if (noEmpresaCount > 0) {
-      description += ` (${noEmpresaCount} sin empresa en BD)`;
+      description += ` (${noEmpresaCount} no pudieron crearse)`;
     }
     if (errorCount > 0) {
       description += ` (${errorCount} errores)`;
