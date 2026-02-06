@@ -109,24 +109,28 @@ export function useSolicitudes() {
       setLoading(true);
       
       // Ejecutar ambas consultas en paralelo para mayor velocidad
-      const [solicitudesResult, empresasResult] = await Promise.all([
-        supabase
-          .from('solicitudes')
-          .select(`
-            id, email, nombres_apellidos, numero_documento, nit_empresa, 
-            estado, fecha_solicitud, celular, cargo, es_colaborador,
-            camara_colaborador_id, genero, tipo_identificacion, nivel_educativo,
-            grupo_etnico, fecha_nacimiento, razon_rechazo,
-            camaras:camara_colaborador_id (id, nombre, nit)
-          `)
-          .order('fecha_solicitud', { ascending: false }),
-        supabase
-          .from('empresas')
-          .select(`
-            id, nit, nombre, sector, camara_id,
-            camaras (id, nombre, nit)
-          `)
-      ]);
+       const [solicitudesResult, empresasResult] = await Promise.all([
+         supabase
+           .from('solicitudes')
+           .select(`
+             id, email, nombres_apellidos, numero_documento, nit_empresa, 
+             estado, fecha_solicitud, celular, cargo, es_colaborador,
+             camara_colaborador_id, genero, tipo_identificacion, nivel_educativo,
+             grupo_etnico, fecha_nacimiento, razon_rechazo,
+             camaras:camara_colaborador_id (id, nombre, nit)
+           `)
+           .order('fecha_solicitud', { ascending: false })
+           // PostgREST aplica un límite de 1000 filas si no se especifica rango.
+           // Traemos un rango mayor para evitar “registros que existen pero no aparecen”.
+           .range(0, 4999),
+         supabase
+           .from('empresas')
+           .select(`
+             id, nit, nombre, sector, camara_id,
+             camaras (id, nombre, nit)
+           `)
+           .range(0, 4999)
+       ]);
 
       if (solicitudesResult.error) throw solicitudesResult.error;
       if (empresasResult.error) throw empresasResult.error;
