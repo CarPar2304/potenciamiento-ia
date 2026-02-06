@@ -58,6 +58,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
 import { useSolicitudes, useCamaras, usePlatziGeneral, usePlatziSeguimiento } from '@/hooks/useSupabaseData';
+import { useRemoteEmailSearch } from '@/hooks/useRemoteEmailSearch';
 
 // Mapeo de nombres de cámara de la API RUES a IDs del sistema
 const CAMARA_API_TO_ID: Record<string, string> = {
@@ -614,6 +615,14 @@ export default function Solicitudes() {
   const { seguimientoData } = usePlatziSeguimiento();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Búsqueda server-side por email (para registros que quedan fuera del “top 1000”)
+  const remoteEmailSearch = useRemoteEmailSearch(searchTerm);
+  const effectiveSolicitudes = remoteEmailSearch.enabled
+    ? (remoteEmailSearch.data ?? [])
+    : solicitudes;
+  const effectiveLoading = loading || (remoteEmailSearch.enabled && remoteEmailSearch.loading);
+
   const [statusFilter, setStatusFilter] = useState('todos');
   const [chamberFilter, setChamberFilter] = useState('todas');
   const [sectorFilter, setSectorFilter] = useState('todos');
@@ -777,9 +786,9 @@ export default function Solicitudes() {
   // Filter applications based on user permissions
   const baseApplications = useMemo(() => 
     canViewGlobal 
-      ? solicitudes 
-      : solicitudes.filter(sol => sol.empresas?.camaras?.nombre === profile.chamber),
-    [canViewGlobal, solicitudes, profile.chamber]
+      ? effectiveSolicitudes 
+      : effectiveSolicitudes.filter(sol => sol.empresas?.camaras?.nombre === profile.chamber),
+    [canViewGlobal, effectiveSolicitudes, profile.chamber]
   );
 
   // Pre-compute platzi emails for faster lookup
@@ -1167,7 +1176,7 @@ export default function Solicitudes() {
 
       {/* Modern Cards Grid */}
       <div className="space-y-4">
-        {loading ? (
+        {effectiveLoading ? (
           <Card>
             <CardContent className="p-8">
               <div className="flex items-center justify-center">
