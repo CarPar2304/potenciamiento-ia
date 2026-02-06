@@ -394,11 +394,16 @@ export function BulkUploadDialog({ isOpen, onClose, onSuccess }: BulkUploadDialo
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    <p className="font-semibold mb-2">Emails duplicados (no se cargarán):</p>
+                    <p className="font-semibold mb-2">Emails duplicados (ya existen en la base de datos):</p>
+                    <p className="text-xs mb-2 opacity-80">
+                      💡 Si no los encuentras al buscar, verifica que todos los filtros estén en "Todos/Todas"
+                    </p>
                     <div className="max-h-32 overflow-y-auto text-sm">
-                      <ul className="list-disc list-inside">
+                      <ul className="list-disc list-inside space-y-1">
                         {analysis.duplicateEmails.slice(0, 10).map((email, index) => (
-                          <li key={index}>{email}</li>
+                          <li key={index} className="flex items-center gap-2">
+                            <span>{email}</span>
+                          </li>
                         ))}
                         {analysis.duplicateEmails.length > 10 && (
                           <li>... y {analysis.duplicateEmails.length - 10} más</li>
