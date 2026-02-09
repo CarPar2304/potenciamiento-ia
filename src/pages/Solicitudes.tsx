@@ -58,9 +58,9 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useEffect } from 'react';
 import { useSolicitudes, useCamaras, usePlatziGeneral, usePlatziSeguimiento } from '@/hooks/useSupabaseData';
-import { useRemoteEmailSearch } from '@/hooks/useRemoteEmailSearch';
+import { useRemoteSearch } from '@/hooks/useRemoteSearch';
 
-// Mapeo de nombres de cámara de la API RUES a IDs del sistema
+// CAMARA_API_TO_ID mapping
 const CAMARA_API_TO_ID: Record<string, string> = {
   'CALI': '7f567c19-8963-4910-a033-36689f29f9d7',
   'TULUA': '9592810c-00df-4911-9609-fc786aeda0ee',
@@ -85,6 +85,7 @@ import { BulkChamberLookupDialog } from '@/components/BulkChamberLookupDialog';
 // StatCard component moved to src/components/solicitudes/StatCard.tsx
 // SolicitudCard component moved to src/components/solicitudes/SolicitudCard.tsx
 
+// SolicitudEditDialog component - lines 88-401
 const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave, camaras }: {
   solicitud: any;
   isOpen: boolean;
@@ -93,7 +94,6 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave, camaras }: {
   camaras: any[];
 }) => {
   const [formData, setFormData] = useState({
-    // Solo datos de solicitud
     nombres_apellidos: '',
     email: '',
     numero_documento: '',
@@ -114,7 +114,6 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave, camaras }: {
   
   const [saving, setSaving] = useState(false);
 
-  // Inicializar form data cuando cambia la solicitud
   useEffect(() => {
     if (solicitud) {
       setFormData({
@@ -401,6 +400,7 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave, camaras }: {
   );
 };
 
+// SolicitudDetailDialog component - lines 404-607
 const SolicitudDetailDialog = ({ solicitud, isOpen, onClose, platziSeguimiento }: {
   solicitud: any;
   isOpen: boolean;
@@ -409,7 +409,6 @@ const SolicitudDetailDialog = ({ solicitud, isOpen, onClose, platziSeguimiento }
 }) => {
   if (!solicitud) return null;
 
-  // Filtrar datos de seguimiento por email de la solicitud
   const userCourses = platziSeguimiento.filter(curso => curso.email === solicitud.email);
 
   return (
@@ -447,156 +446,133 @@ const SolicitudDetailDialog = ({ solicitud, isOpen, onClose, platziSeguimiento }
               </div>
               <div>
                 <label className="font-medium text-muted-foreground">Celular</label>
-                <p>{solicitud.celular || 'N/A'}</p>
+                <p>{solicitud.celular || 'No registrado'}</p>
               </div>
               <div>
                 <label className="font-medium text-muted-foreground">Cargo</label>
-                <p>{solicitud.cargo || 'N/A'}</p>
+                <p>{solicitud.cargo || 'No registrado'}</p>
               </div>
               <div>
-                <label className="font-medium text-muted-foreground">Nivel educativo</label>
-                <p>{solicitud.nivel_educativo || 'N/A'}</p>
+                <label className="font-medium text-muted-foreground">Nivel Educativo</label>
+                <p>{solicitud.nivel_educativo || 'No registrado'}</p>
               </div>
-            </div>
-          </div>
-
-          {/* Información de Empresa */}
-          <div className="bg-muted/20 rounded-lg p-4">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <Building className="h-4 w-4" />
-              Información de Empresa
-            </h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <label className="font-medium text-muted-foreground">NIT</label>
-                <p>{solicitud.nit_empresa || 'N/A'}</p>
+                <label className="font-medium text-muted-foreground">Tipo de Identificación</label>
+                <p>{solicitud.tipo_identificacion || 'No registrado'}</p>
               </div>
-              {solicitud.empresas ? (
-                <>
-                  <div>
-                    <label className="font-medium text-muted-foreground">Empresa</label>
-                    <p>{solicitud.empresas.nombre}</p>
-                  </div>
-                  <div>
-                    <label className="font-medium text-muted-foreground">Sector</label>
-                    <p>{solicitud.empresas.sector || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="font-medium text-muted-foreground">Mercado</label>
-                    <p>{solicitud.empresas.mercado || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="font-medium text-muted-foreground">Colaboradores</label>
-                    <p>{solicitud.empresas.num_colaboradores || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <label className="font-medium text-muted-foreground">Cámara</label>
-                    <p>{solicitud.empresas.camaras?.nombre || 'N/A'}</p>
-                  </div>
-                </>
-              ) : (
+              <div>
+                <label className="font-medium text-muted-foreground">Género</label>
+                <p>{solicitud.genero || 'No registrado'}</p>
+              </div>
+              <div>
+                <label className="font-medium text-muted-foreground">Grupo Étnico</label>
+                <p>{solicitud.grupo_etnico || 'No registrado'}</p>
+              </div>
+              <div>
+                <label className="font-medium text-muted-foreground">Fecha de Nacimiento</label>
+                <p>{solicitud.fecha_nacimiento ? format(new Date(solicitud.fecha_nacimiento), "dd/MM/yyyy") : 'No registrado'}</p>
+              </div>
+              <div>
+                <label className="font-medium text-muted-foreground">Fecha de Solicitud</label>
+                <p>{format(new Date(solicitud.fecha_solicitud), "dd/MM/yyyy")}</p>
+              </div>
+              <div>
+                <label className="font-medium text-muted-foreground">Estado</label>
+                <Badge variant={
+                  solicitud.estado === 'Aprobada' ? 'default' :
+                  solicitud.estado === 'Pendiente' ? 'secondary' : 'destructive'
+                }>
+                  {solicitud.estado}
+                </Badge>
+              </div>
+              {solicitud.es_colaborador && (
                 <div className="col-span-2">
-                  <p className="text-sm text-muted-foreground italic">No hay información adicional de la empresa disponible</p>
+                  <label className="font-medium text-muted-foreground">Es Colaborador de</label>
+                  <p>{solicitud.camaras?.nombre || 'Cámara no especificada'}</p>
+                </div>
+              )}
+              {solicitud.razon_rechazo && (
+                <div className="col-span-2">
+                  <label className="font-medium text-muted-foreground">Razón de Rechazo</label>
+                  <p className="text-destructive">{solicitud.razon_rechazo}</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Estado y Fechas */}
-          <div className="bg-muted/20 rounded-lg p-4">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Estado y Seguimiento
-            </h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <label className="font-medium text-muted-foreground">Estado actual</label>
-                <Badge className="mt-1">{solicitud.estado}</Badge>
-              </div>
-              <div>
-                <label className="font-medium text-muted-foreground">Fecha de solicitud</label>
-                <p>{new Date(solicitud.fecha_solicitud).toLocaleDateString('es-CO')}</p>
-              </div>
-              <div>
-                <label className="font-medium text-muted-foreground">Test diagnóstico</label>
-                <Badge variant="secondary">Pendiente</Badge>
+          {/* Información Empresarial */}
+          {!solicitud.es_colaborador && solicitud.empresas && (
+            <div className="bg-muted/20 rounded-lg p-4">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Building className="h-4 w-4" />
+                Información Empresarial
+              </h3>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <label className="font-medium text-muted-foreground">Empresa</label>
+                  <p>{solicitud.empresas.nombre}</p>
+                </div>
+                <div>
+                  <label className="font-medium text-muted-foreground">NIT</label>
+                  <p>{solicitud.nit_empresa}</p>
+                </div>
+                <div>
+                  <label className="font-medium text-muted-foreground">Sector</label>
+                  <p>{solicitud.empresas.sector || 'No registrado'}</p>
+                </div>
+                <div>
+                  <label className="font-medium text-muted-foreground">Mercado</label>
+                  <p>{solicitud.empresas.mercado || 'No registrado'}</p>
+                </div>
+                <div>
+                  <label className="font-medium text-muted-foreground">Colaboradores</label>
+                  <p>{solicitud.empresas.num_colaboradores || 'No registrado'}</p>
+                </div>
+                <div>
+                  <label className="font-medium text-muted-foreground">Cámara</label>
+                  <p>{solicitud.empresas.camaras?.nombre || 'Sin cámara vinculada'}</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Información de Platzi Seguimiento */}
-          {userCourses.length > 0 && (
+          {/* Seguimiento Platzi */}
+          {userCourses.length > 0 ? (
             <div className="bg-muted/20 rounded-lg p-4">
               <h3 className="font-semibold mb-3 flex items-center gap-2">
                 <BookOpen className="h-4 w-4" />
-                Progreso de Cursos en Platzi ({userCourses.length} cursos)
+                Seguimiento de Cursos Platzi ({userCourses.length} cursos)
               </h3>
-              <div className="space-y-3 max-h-64 overflow-y-auto">
+              <div className="space-y-3">
                 {userCourses.map((curso, index) => (
-                  <div key={index} className="border rounded-lg p-3 bg-background/50">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-sm line-clamp-2">{curso.curso || "Curso sin nombre"}</h4>
-                        <p className="text-xs text-muted-foreground">
-                          <span className="font-medium">Ruta:</span> {curso.ruta || "Sin ruta"}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 ml-2">
-                        {curso.estado_curso === 'Certificado' && (
-                          <Award className="h-4 w-4 text-green-600" />
-                        )}
-                        <Badge 
-                          variant={curso.estado_curso === 'Certificado' ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {curso.estado_curso || 'En progreso'}
-                        </Badge>
-                      </div>
+                  <div key={index} className="flex items-center justify-between p-3 bg-background rounded-lg border">
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{curso.curso || curso.id_curso}</p>
+                      <p className="text-xs text-muted-foreground">{curso.ruta || 'Sin ruta'}</p>
                     </div>
-                    
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div>
-                        <label className="font-medium text-muted-foreground">Progreso</label>
-                        <div className="flex items-center gap-2 mt-1">
-                          <div className="flex-1 bg-muted rounded-full h-2">
-                            <div 
-                              className="bg-primary h-2 rounded-full transition-all"
-                              style={{ width: `${(curso.porcentaje_avance || 0) * 100}%` }}
-                            />
-                          </div>
-                          <span className="font-medium">{Math.round((curso.porcentaje_avance || 0) * 100)}%</span>
-                        </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{curso.porcentaje_avance || 0}%</p>
+                        <p className="text-xs text-muted-foreground">Avance</p>
                       </div>
-                      <div>
-                        <label className="font-medium text-muted-foreground">Tiempo invertido</label>
-                        <p className="mt-1">
-                          {curso.tiempo_invertido 
-                            ? `${Math.round(curso.tiempo_invertido / 3600)} horas`
-                            : 'N/A'
-                          }
-                        </p>
-                      </div>
-                      {curso.fecha_certificacion && (
-                        <div className="col-span-2">
-                          <label className="font-medium text-muted-foreground">Fecha de certificación</label>
-                          <p className="mt-1">{new Date(curso.fecha_certificacion).toLocaleDateString('es-CO')}</p>
-                        </div>
-                      )}
+                      <Badge variant={
+                        curso.estado_curso === 'Aprobado' || curso.estado_curso === 'Certificado' ? 'default' :
+                        curso.estado_curso === 'En progreso' ? 'secondary' : 'outline'
+                      }>
+                        {curso.estado_curso || 'Sin estado'}
+                      </Badge>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-          )}
-
-          {/* Mensaje cuando no hay cursos */}
-          {userCourses.length === 0 && solicitud.estado === 'Aprobada' && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 text-amber-700">
-                <BarChart3 className="h-4 w-4" />
-                <span className="font-medium text-sm">Sin actividad en Platzi</span>
-              </div>
-              <p className="text-xs text-amber-600 mt-1">
+          ) : (
+            <div className="bg-muted/20 rounded-lg p-4">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <BookOpen className="h-4 w-4" />
+                Seguimiento Platzi
+              </h3>
+              <p className="text-sm text-muted-foreground">
                 Esta persona tiene la licencia aprobada pero aún no ha comenzado cursos o no aparece en los reportes.
               </p>
             </div>
@@ -616,12 +592,30 @@ export default function Solicitudes() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Búsqueda server-side por email (para registros que quedan fuera del “top 1000”)
-  const remoteEmailSearch = useRemoteEmailSearch(searchTerm);
-  const effectiveSolicitudes = remoteEmailSearch.enabled
-    ? (remoteEmailSearch.data ?? [])
-    : solicitudes;
-  const effectiveLoading = loading || (remoteEmailSearch.enabled && remoteEmailSearch.loading);
+  // Búsqueda server-side complementaria (para registros fuera del dataset local)
+  const localFilteredCount = useMemo(() => {
+    if (!searchTerm.trim()) return solicitudes.length;
+    const q = searchTerm.toLowerCase();
+    return solicitudes.filter(s =>
+      s.nombres_apellidos?.toLowerCase().includes(q) ||
+      s.email?.toLowerCase().includes(q) ||
+      s.numero_documento?.includes(searchTerm) ||
+      s.nit_empresa?.includes(searchTerm)
+    ).length;
+  }, [solicitudes, searchTerm]);
+
+  const remoteSearch = useRemoteSearch(searchTerm, localFilteredCount);
+
+  // Fusionar resultados remotos con locales (sin reemplazar), deduplicando por ID
+  const effectiveSolicitudes = useMemo(() => {
+    if (!remoteSearch.enabled || !remoteSearch.data?.length) return solicitudes;
+    const localIds = new Set(solicitudes.map(s => s.id));
+    const extras = remoteSearch.data.filter(r => !localIds.has(r.id));
+    if (extras.length === 0) return solicitudes;
+    return [...solicitudes, ...extras] as typeof solicitudes;
+  }, [solicitudes, remoteSearch.enabled, remoteSearch.data]);
+
+  const effectiveLoading = loading || (remoteSearch.enabled && remoteSearch.loading);
 
   const [statusFilter, setStatusFilter] = useState('todos');
   const [chamberFilter, setChamberFilter] = useState('todas');
@@ -648,6 +642,7 @@ export default function Solicitudes() {
   const canViewGlobal = hasPermission(profile.role, 'view_all');
   const canExecuteActions = hasPermission(profile.role, 'admin_actions');
 
+  // handleSendReminder function
   const handleSendReminder = async (solicitud: any) => {
     if (!solicitud.celular) {
       toast({
@@ -660,7 +655,6 @@ export default function Solicitudes() {
 
     setSendingReminderId(solicitud.id);
     try {
-      // Obtener configuración de webhook
       const { data: webhookConfig, error: webhookError } = await supabase
         .from('webhook_config')
         .select('*')
@@ -677,7 +671,6 @@ export default function Solicitudes() {
         return;
       }
 
-      // Enviar webhook
       const response = await fetch(webhookConfig.url, {
         method: webhookConfig.method,
         headers: {
@@ -694,7 +687,6 @@ export default function Solicitudes() {
       });
 
       if (response.ok) {
-        // Marcar como enviado y añadir a la lista de recordatorios enviados
         setSentReminders(prev => new Set(prev).add(solicitud.id));
         
         toast({
@@ -716,6 +708,7 @@ export default function Solicitudes() {
     }
   };
 
+  // handleApproveRequest function
   const handleApproveRequest = async (solicitud: any) => {
     if (!solicitud.celular) {
       toast({
@@ -728,7 +721,6 @@ export default function Solicitudes() {
 
     setApprovingRequestId(solicitud.id);
     try {
-      // Obtener configuración de webhook
       const { data: webhookConfig, error: webhookError } = await supabase
         .from('webhook_config')
         .select('*')
@@ -745,7 +737,6 @@ export default function Solicitudes() {
         return;
       }
 
-      // Enviar webhook
       const response = await fetch(webhookConfig.url, {
         method: webhookConfig.method,
         headers: {
@@ -823,7 +814,6 @@ export default function Solicitudes() {
         (colaboradorFilter === 'si' && sol.es_colaborador === true) ||
         (colaboradorFilter === 'no' && sol.es_colaborador === false);
       
-      // Filtro de empresa: sin_empresa = solicitudes de empresarios cuyo NIT no cruza con ninguna empresa
       const matchesEmpresa = empresaFilter === 'todas' ||
         (empresaFilter === 'sin_empresa' && !sol.es_colaborador && !sol.empresas) ||
         (empresaFilter === 'con_empresa' && !sol.es_colaborador && sol.empresas);
@@ -862,7 +852,6 @@ export default function Solicitudes() {
     setLookingUpChamberId(solicitud.id);
     
     try {
-      // Consultar API de datos.gov.co (RUES)
       const response = await fetch(
         `https://www.datos.gov.co/resource/c82u-588k.json?` +
         `nit=${solicitud.nit_empresa}` +
@@ -872,7 +861,6 @@ export default function Solicitudes() {
       
       const data = await response.json();
       
-      // Verificar si hay resultados
       if (!data || data.length === 0) {
         toast({
           title: "NIT No encontrado",
@@ -884,7 +872,6 @@ export default function Solicitudes() {
       
       const camaraAPI = data[0].camara_comercio;
       
-      // Buscar el ID correspondiente en el mapeo
       const camaraId = CAMARA_API_TO_ID[camaraAPI];
       
       if (!camaraId) {
@@ -896,7 +883,6 @@ export default function Solicitudes() {
         return;
       }
       
-      // Actualizar la empresa con la cámara encontrada
       const { error } = await supabase
         .from('empresas')
         .update({ camara_id: camaraId })
@@ -904,7 +890,6 @@ export default function Solicitudes() {
       
       if (error) throw error;
       
-      // Obtener información de la cámara para el mensaje y actualización local
       const camaraInfo = camaras.find(c => c.id === camaraId);
       const camaraNombre = camaraInfo?.nombre || camaraAPI;
       
@@ -913,7 +898,6 @@ export default function Solicitudes() {
         description: `Se asignó correctamente: ${camaraNombre}`,
       });
       
-      // Refrescar datos en segundo plano sin bloquear la UI
       refetch();
       
     } catch (err: any) {
@@ -930,7 +914,6 @@ export default function Solicitudes() {
 
   const handleSaveEdit = async (updatedSolicitud: any) => {
     try {
-      // Actualizar solicitud - el NIT se actualiza aquí
       const { error: solicitudError } = await supabase
         .from('solicitudes')
         .update({
@@ -946,7 +929,7 @@ export default function Solicitudes() {
           fecha_nacimiento: updatedSolicitud.fecha_nacimiento,
           estado: updatedSolicitud.estado,
           razon_rechazo: updatedSolicitud.razon_rechazo,
-          nit_empresa: updatedSolicitud.nit_empresa, // NIT actualizado en solicitudes
+          nit_empresa: updatedSolicitud.nit_empresa,
           es_colaborador: updatedSolicitud.es_colaborador,
           camara_colaborador_id: updatedSolicitud.camara_colaborador_id,
         })
@@ -954,12 +937,11 @@ export default function Solicitudes() {
 
       if (solicitudError) throw solicitudError;
 
-      // Actualizar también el NIT en la tabla empresas
       if (editingSolicitud.empresas?.id) {
         const { error: empresaError } = await supabase
           .from('empresas')
           .update({
-            nit: updatedSolicitud.nit_empresa, // Mismo NIT actualizado en empresas
+            nit: updatedSolicitud.nit_empresa,
             camara_id: updatedSolicitud.camara_empresa_id || null,
           })
           .eq('id', editingSolicitud.empresas.id);
@@ -975,7 +957,6 @@ export default function Solicitudes() {
       setShowEditDialog(false);
       setEditingSolicitud(null);
       
-      // Refrescar datos en segundo plano sin bloquear la UI
       refetch();
     } catch (error: any) {
       console.error('Error updating request:', error);
