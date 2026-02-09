@@ -2,6 +2,32 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
+// Helper: fetch ALL rows by paginating in batches of 1000
+// Receives a function that builds the query (without .range())
+async function fetchAllPaginated(
+  buildQuery: () => any
+): Promise<any[]> {
+  const batchSize = 1000;
+  const allData: any[] = [];
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await buildQuery().range(offset, offset + batchSize - 1);
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      allData.push(...data);
+      offset += batchSize;
+      hasMore = data.length === batchSize;
+    } else {
+      hasMore = false;
+    }
+  }
+
+  return allData;
+}
+
 // Types
 export interface Solicitud {
   id: string;
@@ -23,10 +49,10 @@ export interface Solicitud {
     sector?: string;
     mercado?: string;
     num_colaboradores?: number;
-  ventas_2024?: number;
-  decision_adoptar_ia?: 'Sí' | 'No';
-  invirtio_ia_2024?: 'Sí' | 'No';
-  monto_inversion_2024?: number;
+    ventas_2024?: number;
+    decision_adoptar_ia?: 'Sí' | 'No';
+    invirtio_ia_2024?: 'Sí' | 'No';
+    monto_inversion_2024?: number;
     camara_id?: string;
     camaras?: {
       nombre: string;
@@ -108,43 +134,40 @@ export function useSolicitudes() {
     try {
       setLoading(true);
       
-      // Ejecutar ambas consultas en paralelo para mayor velocidad
-       const [solicitudesResult, empresasResult] = await Promise.all([
-         supabase
-           .from('solicitudes')
-           .select(`
-             id, email, nombres_apellidos, numero_documento, nit_empresa, 
-             estado, fecha_solicitud, celular, cargo, es_colaborador,
-             camara_colaborador_id, genero, tipo_identificacion, nivel_educativo,
-             grupo_etnico, fecha_nacimiento, razon_rechazo,
-             camaras:camara_colaborador_id (id, nombre, nit)
-           `)
-           .order('fecha_solicitud', { ascending: false })
-           // PostgREST aplica un límite de 1000 filas si no se especifica rango.
-           // Traemos un rango mayor para evitar “registros que existen pero no aparecen”.
-           .range(0, 4999),
-         supabase
-           .from('empresas')
-           .select(`
-             id, nit, nombre, sector, camara_id,
-             camaras (id, nombre, nit)
-           `)
-           .range(0, 4999)
-       ]);
+      // Fetch ALL rows using pagination to bypass PostgREST 1000-row limit
+      const [solicitudesData, empresasData] = await Promise.all([
+        fetchAllPaginated(() =>
+          supabase
+            .from('solicitudes')
+            .select(`
+              id, email, nombres_apellidos, numero_documento, nit_empresa, 
+              estado, fecha_solicitud, celular, cargo, es_colaborador,
+              camara_colaborador_id, genero, tipo_identificacion, nivel_educativo,
+              grupo_etnico, fecha_nacimiento, razon_rechazo,
+              camaras:camara_colaborador_id (id, nombre, nit)
+            `)
+            .order('fecha_solicitud', { ascending: false })
+        ),
+        fetchAllPaginated(() =>
+          supabase
+            .from('empresas')
+            .select(`
+              id, nit, nombre, sector, camara_id,
+              camaras (id, nombre, nit)
+            `)
+        )
+      ]);
 
-      if (solicitudesResult.error) throw solicitudesResult.error;
-      if (empresasResult.error) throw empresasResult.error;
-
-      // Crear mapa de empresas por NIT para búsqueda O(1)
+      // Crear mapa de empresas por NIT para busqueda O(1)
       const empresasMap = new Map(
-        empresasResult.data?.map(empresa => [empresa.nit, empresa]) || []
+        empresasData.map(empresa => [empresa.nit, empresa])
       );
 
       // Combinar los datos usando el mapa
-      const solicitudesWithEmpresas = solicitudesResult.data?.map(solicitud => ({
+      const solicitudesWithEmpresas = solicitudesData.map(solicitud => ({
         ...solicitud,
         empresas: solicitud.es_colaborador ? undefined : empresasMap.get(solicitud.nit_empresa)
-      })) || [];
+      }));
 
       setSolicitudes(solicitudesWithEmpresas);
     } catch (err) {
@@ -178,36 +201,36 @@ export function useEmpresas() {
     try {
       setLoading(true);
       
-      // Obtener todas las empresas
-      const { data: empresasData, error: empresasError } = await supabase
-        .from('empresas')
-        .select(`
-          *,
-          camaras (
-            nombre,
-            nit
-          )
-        `)
-        .order('nombre');
-
-      if (empresasError) throw empresasError;
-
-      // Obtener solicitudes empresariales (no colaboradores) para filtrar empresas
-      const { data: solicitudesEmpresariales, error: solicitudesError } = await supabase
-        .from('solicitudes')
-        .select('nit_empresa')
-        .eq('es_colaborador', false);
-
-      if (solicitudesError) throw solicitudesError;
+      // Fetch ALL empresas and solicitudes using pagination
+      const [empresasData, solicitudesEmpresariales] = await Promise.all([
+        fetchAllPaginated(() =>
+          supabase
+            .from('empresas')
+            .select(`
+              *,
+              camaras (
+                nombre,
+                nit
+              )
+            `)
+            .order('nombre')
+        ),
+        fetchAllPaginated(() =>
+          supabase
+            .from('solicitudes')
+            .select('nit_empresa')
+            .eq('es_colaborador', false)
+        )
+      ]);
 
       // Filtrar empresas que tienen solicitudes empresariales reales
       const nitsConSolicitudesEmpresariales = new Set(
-        solicitudesEmpresariales?.map(s => s.nit_empresa) || []
+        solicitudesEmpresariales.map(s => s.nit_empresa)
       );
 
-      const empresasFiltradas = empresasData?.filter(empresa => 
+      const empresasFiltradas = empresasData.filter(empresa => 
         nitsConSolicitudesEmpresariales.has(empresa.nit)
-      ) || [];
+      );
 
       setEmpresas(empresasFiltradas);
     } catch (err) {
@@ -241,13 +264,13 @@ export function usePlatziGeneral() {
     const fetchPlatziData = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('platzi_general')
-          .select('*')
-          .order('nombre');
-
-        if (error) throw error;
-        setPlatziData(data || []);
+        const data = await fetchAllPaginated(() =>
+          supabase
+            .from('platzi_general')
+            .select('*')
+            .order('nombre')
+        );
+        setPlatziData(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error cargando datos Platzi');
         console.error('Error fetching platzi data:', err);
@@ -274,13 +297,13 @@ export function usePlatziSeguimiento() {
     const fetchSeguimientoData = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('platzi_seguimiento')
-          .select('*')
-          .order('nombre');
-
-        if (error) throw error;
-        setSeguimientoData(data || []);
+        const data = await fetchAllPaginated(() =>
+          supabase
+            .from('platzi_seguimiento')
+            .select('*')
+            .order('nombre')
+        );
+        setSeguimientoData(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error cargando seguimiento Platzi');
         console.error('Error fetching platzi seguimiento:', err);
@@ -314,7 +337,7 @@ export function useCamaras() {
         if (error) throw error;
         setCamaras(data || []);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error cargando cámaras');
+        setError(err instanceof Error ? err.message : 'Error cargando camaras');
         console.error('Error fetching camaras:', err);
       } finally {
         setLoading(false);
@@ -338,23 +361,23 @@ export function useColaboradores() {
     try {
       setLoading(true);
       
-      // Obtener colaboradores con información de su cámara
-      const { data: colaboradoresData, error: colaboradoresError } = await supabase
-        .from('solicitudes')
-        .select(`
-          *,
-          camaras!solicitudes_camara_colaborador_id_fkey (
-            id,
-            nombre,
-            nit
-          )
-        `)
-        .eq('es_colaborador', true)
-        .order('fecha_solicitud', { ascending: false });
+      // Fetch ALL colaboradores using pagination
+      const colaboradoresData = await fetchAllPaginated(() =>
+        supabase
+          .from('solicitudes')
+          .select(`
+            *,
+            camaras!solicitudes_camara_colaborador_id_fkey (
+              id,
+              nombre,
+              nit
+            )
+          `)
+          .eq('es_colaborador', true)
+          .order('fecha_solicitud', { ascending: false })
+      );
 
-      if (colaboradoresError) throw colaboradoresError;
-
-      setColaboradores(colaboradoresData || []);
+      setColaboradores(colaboradoresData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error cargando colaboradores');
       console.error('Error fetching colaboradores:', err);
@@ -567,7 +590,7 @@ export function useStats() {
   const { platziData } = usePlatziGeneral();
 
   const stats = {
-    totalLicenses: 1200, // Este valor debería venir de configuración
+    totalLicenses: 1200,
     usedLicenses: platziData.length,
     totalApplications: solicitudes.length,
     approvedApplications: solicitudes.filter(s => s.estado === 'Aprobada').length,
