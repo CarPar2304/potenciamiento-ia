@@ -938,15 +938,49 @@ export default function Solicitudes() {
       if (solicitudError) throw solicitudError;
 
       if (editingSolicitud.empresas?.id) {
-        const { error: empresaError } = await supabase
-          .from('empresas')
-          .update({
-            nit: updatedSolicitud.nit_empresa,
-            camara_id: updatedSolicitud.camara_empresa_id || null,
-          })
-          .eq('id', editingSolicitud.empresas.id);
+        const nitChanged = editingSolicitud.empresas.nit !== updatedSolicitud.nit_empresa;
+        const camaraChanged = editingSolicitud.empresas.camara_id !== (updatedSolicitud.camara_empresa_id || null);
 
-        if (empresaError) throw empresaError;
+        if (nitChanged || camaraChanged) {
+          // Si el NIT cambió, verificar si ya existe otra empresa con ese NIT
+          if (nitChanged) {
+            const { data: existingEmpresa } = await supabase
+              .from('empresas')
+              .select('id')
+              .eq('nit', updatedSolicitud.nit_empresa)
+              .neq('id', editingSolicitud.empresas.id)
+              .maybeSingle();
+
+            if (existingEmpresa) {
+              // Ya existe empresa con ese NIT, no actualizar la empresa actual
+              // Solo se actualiza camara_id si cambió
+              if (camaraChanged) {
+                await supabase
+                  .from('empresas')
+                  .update({ camara_id: updatedSolicitud.camara_empresa_id || null })
+                  .eq('id', editingSolicitud.empresas.id);
+              }
+            } else {
+              const { error: empresaError } = await supabase
+                .from('empresas')
+                .update({
+                  nit: updatedSolicitud.nit_empresa,
+                  camara_id: updatedSolicitud.camara_empresa_id || null,
+                })
+                .eq('id', editingSolicitud.empresas.id);
+
+              if (empresaError) throw empresaError;
+            }
+          } else {
+            // Solo cambió la cámara
+            const { error: empresaError } = await supabase
+              .from('empresas')
+              .update({ camara_id: updatedSolicitud.camara_empresa_id || null })
+              .eq('id', editingSolicitud.empresas.id);
+
+            if (empresaError) throw empresaError;
+          }
+        }
       }
 
       toast({
