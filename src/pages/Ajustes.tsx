@@ -404,22 +404,28 @@ export default function Ajustes() {
     console.log('Procesando sheet1 con', data.length, 'filas');
     console.log('Primera fila de ejemplo:', data[0]);
 
-    // Obtener emails aprobados de solicitudes
-    const { data: approvedEmails, error: emailError } = await supabase
-      .from('solicitudes')
-      .select('email')
-      .eq('estado', 'Aprobada');
-
-    if (emailError) {
-      console.error('Error obteniendo emails aprobados:', emailError);
-      throw new Error(`Error al obtener emails aprobados: ${emailError.message}`);
-    }
-
-    // Crear mapa de emails aprobados: key = email en minúsculas, value = email canónico en BD
+    // Obtener TODOS los emails aprobados (paginado para superar límite de 1000)
     const approvedEmailsMap = new Map<string, string>();
-    (approvedEmails || []).forEach((s: any) => {
-      if (s.email) approvedEmailsMap.set(s.email.toLowerCase(), s.email);
-    });
+    let offset = 0;
+    const batchSize = 1000;
+    let hasMore = true;
+    while (hasMore) {
+      const { data: batch, error: emailError } = await supabase
+        .from('solicitudes')
+        .select('email')
+        .eq('estado', 'Aprobada')
+        .range(offset, offset + batchSize - 1);
+
+      if (emailError) {
+        console.error('Error obteniendo emails aprobados:', emailError);
+        throw new Error(`Error al obtener emails aprobados: ${emailError.message}`);
+      }
+      (batch || []).forEach((s: any) => {
+        if (s.email) approvedEmailsMap.set(s.email.toLowerCase(), s.email);
+      });
+      hasMore = (batch?.length || 0) === batchSize;
+      offset += batchSize;
+    }
     console.log('Emails aprobados encontrados:', approvedEmailsMap.size);
 
     for (let i = 0; i < data.length; i++) {
@@ -521,22 +527,28 @@ export default function Ajustes() {
     console.log('Procesando sheet2 con', data.length, 'filas');
     console.log('Primera fila de ejemplo:', data[0]);
 
-    // Obtener emails aprobados de solicitudes
-    const { data: approvedEmails, error: emailError } = await supabase
-      .from('solicitudes')
-      .select('email')
-      .eq('estado', 'Aprobada');
-
-    if (emailError) {
-      console.error('Error obteniendo emails aprobados:', emailError);
-      throw new Error(`Error al obtener emails aprobados: ${emailError.message}`);
-    }
-
-    // Crear mapa de emails aprobados: key = email en minúsculas, value = email canónico en BD
+    // Obtener TODOS los emails aprobados (paginado para superar límite de 1000)
     const approvedEmailsMap = new Map<string, string>();
-    (approvedEmails || []).forEach((s: any) => {
-      if (s.email) approvedEmailsMap.set(s.email.toLowerCase(), s.email);
-    });
+    let offset = 0;
+    const batchSize = 1000;
+    let hasMore = true;
+    while (hasMore) {
+      const { data: batch, error: emailError } = await supabase
+        .from('solicitudes')
+        .select('email')
+        .eq('estado', 'Aprobada')
+        .range(offset, offset + batchSize - 1);
+
+      if (emailError) {
+        console.error('Error obteniendo emails aprobados:', emailError);
+        throw new Error(`Error al obtener emails aprobados: ${emailError.message}`);
+      }
+      (batch || []).forEach((s: any) => {
+        if (s.email) approvedEmailsMap.set(s.email.toLowerCase(), s.email);
+      });
+      hasMore = (batch?.length || 0) === batchSize;
+      offset += batchSize;
+    }
     console.log('Emails aprobados encontrados:', approvedEmailsMap.size);
 
     for (let i = 0; i < data.length; i++) {
