@@ -956,6 +956,7 @@ export default function Solicitudes() {
           genero: updatedSolicitud.genero,
           grupo_etnico: updatedSolicitud.grupo_etnico,
           fecha_nacimiento: updatedSolicitud.fecha_nacimiento,
+          ...(updatedSolicitud.fecha_solicitud ? { fecha_solicitud: updatedSolicitud.fecha_solicitud } : {}),
           estado: updatedSolicitud.estado,
           razon_rechazo: updatedSolicitud.razon_rechazo,
           nit_empresa: updatedSolicitud.nit_empresa,
