@@ -104,6 +104,7 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave, camaras }: {
     genero: '',
     grupo_etnico: '',
     fecha_nacimiento: '',
+    fecha_solicitud: '',
     estado: '',
     razon_rechazo: '',
     nit_empresa: '',
@@ -127,6 +128,7 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave, camaras }: {
         genero: solicitud.genero || '',
         grupo_etnico: solicitud.grupo_etnico || '',
         fecha_nacimiento: solicitud.fecha_nacimiento || '',
+        fecha_solicitud: solicitud.fecha_solicitud ? solicitud.fecha_solicitud.split('T')[0] : '',
         estado: solicitud.estado || '',
         razon_rechazo: solicitud.razon_rechazo || '',
         nit_empresa: solicitud.nit_empresa || '',
@@ -155,9 +157,10 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave, camaras }: {
         cargo: formData.cargo,
         nivel_educativo: formData.nivel_educativo,
         tipo_identificacion: formData.tipo_identificacion,
-        genero: formData.genero,
+        genero: formData.genero || null,
         grupo_etnico: formData.grupo_etnico,
         fecha_nacimiento: formData.fecha_nacimiento,
+        fecha_solicitud: formData.fecha_solicitud ? new Date(formData.fecha_solicitud + 'T12:00:00').toISOString() : undefined,
         estado: formData.estado,
         razon_rechazo: formData.razon_rechazo,
         nit_empresa: formData.nit_empresa,
@@ -260,10 +263,10 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave, camaras }: {
                     <SelectValue placeholder="Seleccionar género" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Masculino">Masculino</SelectItem>
-                    <SelectItem value="Femenino">Femenino</SelectItem>
-                    <SelectItem value="Otro">Otro</SelectItem>
-                    <SelectItem value="Prefiero no decir">Prefiero no decir</SelectItem>
+                    <SelectItem value="Hombre">Hombre</SelectItem>
+                    <SelectItem value="Mujer">Mujer</SelectItem>
+                    <SelectItem value="No Binario">No Binario</SelectItem>
+                    <SelectItem value="Prefiero no especificar">Prefiero no especificar</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -296,6 +299,32 @@ const SolicitudEditDialog = ({ solicitud, isOpen, onClose, onSave, camaras }: {
                       selected={formData.fecha_nacimiento ? new Date(formData.fecha_nacimiento) : undefined}
                       onSelect={(date) => handleInputChange('fecha_nacimiento', date ? date.toISOString().split('T')[0] : '')}
                       disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                      initialFocus
+                      className="p-3 pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div>
+                <Label htmlFor="fecha_solicitud">Fecha de Solicitud</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.fecha_solicitud && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.fecha_solicitud ? format(new Date(formData.fecha_solicitud + 'T12:00:00'), "dd/MM/yyyy") : "Seleccionar fecha"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={formData.fecha_solicitud ? new Date(formData.fecha_solicitud + 'T12:00:00') : undefined}
+                      onSelect={(date) => handleInputChange('fecha_solicitud', date ? date.toISOString().split('T')[0] : '')}
                       initialFocus
                       className="p-3 pointer-events-auto"
                     />
